@@ -22,7 +22,7 @@ endif()
 
 message("Build type is " ${CMAKE_BUILD_TYPE})
 
-set (GMIC_QT_HOST "gimp" CACHE STRING "Define for which host gmic-qt will be built: gimp, gimp3 (experimental), krita, none, paintdotnet or 8bf.")
+set (GMIC_QT_HOST "gimp" CACHE STRING "Define for which host qmic-qt will be built: gimp, gimp3 (experimental), krita, krita-plugin, none, paintdotnet or 8bf.")
 if (${GMIC_QT_HOST} STREQUAL "none")
   message("Building standalone version.")
 else()
@@ -593,6 +593,59 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita")
       )
     install(TARGETS gmic_krita_qt RUNTIME DESTINATION bin)
 
+elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
+    set(MIN_FRAMEWORKS_VERSION 5.44.0)
+
+    find_package(ECM 5.22 REQUIRED NOMODULE)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+
+    include(KDEInstallDirs)
+    include(KDECMakeSettings)
+
+    if (ANDROID)
+        set (KRITA_PLUGIN_INSTALL_DIR ${LIB_INSTALL_DIR})
+    else()
+        set (KRITA_PLUGIN_INSTALL_DIR ${LIB_INSTALL_DIR}/kritaplugins)
+    endif()
+
+    find_package(KF5 ${MIN_FRAMEWORKS_VERSION} REQUIRED COMPONENTS
+        CoreAddons
+    )
+
+    message(STATUS "Looking for Krita QMic libraries in: ${CMAKE_PREFIX_PATH}")
+
+    find_library(KIS_IMAGE_INTERFACE_LIBRARY
+      NAMES kritaqmicinterface
+      REQUIRED)
+
+    find_path(KIS_IMAGE_INTERFACE_DIR
+      NAMES kis_qmic_plugin_interface.h
+      REQUIRED)
+
+    set_package_properties(kritaqmicinterface PROPERTIES
+                           URL "http://www.krita.org"
+                           DESCRIPTION "Krita GMic core library"
+    )
+
+    set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/KritaPlugin/host.cpp src/Host/KritaPlugin/gmicqttoolplugin.cpp)
+    set (gmic_qt_SRCS ${gmic_qt_SRCS} )
+    qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    add_definitions(-DGMIC_HOST=krita-plugin)
+    add_library(krita_gmic_qt MODULE ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
+    target_include_directories(
+      krita_gmic_qt
+      PUBLIC
+      ${KIS_IMAGE_INTERFACE_DIR}
+    )
+    target_link_libraries(
+      krita_gmic_qt
+      PRIVATE
+      ${gmic_qt_LIBRARIES}
+      ${KIS_IMAGE_INTERFACE_LIBRARY}
+      KF5::CoreAddons
+      )
+    install(TARGETS krita_gmic_qt DESTINATION ${KRITA_PLUGIN_INSTALL_DIR}) # plugin
+
 elseif (${GMIC_QT_HOST} STREQUAL "none")
 
   set (gmic_qt_SRCS ${gmic_qt_SRCS}
@@ -635,7 +688,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "8bf")
       )
 
 else()
-    message(FATAL_ERROR "GMIC_QT_HOST is not defined as gimp, gimp3, krita, none, paintdotnet or 8bf")
+    message(FATAL_ERROR "GMIC_QT_HOST is not defined as gimp, gimp3, krita, kritaplugin, none, paintdotnet or 8bf")
 endif()
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
