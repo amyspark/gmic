@@ -28,14 +28,14 @@
 #include <QSettings>
 #include <QTranslator>
 
-#include "HeadlessProcessor.h"
-#include "Logger.h"
-#include "Widgets/ProgressInfoWindow.h"
-#include "gmicqttoolplugin.h"
 #include "DialogSettings.h"
+#include "HeadlessProcessor.h"
+#include "LanguageSettings.h"
+#include "Logger.h"
 #include "MainWindow.h"
-#include "Widgets/LanguageSelectionWidget.h"
+#include "Widgets/ProgressInfoWindow.h"
 #include "gmic_qt.h"
+#include "gmicqttoolplugin.h"
 
 #include "kpluginfactory.h"
 
@@ -64,13 +64,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i,
   if (headless) {
     DialogSettings::loadSettings(GmicQt::GuiApplication);
     Logger::setMode(DialogSettings::outputMessageMode());
-    // Translate according to current locale or configured language
-    QString lang = LanguageSelectionWidget::configuredTranslator();
-    if (!lang.isEmpty() && (lang != "en")) {
-      auto translator = new QTranslator(qApp);
-      translator->load(QString(":/translations/%1.qm").arg(lang));
-      QCoreApplication::installTranslator(translator);
-    }
+    LanguageSettings::installTranslators();
 
     HeadlessProcessor processor;
     QPointer<ProgressInfoWindow> progressWindow = new ProgressInfoWindow(&processor);
@@ -86,15 +80,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i,
 
   } else {
     DialogSettings::loadSettings(GmicQt::GuiApplication);
-
-    // Translate according to current locale or configured language
-    QString lang = LanguageSelectionWidget::configuredTranslator();
-
-    if (!lang.isEmpty() && (lang != "en")) {
-      auto translator = new QTranslator(qApp);
-      translator->load(QString(":/translations/%1.qm").arg(lang));
-      QApplication::installTranslator(translator);
-    }
+    LanguageSettings::installTranslators();
 
     QPointer<MainWindow> mainWindow = new MainWindow(0);
     // We want a non modal dialog here.
