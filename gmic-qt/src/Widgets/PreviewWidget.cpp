@@ -29,6 +29,7 @@
 #include <QEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPointF>
 #include <algorithm>
 #include <functional>
 #include "Common.h"
@@ -213,7 +214,7 @@ void PreviewWidget::updateErrorImage()
   gmic_image<float> image;
   getOriginalImageCrop(image);
   image.move_to(images);
-  QString fullCommandLine = QString::fromLocal8Bit(GmicQt::commandFromOutputMessageMode(DialogSettings::outputMessageMode()));
+  QString fullCommandLine = QString::fromLatin1(GmicQt::commandFromOutputMessageMode(DialogSettings::outputMessageMode()));
   fullCommandLine += QString(" _host=%1 _tk=qt").arg(GmicQt::HostApplicationShortname);
   fullCommandLine += QString(" _preview_width=%1").arg(width());
   fullCommandLine += QString(" _preview_height=%1").arg(height());
@@ -491,10 +492,15 @@ void PreviewWidget::wheelEvent(QWheelEvent * event)
 {
   double degrees = event->angleDelta().y() / 8.0;
   int steps = static_cast<int>(std::fabs(degrees) / 15.0);
+#if QT_VERSION_GTE(5, 14, 0)
+  const QPoint position = event->position().toPoint();
+#else
+  const QPoint position = event->pos();
+#endif
   if (degrees > 0.0) {
-    zoomIn(event->pos() - _imagePosition.topLeft(), steps);
+    zoomIn(position - _imagePosition.topLeft(), steps);
   } else {
-    zoomOut(event->pos() - _imagePosition.topLeft(), steps);
+    zoomOut(position - _imagePosition.topLeft(), steps);
   }
   event->accept();
 }

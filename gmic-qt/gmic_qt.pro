@@ -19,6 +19,9 @@
 # Possible values are "on" or "off"
 !defined(LTO,var) { LTO=on }
 
+# Possible values are "on" or "off"
+!defined(TEST_FILTERS_QM,var) { TEST_FILTERS_QM=off }
+
 #
 #
 #
@@ -187,6 +190,14 @@ equals( HOST, "paintdotnet") {
  message(Target host software is Paint.NET)
 }
 
+equals( HOST, "8bf") {
+ TARGET = gmic_8bf_qt
+ SOURCES += src/Host/8bf/host_8bf.cpp
+ DEFINES += GMIC_HOST=plugin8bf
+ DEPENDPATH += $$PWD/src/Host/8bf
+ message(Target host software is 8bf filter)
+}
+
 # enable OpenMP by default on with g++, except on OS X
 !macx:*g++* {
     CONFIG += openmp
@@ -220,12 +231,7 @@ openmp:equals(COMPILER,"clang") {
     QMAKE_LFLAGS_RELEASE += -fopenmp=libomp
 }
 
-win32:equals(LTO,"on") {
-    message("Link Time Optimizer disabled (windows platform)")
-    LTO = off
-}
-
-!win32:CONFIG(release, debug|release):gcc|clang:equals(LTO,"on") {
+CONFIG(release, debug|release):gcc|clang:equals(LTO,"on") {
     message("Link Time Optimizer enabled")
     QMAKE_CXXFLAGS_RELEASE += -flto
     QMAKE_LFLAGS_RELEASE += -flto
@@ -274,6 +280,7 @@ HEADERS +=  \
   src/FilterSyncRunner.h \
   src/FilterThread.h \
   src/gmic_qt.h \
+  src/FilterTextTranslator.h \
   src/Globals.h \
   src/GmicStdlib.h \
   src/GmicProcessor.h \
@@ -287,6 +294,7 @@ HEADERS +=  \
   src/KeypointList.h \
   src/LayersExtentProxy.h \
   src/Logger.h \
+  src/LanguageSettings.h \
   src/MainWindow.h \
   src/ParametersCache.h \
   src/TimeLogger.h \
@@ -347,6 +355,7 @@ SOURCES += \
   src/FilterSyncRunner.cpp \
   src/FilterThread.cpp \
   src/gmic_qt.cpp \
+  src/FilterTextTranslator.cpp \
   src/Globals.cpp \
   src/GmicStdlib.cpp \
   src/GmicProcessor.cpp \
@@ -358,6 +367,7 @@ SOURCES += \
   src/InputOutputState.cpp \
   src/KeypointList.cpp \
   src/LayersExtentProxy.cpp \
+  src/LanguageSettings.cpp \
   src/Logger.cpp \
   src/MainWindow.cpp \
   src/ParametersCache.cpp \
@@ -403,8 +413,11 @@ FORMS +=  ui/inoutpanel.ui \
           ui/filtersview.ui
 
 RESOURCES += gmic_qt.qrc translations.qrc
-equals( HOST, "none") {
+equals(HOST, "none") {
  RESOURCES += standalone.qrc
+}
+equals(TEST_FILTERS_QM, "on") {
+ RESOURCES += wip_translations.qrc
 }
 
 TRANSLATIONS = \

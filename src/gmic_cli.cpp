@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
   catch (...) {}
   if (commands_user) try {
       commands_user.append(CImg<char>::vector(0),'y');
-      gmic_instance.add_commands(commands_user,filename_user);
+      gmic_instance.add_commands(commands_user,is_debug?filename_user:0);
     } catch (...) { is_invalid_userfile = true; }
   commands_user.assign();
 
@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
         if (gmic_file) {
           bool allow_entrypoint = false;
           gmic gi(0,0,false,0,0,(gmic_pixel_type)0);
-          gi.add_commands(gmic_file,argv[1],0,0,&allow_entrypoint);
+          gi.add_commands(gmic_file,is_debug?argv[1]:0,0,0,&allow_entrypoint);
           if (allow_entrypoint && argc==3) { // Check if command '_main_' has arguments
             const unsigned int hash = (int)gmic::hashcode("_main_",false);
             unsigned int ind = 0;
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
         try {
           gmic(tmp_line,images,images_names);
         } catch (...) { // Fallback in case overloaded version of 'help' crashed
-          cimg_snprintf(tmp_line,tmp_line.width(),"help \"%s\",1",e.command());
+          cimg_snprintf(tmp_line,tmp_line.width(),"help \"%s\"",e.command());
           images.assign().insert(gmic::stdlib);
           images_names.assign();
           gmic(tmp_line,images,images_names);

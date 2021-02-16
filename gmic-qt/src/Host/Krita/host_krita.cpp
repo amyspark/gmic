@@ -37,6 +37,7 @@
 #include <ImageConverter.h>
 
 #include <algorithm>
+#include "Common.h"
 #include "Host/host.h"
 #include "gmic_qt.h"
 #include "gmic.h"
@@ -127,7 +128,7 @@ void gmic_qt_get_layers_extent(int *width, int *height, GmicQt::InputMode mode)
 
     QString answer = QString::fromUtf8(sendMessageSynchronously(command));
     if (answer.length() > 0) {
-        QList<QString> wh = answer.split(',', QString::SkipEmptyParts);
+        QList<QString> wh = answer.split(',', QT_SKIP_EMPTY_PARTS);
         if (wh.length() == 2) {
             *width = wh[0].toInt();
             *height = wh[1].toInt();
@@ -165,7 +166,7 @@ void gmic_qt_get_cropped_images(gmic_list<float> & images,
 
     //qDebug() << "\tgmic-qt: " << answer;
 
-    QStringList imagesList = answer.split("\n", QString::SkipEmptyParts);
+    QStringList imagesList = answer.split("\n", QT_SKIP_EMPTY_PARTS);
 
     images.assign(imagesList.size());
     imageNames.assign(imagesList.size());
@@ -178,7 +179,7 @@ void gmic_qt_get_cropped_images(gmic_list<float> & images,
     // Get the keys for the shared memory areas and the imageNames as prepared by Krita in G'Mic format
     for (int i = 0; i < imagesList.length(); ++i) {
         const QString &layer = imagesList[i];
-        QStringList parts = layer.split(',', QString::SkipEmptyParts);
+        QStringList parts = layer.split(',', QT_SKIP_EMPTY_PARTS);
         if (parts.size() != 4) {
             qWarning() << "\tgmic-qt: Got the wrong answer!";
         }
@@ -230,8 +231,7 @@ void gmic_qt_get_cropped_images(gmic_list<float> & images,
 
 void gmic_qt_output_images( gmic_list<float> & images,
                             const gmic_list<char> & imageNames,
-                            GmicQt::OutputMode mode,
-                            const char * /*verboseLayersLabel*/)
+                            GmicQt::OutputMode mode)
 {
 
     //qDebug() << "qmic-qt-output-images";

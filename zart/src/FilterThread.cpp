@@ -46,13 +46,13 @@
 #include "FilterThread.h"
 #include <QApplication>
 #include <QColor>
+#include <QElapsedTimer>
 #include <QFont>
 #include <QFontMetrics>
 #include <QImage>
 #include <QMutex>
 #include <QPainter>
 #include <QSemaphore>
-#include <QTime>
 #include <iostream>
 #include "ImageConverter.h"
 #include "WebcamSource.h"
@@ -125,7 +125,7 @@ void FilterThread::setViewSize(const QSize & size)
 
 void FilterThread::run()
 {
-  QTime timeMeasure;
+  QElapsedTimer timeMeasure;
   unsigned int lastCommandDuration = 0;
   timeMeasure.start();
   int n;
@@ -163,8 +163,8 @@ void FilterThread::run()
         if (_commandUpdated) {
           delete _gmic;
           QString c = QString("zart: -skip $\"*\" ") + _command;
-          _gmic = new gmic("", c.toLatin1().constData());
-          _commandUpdated = false;
+	  _gmic = new gmic("", c.toLatin1().constData(), true, 0, 0, 0.0f);
+	  _commandUpdated = false;
         }
 
         QString c("v -");

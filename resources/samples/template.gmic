@@ -199,8 +199,7 @@
 #@gui : sep = separator()
 #@gui : note = note{"
 #@gui : The source code of this set of filters is available at :"}
-#@gui : note = link("http://www.filters_url.org/template.gmic")
-#@gui : "}
+#@gui : url = link("http://www.filters_url.org/template.gmic")
 #@gui : sep = separator()
 jd_about :
   fx_logo "John Doe's Filters"

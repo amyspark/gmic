@@ -82,6 +82,7 @@ public slots:
   void onCancelClicked();
   void onProgressionWidgetCancelClicked();
   void onReset();
+  void onCopyGMICCommand();
   void onPreviewZoomReset();
   void onUpdateFiltersClicked();
   void saveCurrentParameters();
@@ -101,6 +102,7 @@ public slots:
   void onPreviewError(const QString & message);
   void onParametersChanged();
   static bool isAccepted();
+  void setFilterName(const QString & text);
 
 protected:
   void timerEvent(QTimerEvent *) override;
@@ -115,7 +117,6 @@ protected:
   void activateFilter(bool resetZoom);
   void setNoFilter();
   void setPreviewPosition(PreviewPosition position);
-
   void adjustVerticalSplitter();
 
 private slots:

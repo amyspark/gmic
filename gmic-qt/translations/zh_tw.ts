@@ -7,7 +7,7 @@
 <context>
     <name>ColorParameter</name>
     <message>
-        <location filename="../src/FilterParameters/ColorParameter.cpp" line="133"/>
+        <location filename="../src/FilterParameters/ColorParameter.cpp" line="168"/>
         <source>Select color</source>
         <translation>選取顏色</translation>
     </message>
@@ -172,41 +172,36 @@
     </message>
     <message>
         <location filename="../src/DialogSettings.cpp" line="86"/>
-        <source>Verbose (layer name)</source>
-        <translation>繁複 (圖層名稱)</translation>
-    </message>
-    <message>
-        <location filename="../src/DialogSettings.cpp" line="87"/>
         <source>Verbose (console)</source>
         <translation>繁複 (控制台)</translation>
     </message>
     <message>
-        <location filename="../src/DialogSettings.cpp" line="88"/>
+        <location filename="../src/DialogSettings.cpp" line="87"/>
         <source>Verbose (log file)</source>
         <translation>繁複 (log 檔案)</translation>
     </message>
     <message>
-        <location filename="../src/DialogSettings.cpp" line="89"/>
+        <location filename="../src/DialogSettings.cpp" line="88"/>
         <source>Very verbose (console)</source>
         <translation>超繁複 (控制台)</translation>
     </message>
     <message>
-        <location filename="../src/DialogSettings.cpp" line="90"/>
+        <location filename="../src/DialogSettings.cpp" line="89"/>
         <source>Very verbose (log file)</source>
         <translation>超繁複 (log 檔案)</translation>
     </message>
     <message>
-        <location filename="../src/DialogSettings.cpp" line="91"/>
+        <location filename="../src/DialogSettings.cpp" line="90"/>
         <source>Debug (console)</source>
         <translation>Debug (控制台)</translation>
     </message>
     <message>
-        <location filename="../src/DialogSettings.cpp" line="92"/>
+        <location filename="../src/DialogSettings.cpp" line="91"/>
         <source>Debug (log file)</source>
         <translation>Debug (log 檔案)</translation>
     </message>
     <message>
-        <location filename="../src/DialogSettings.cpp" line="108"/>
+        <location filename="../src/DialogSettings.cpp" line="107"/>
         <source>Check to use Native/OS color dialog, uncheck to use Qt&apos;s</source>
         <translation>勾選以使用原生色彩對話框，不選以使用Qt</translation>
     </message>
@@ -214,9 +209,9 @@
 <context>
     <name>FileParameter</name>
     <message>
-        <location filename="../src/FilterParameters/FileParameter.cpp" line="148"/>
-        <location filename="../src/FilterParameters/FileParameter.cpp" line="151"/>
-        <location filename="../src/FilterParameters/FileParameter.cpp" line="154"/>
+        <location filename="../src/FilterParameters/FileParameter.cpp" line="149"/>
+        <location filename="../src/FilterParameters/FileParameter.cpp" line="152"/>
+        <location filename="../src/FilterParameters/FileParameter.cpp" line="155"/>
         <source>Select a file</source>
         <translation>選取檔案</translation>
     </message>
@@ -245,7 +240,12 @@
 <context>
     <name>FiltersPresenter</name>
     <message>
-        <location filename="../src/FilterSelector/FiltersPresenter.cpp" line="418"/>
+        <location filename="../src/FilterSelector/FiltersPresenter.cpp" line="339"/>
+        <source>Unknown filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/FilterSelector/FiltersPresenter.cpp" line="427"/>
         <source>Cannot find this fave&apos;s original filter
 </source>
         <translation type="unfinished"></translation>
@@ -259,28 +259,28 @@
         <translation>GMIC</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="64"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="65"/>
         <source>Rename fave</source>
         <translation>重新命名最愛列</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="66"/>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="342"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="67"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="344"/>
         <source>Remove fave</source>
         <translation>從最愛移除</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="68"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="69"/>
         <source>Clone fave</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="72"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="73"/>
         <source>Add fave</source>
         <translation>加到最愛列</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="342"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="345"/>
         <source>Do you really want to remove the following fave?
 
 %1
@@ -291,7 +291,7 @@
 <context>
     <name>FolderParameter</name>
     <message>
-        <location filename="../src/FilterParameters/FolderParameter.cpp" line="126"/>
+        <location filename="../src/FilterParameters/FolderParameter.cpp" line="127"/>
         <source>Select a folder</source>
         <translation>選取資料夾</translation>
     </message>
@@ -313,6 +313,7 @@
     <name>InOutPanel</name>
     <message>
         <location filename="../ui/inoutpanel.ui" line="40"/>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="271"/>
         <source>Input / Output</source>
         <translation>輸入／輸出</translation>
     </message>
@@ -323,116 +324,41 @@
     </message>
     <message>
         <location filename="../ui/inoutpanel.ui" line="102"/>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="45"/>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="72"/>
         <source>Input layers</source>
         <translation>輸入圖層</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="46"/>
-        <source>None</source>
-        <translation>無</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="47"/>
-        <source>Active (default)</source>
-        <translation>啟用中 (預設)</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="48"/>
-        <source>All</source>
-        <translation>全部</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="49"/>
-        <source>Active and below</source>
-        <translation>啟用中和以下的</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="50"/>
-        <source>Active and above</source>
-        <translation>啟用中和以上的</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="51"/>
-        <source>All visible</source>
-        <translation>全部可見</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="52"/>
-        <source>All invisible</source>
-        <translation>全部隱藏</translation>
-    </message>
-    <message>
         <location filename="../ui/inoutpanel.ui" line="138"/>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="58"/>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="95"/>
         <source>Output mode</source>
         <translation>輸出模式</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="59"/>
-        <source>In place (default)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="60"/>
-        <source>New layer(s)</source>
-        <translation>新增圖層</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="61"/>
-        <source>New active layer(s)</source>
-        <translation>新增圖層</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="62"/>
-        <source>New image</source>
-        <translation>新增圖片</translation>
-    </message>
-    <message>
         <location filename="../ui/inoutpanel.ui" line="125"/>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="64"/>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="111"/>
         <source>Preview mode</source>
         <translation>預覽模式</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="65"/>
-        <source>1st output (default)</source>
-        <translation>第一輸出 (預設)</translation>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="273"/>
+        <source>Input / Preview</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="66"/>
-        <source>2nd output</source>
-        <translation>第二輸出</translation>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="273"/>
+        <source>Input</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="67"/>
-        <source>3rd output</source>
-        <translation>第三輸出</translation>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="275"/>
+        <source>Output / Preview</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="68"/>
-        <source>4th output</source>
-        <translation>第四輸出</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="69"/>
-        <source>1st -&gt; 2nd output</source>
-        <translation>第一 -&gt; 第二輸出</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="70"/>
-        <source>1st -&gt; 3rd output</source>
-        <translation>第一 -&gt; 第三輸出</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="71"/>
-        <source>1st -&gt; 4th output</source>
-        <translation>第一 -&gt; 第四輸出</translation>
-    </message>
-    <message>
-        <location filename="../src/Widgets/InOutPanel.cpp" line="72"/>
-        <source>All outputs</source>
-        <translation>全部輸出</translation>
+        <location filename="../src/Widgets/InOutPanel.cpp" line="275"/>
+        <source>Output</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -448,7 +374,7 @@
         <translation>&lt;i&gt;(需要重開)&lt;/I&gt;</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/LanguageSelectionWidget.cpp" line="45"/>
+        <location filename="../src/Widgets/LanguageSelectionWidget.cpp" line="48"/>
         <source>System default (%1)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -472,153 +398,159 @@
     </message>
     <message>
         <location filename="../ui/mainwindow.ui" line="233"/>
+        <location filename="../ui/mainwindow.ui" line="240"/>
         <source>...</source>
         <translation>...</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="379"/>
+        <location filename="../ui/mainwindow.ui" line="386"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable/disable preview&lt;br/&gt;(Ctrl+P)&lt;br/&gt;(right click on preview image for instant swapping)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="382"/>
+        <location filename="../ui/mainwindow.ui" line="389"/>
         <source>Preview</source>
         <translation>預覽</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="473"/>
+        <location filename="../ui/mainwindow.ui" line="480"/>
         <source>Settings...</source>
         <translation>設定...</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="489"/>
+        <location filename="../ui/mainwindow.ui" line="496"/>
         <source>TextLabel</source>
         <translation>TextLabel</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="502"/>
+        <location filename="../ui/mainwindow.ui" line="509"/>
         <source>&amp;Cancel</source>
         <translation>取消 (&amp;C)</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="515"/>
+        <location filename="../ui/mainwindow.ui" line="522"/>
         <source>&amp;Fullscreen</source>
         <translation>全螢幕 (&amp;F)</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="528"/>
+        <location filename="../ui/mainwindow.ui" line="535"/>
         <source>&amp;Apply</source>
         <translation>應用 (&amp;A)</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="541"/>
+        <location filename="../ui/mainwindow.ui" line="548"/>
         <source>&amp;OK</source>
         <translation>確定 (&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="83"/>
+        <location filename="../src/MainWindow.cpp" line="102"/>
         <source>Add fave</source>
         <translation>加到最愛列</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="85"/>
+        <location filename="../src/MainWindow.cpp" line="104"/>
         <source>Reset parameters to default values</source>
         <translation>重設參數成預設值</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="88"/>
-        <source>Update filters (Ctrl+R / F5)</source>
+        <location filename="../src/MainWindow.cpp" line="110"/>
+        <source>Copy G&apos;MIC command to clipboard</source>
+        <translation>将G&apos;MIC命令复制到剪贴板</translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow.cpp" line="166"/>
+        <source>Update filters</source>
         <translation>更新濾鏡</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="90"/>
+        <location filename="../src/MainWindow.cpp" line="113"/>
         <source>Rename fave</source>
         <translation>重新命名最愛列</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="92"/>
+        <location filename="../src/MainWindow.cpp" line="115"/>
         <source>Remove fave</source>
         <translation>從最愛移除</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="96"/>
+        <location filename="../src/MainWindow.cpp" line="119"/>
         <source>Expand/Collapse all</source>
         <translation>全部展開／折疊</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="98"/>
+        <location filename="../src/MainWindow.cpp" line="121"/>
         <source>G&apos;MIC (https://gmic.eu)&lt;br/&gt;GREYC (https://www.greyc.fr)&lt;br/&gt;CNRS (https://www.cnrs.fr)&lt;br/&gt;Normandy University (https://www.unicaen.fr)&lt;br/&gt;Ensicaen (https://www.ensicaen.fr)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="105"/>
+        <location filename="../src/MainWindow.cpp" line="128"/>
         <source>Selection mode</source>
         <translation>選取模式</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="288"/>
+        <location filename="../src/MainWindow.cpp" line="329"/>
         <source>Update completed</source>
         <translation>更新完成</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="288"/>
-        <location filename="../src/MainWindow.cpp" line="290"/>
-        <location filename="../src/MainWindow.cpp" line="344"/>
+        <location filename="../src/MainWindow.cpp" line="329"/>
+        <location filename="../src/MainWindow.cpp" line="331"/>
+        <location filename="../src/MainWindow.cpp" line="385"/>
         <source>Filter definitions have been updated.</source>
         <translation>濾鏡定義已更新。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="293"/>
+        <location filename="../src/MainWindow.cpp" line="334"/>
         <source>No download was needed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="340"/>
+        <location filename="../src/MainWindow.cpp" line="381"/>
         <source>Filters update could not be achieved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="462"/>
+        <location filename="../src/MainWindow.cpp" line="503"/>
         <source>The update could not be achieved&lt;br&gt;because of the following errors:&lt;br&gt;</source>
         <translation>這次更新由於以下错誤&lt;br/&gt;未能完成:&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="468"/>
+        <location filename="../src/MainWindow.cpp" line="509"/>
         <source>Update error</source>
         <translation>更新出錯</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="658"/>
+        <location filename="../src/MainWindow.cpp" line="711"/>
         <source>Error</source>
         <translation>出錯</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="750"/>
+        <location filename="../src/MainWindow.cpp" line="807"/>
         <source>Waiting for cancelled jobs...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1098"/>
+        <location filename="../src/MainWindow.cpp" line="1169"/>
         <source>Import faves</source>
         <translation>導入最愛列</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1098"/>
+        <location filename="../src/MainWindow.cpp" line="1169"/>
         <source>Do you want to import faves from file below?&lt;br/&gt;%1</source>
         <translation>你要從以下文件導入最愛列嗎？&lt;br/&gt;%1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1101"/>
+        <location filename="../src/MainWindow.cpp" line="1172"/>
         <source>Don&apos;t ask again</source>
         <translation>不要再問</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1213"/>
+        <location filename="../src/MainWindow.cpp" line="1284"/>
         <source>Confirmation</source>
         <translation>確認</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1213"/>
+        <location filename="../src/MainWindow.cpp" line="1284"/>
         <source>A gmic command is running.&lt;br&gt;Do you really want to close the plugin?</source>
         <translation>gmic 命令正在運行。&lt;br&gt;你確定要關閉插件嗎?</translation>
     </message>
@@ -718,12 +650,12 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="87"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="88"/>
         <source>Visible</source>
         <translation>可見</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersPresenter.cpp" line="85"/>
+        <location filename="../src/FilterSelector/FiltersPresenter.cpp" line="86"/>
         <source>Available filters (%1)</source>
         <translation>可用的濾鏡(%1)</translation>
     </message>

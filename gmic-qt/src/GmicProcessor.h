@@ -25,13 +25,13 @@
 #ifndef GMIC_QT_GMICPROCESSOR_H
 #define GMIC_QT_GMICPROCESSOR_H
 
+#include <QElapsedTimer>
 #include <QList>
 #include <QObject>
 #include <QSettings>
 #include <QSignalMapper>
 #include <QString>
 #include <QStringList>
-#include <QTime>
 #include <QTimer>
 #include <QVector>
 #include <deque>
@@ -94,7 +94,7 @@ public:
   const QList<int> & parametersVisibilityStates() const;
 
   void saveSettings(QSettings & settings);
-  ~GmicProcessor();
+  ~GmicProcessor() override;
 
   int duration() const;
   float progress() const;
@@ -150,7 +150,7 @@ private:
   QString _gmicStatusQuotedParameters;
   QString _lastAppliedCommandEnv;
   GmicQt::InputOutputState _lastAppliedCommandInOutState;
-  QTime _filterExecutionTime;
+  QElapsedTimer _filterExecutionTime;
   std::deque<int> _lastFilterPreviewExecutionDurations;
   int _completeFullImageProcessingCount;
 };

@@ -30,6 +30,7 @@
 #include "FilterParameters/FilterParametersWidget.h"
 #include "FilterThread.h"
 #include "GmicStdlib.h"
+#include "Logger.h"
 #include "ParametersCache.h"
 #include "Updater.h"
 #include "gmic.h"
@@ -188,9 +189,7 @@ void HeadlessProcessor::onProcessingFinished()
   } else {
     gmic_list<gmic_pixel_type> images = _filterThread->images();
     if (!_filterThread->aborted()) {
-      gmic_qt_output_images(images, _filterThread->imageNames(), _outputMode,
-                            (_outputMessageMode == GmicQt::VerboseLayerName) ? QString("[G'MIC] %1: %2").arg(_filterThread->name()).arg(_filterThread->fullCommand()).toLocal8Bit().constData()
-                                                                             : nullptr);
+      gmic_qt_output_images(images, _filterThread->imageNames(), _outputMode);
       _processingCompletedProperly = true;
     }
   }
@@ -199,7 +198,7 @@ void HeadlessProcessor::onProcessingFinished()
   _singleShotTimer.stop();
   emit done(errorMessage);
   if (!_hasProgressWindow && !errorMessage.isEmpty()) {
-    qWarning() << "Error:" << errorMessage;
+    Logger::error(errorMessage);
   }
   QCoreApplication::exit(0);
 }

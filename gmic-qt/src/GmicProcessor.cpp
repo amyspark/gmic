@@ -40,6 +40,7 @@
 #include "ImageConverter.h"
 #include "ImageTools.h"
 #include "LayersExtentProxy.h"
+#include "Logger.h"
 #include "OverrideCursor.h"
 #include "gmic.h"
 
@@ -100,7 +101,7 @@ void GmicProcessor::execute()
     _filterExecutionTime.restart();
     runner.run();
     manageSynchonousRunner(runner);
-    recordPreviewFilterExecutionDurationMS(_filterExecutionTime.elapsed());
+    recordPreviewFilterExecutionDurationMS((int)_filterExecutionTime.elapsed());
   } else if (_filterContext.requestType == FilterContext::PreviewProcessing) {
     _filterThread = new FilterThread(this, _filterContext.filterName, _filterContext.filterCommand, _filterContext.filterArguments, env, _filterContext.outputMessageMode);
     _filterThread->swapImages(*_gmicImages);
@@ -185,7 +186,7 @@ int GmicProcessor::averagePreviewFilterExecutionDuration() const
     return 0;
   }
   int count = 0;
-  float sum = 0;
+  double sum = 0;
   for (int duration : _lastFilterPreviewExecutionDurations) {
     sum += duration;
     ++count;
@@ -242,7 +243,7 @@ GmicProcessor::~GmicProcessor()
   delete _gmicImages;
   delete _previewImage;
   if (!_unfinishedAbortedThreads.isEmpty()) {
-    qWarning() << QString("Error: ~GmicProcessor(): There are %1 unfinished filter threads.").arg(_unfinishedAbortedThreads.size());
+    Logger::error(QString("~GmicProcessor(): There are %1 unfinished filter threads.").arg(_unfinishedAbortedThreads.size()));
   }
 }
 
@@ -275,7 +276,7 @@ void GmicProcessor::onPreviewThreadFinished()
   _filterThread = nullptr;
   hideWaitingCursor();
   emit previewImageAvailable();
-  recordPreviewFilterExecutionDurationMS(_filterExecutionTime.elapsed());
+  recordPreviewFilterExecutionDurationMS((int)_filterExecutionTime.elapsed());
 }
 
 void GmicProcessor::onApplyThreadFinished()
@@ -288,7 +289,6 @@ void GmicProcessor::onApplyThreadFinished()
   _gmicStatus = _filterThread->gmicStatus();
   _parametersVisibilityStates = _filterThread->parametersVisibilityStates();
   hideWaitingCursor();
-
   if (_filterThread->failed()) {
     _lastAppliedFilterName.clear();
     _lastAppliedCommand.clear();
@@ -302,12 +302,7 @@ void GmicProcessor::onApplyThreadFinished()
       emit aboutToSendImagesToHost();
     }
     _filterThread->swapImages(*_gmicImages);
-    if (_filterContext.outputMessageMode == GmicQt::VerboseLayerName) {
-      QString label = QString("[G'MIC] %1: %2").arg(_filterThread->name()).arg(_filterThread->fullCommand());
-      gmic_qt_output_images(*_gmicImages, _filterThread->imageNames(), _filterContext.inputOutputState.outputMode, label.toLocal8Bit().constData());
-    } else {
-      gmic_qt_output_images(*_gmicImages, _filterThread->imageNames(), _filterContext.inputOutputState.outputMode, nullptr);
-    }
+    gmic_qt_output_images(*_gmicImages, _filterThread->imageNames(), _filterContext.inputOutputState.outputMode);
     _completeFullImageProcessingCount += 1;
     LayersExtentProxy::clear();
     CroppedActiveLayerProxy::clear();
@@ -358,8 +353,8 @@ void GmicProcessor::updateImageNames(gmic_list<char> & imageNames)
     if (str.contains(position) && position.matchedLength() > 0) {
       int xPos = position.cap(1).toInt();
       int yPos = position.cap(3).toInt();
-      int newXPos = (int)(xPos * (xFactor / (float)maxWidth));
-      int newYPos = (int)(yPos * (yFactor / (float)maxHeight));
+      int newXPos = (int)(xPos * (xFactor / (double)maxWidth));
+      int newYPos = (int)(yPos * (yFactor / (double)maxHeight));
       str.replace(position.cap(0), QString("pos(%1%2%3)").arg(newXPos).arg(position.cap(2)).arg(newYPos));
       name.resize(str.size() + 1);
       std::memcpy(name.data(), str.toLatin1().constData(), name.width());

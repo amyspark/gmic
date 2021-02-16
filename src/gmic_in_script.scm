@@ -38,7 +38,7 @@
 ;;   knowledge of the CeCILL license and that you accept its terms.
 ;;
 
-(define	(script-with-gmic img drawable x y z)
+(define (script-with-gmic img drawable x y z)
 
   ;; Start undo group.
   (gimp-image-undo-group-start img)
@@ -78,9 +78,9 @@
                     "David Tschumperlé"
                     "March 2017"
                     "*"
-                    SF-IMAGE		"Image"		0
+                    SF-IMAGE            "Image"         0
                     SF-DRAWABLE         "Drawable"      0
-                    SF-ADJUSTMENT	_"X-Angle"	'(57  0 360  1 2 0 0)
-                    SF-ADJUSTMENT	_"Y-Angle"	'(41  0 360  1 2 0 0)
-                    SF-ADJUSTMENT	_"Z-Angle"	'(21  0 360  1 2 0 0)
+                    SF-ADJUSTMENT       _"X-Angle"      '(57  0 360  1 2 0 0)
+                    SF-ADJUSTMENT       _"Y-Angle"      '(41  0 360  1 2 0 0)
+                    SF-ADJUSTMENT       _"Z-Angle"      '(21  0 360  1 2 0 0)
                     )

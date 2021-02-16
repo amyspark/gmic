@@ -46,8 +46,8 @@
 #ifndef ZART_IMAGEVIEW_H
 #define ZART_IMAGEVIEW_H
 
+#include <QElapsedTimer>
 #include <QMutex>
-#include <QTime>
 #include <QWidget>
 #include "KeypointList.h"
 
@@ -57,7 +57,7 @@ class ImageView : public QWidget {
   Q_OBJECT
 
 public:
-  ImageView(QWidget * parent = 0);
+  ImageView(QWidget * parent = nullptr);
   inline QImage & image();
   inline QMutex & imageMutex();
   void setImageSize(int width, int height);
@@ -72,14 +72,14 @@ public slots:
   void checkSize();
 
 protected:
-  void paintEvent(QPaintEvent *);
-  void mousePressEvent(QMouseEvent *);
-  void mouseReleaseEvent(QMouseEvent *);
-  void mouseDoubleClickEvent(QMouseEvent *);
-  void mouseMoveEvent(QMouseEvent *);
-  void resizeEvent(QResizeEvent *);
-  void keyPressEvent(QKeyEvent *);
-  void closeEvent(QCloseEvent *);
+  void paintEvent(QPaintEvent *) override;
+  void mousePressEvent(QMouseEvent *) override;
+  void mouseReleaseEvent(QMouseEvent *) override;
+  void mouseDoubleClickEvent(QMouseEvent *) override;
+  void mouseMoveEvent(QMouseEvent *) override;
+  void resizeEvent(QResizeEvent *) override;
+  void keyPressEvent(QKeyEvent *) override;
+  void closeEvent(QCloseEvent *) override;
 
 signals:
   void mousePress(QMouseEvent *);
@@ -101,7 +101,7 @@ private:
   QColor _backgroundColor;
   KeypointList _keypoints;
   int _movedKeypointIndex;
-  QTime _keypointTimestamp;
+  QElapsedTimer _keypointTimestamp;
   static int roundedDistance(const QPoint & p1, const QPoint & p2);
   int keypointUnderMouse(const QPoint & p);
   void paintKeypoints(QPainter & painter);

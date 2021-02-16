@@ -36,7 +36,9 @@
 #include <cstdio>
 #include "Common.h"
 #include "DialogSettings.h"
+#include "FilterTextTranslator.h"
 #include "HtmlTranslator.h"
+#include "Logger.h"
 
 ColorParameter::ColorParameter(QObject * parent) : AbstractParameter(parent, true), _default(0, 0, 0, 0), _value(_default), _alphaChannel(false), _label(nullptr), _button(nullptr), _dialog(nullptr) {}
 
@@ -85,11 +87,27 @@ QString ColorParameter::textValue() const
 void ColorParameter::setValue(const QString & value)
 {
   QStringList list = value.split(",");
-  const int red = list[0].toInt();
-  const int green = list[1].toInt();
-  const int blue = list[2].toInt();
+  if ((list.size() != 3) && (list.size() != 4)) {
+    return;
+  }
+  bool ok = false;
+  const int red = list[0].toInt(&ok);
+  if (!ok) {
+    Logger::warning(QString("ColorParameter::setValue(\"%1\"): bad red channel").arg(value));
+  }
+  const int green = list[1].toInt(&ok);
+  if (!ok) {
+    Logger::warning(QString("ColorParameter::setValue(\"%1\"): bad green channel").arg(value));
+  }
+  const int blue = list[2].toInt(&ok);
+  if (!ok) {
+    Logger::warning(QString("ColorParameter::setValue(\"%1\"): bad blue channel").arg(value));
+  }
   if ((list.size() == 4) && _alphaChannel) {
-    const int alpha = list[3].toInt();
+    const int alpha = list[3].toInt(&ok);
+    if (!ok) {
+      Logger::warning(QString("ColorParameter::setValue(\"%1\"): bad alpha channel").arg(value));
+    }
     _value = QColor(red, green, blue, alpha);
   } else {
     _value = QColor(red, green, blue);
@@ -111,7 +129,7 @@ bool ColorParameter::initFromText(const char * text, int & textLength)
   if (list.isEmpty()) {
     return false;
   }
-  _name = HtmlTranslator::html2txt(list[0]);
+  _name = HtmlTranslator::html2txt(FilterTextTranslator::translate(list[0]));
 
   // color(#e9cc00) and color(#e9cc00ff)
   const QString trimmed = list[1].trimmed();

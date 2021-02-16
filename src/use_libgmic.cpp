@@ -95,7 +95,7 @@ int main() {
 
   // Second step : Call G'MIC API to process input images.
   //------------------------------------------------------
-  std::fprintf(stderr,"\n- 2st step : Call G'MIC interpreter.\n");
+  std::fprintf(stderr,"\n- 2nd step : Call G'MIC interpreter.\n");
 
   try {
 

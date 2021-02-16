@@ -113,7 +113,7 @@ ifeq ($(OS),NetBSD)
 OS = Unix
 endif
 
-ifneq (, $(findstring MINGW, $(OS)))
+ifneq (,$(findstring MINGW,$(OS)))
 OS = Windows
 USR = /mingw64
 endif
@@ -344,8 +344,8 @@ native:
 
 # CLI (standard)
 #---------------
-GMIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
-GMIC_CLI_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
+GMIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
+GMIC_CLI_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix
 GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS) # $(XSHM_CFLAGS) # $(MAGICK_CFLAGS)
 GMIC_CLI_LIBS += $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS) # $(XSHM_LIBS) # $(MAGICK_LIBS)
@@ -354,8 +354,8 @@ ifeq ($(OS),Darwin) # MacOSX
 GMIC_CLI_CFLAGS += $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS)
 GMIC_CLI_LIBS += $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS)
 else # Windows
-GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS) $(OPENCV_CFLAGS)
-GMIC_CLI_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS) $(OPENCV_LIBS)
+GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS) # $(OPENCV_CFLAGS)
+GMIC_CLI_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS) # $(OPENCV_LIBS)
 endif
 endif
 
@@ -366,18 +366,24 @@ cli:
 debug:
 	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=$(GMIC_CLI_LIBS)" _cli
 
+half:
+	$(MAKE) "CFLAGS+=$(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) -Dcimg_use_half -I/usr/include/OpenEXR -Dgmic_pixel_type=half" \
+	        "LIBS+=$(MANDATORY_LIBS) $(PARALLEL_LIBS) $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS)" _cli
+
 _cli: gmic_cli.o gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic gmic_cli.cpp gmic_cli.o $(CFLAGS) $(LIBS)
 
 gmic_cli.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic_cli.o -c gmic.cpp $(CFLAGS)
 
+
+
 # CLI (static)
 #-------------
 GMIC_STATIC_CLI_PATH = $(USR)/$(LIB)/x86_64-linux-gnu
 GMIC_STATIC_CLI_EXTRA =
-GMIC_STATIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(ZLIB_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) -Dcimg_display=0
-GMIC_STATIC_CLI_LIBS = $(PARALLEL_LIBS) $(EIGEN_LIBS) \
+GMIC_STATIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(ZLIB_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) -Dcimg_display=0
+GMIC_STATIC_CLI_LIBS = $(PARALLEL_LIBS) \
 	               $(GMIC_STATIC_CLI_PATH)/libpng.a \
 	               $(GMIC_STATIC_CLI_PATH)/libjpeg.a \
                        $(GMIC_STATIC_CLI_PATH)/libz.a \
@@ -390,8 +396,8 @@ static:
 
 # Libgmic
 #--------
-GMIC_LIB_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
-GMIC_LIB_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
+GMIC_LIB_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
+GMIC_LIB_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix.
 GMIC_LIB_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS)
 GMIC_LIB_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
@@ -422,8 +428,8 @@ libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 
 # LibCgmic (standard)
 #--------------------
-GMIC_LIBC_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
-GMIC_LIBC_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
+GMIC_LIBC_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
+GMIC_LIBC_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix.
 GMIC_LIBC_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS)
 GMIC_LIBC_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
@@ -474,11 +480,11 @@ libcgmic_files:
 
 # LibCgmic (static)
 #------------------
-GMIC_LIBC_STATIC_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) # $(CURL_CFLAGS) $(TIFF_CFLAGS)
+GMIC_LIBC_STATIC_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) # $(CURL_CFLAGS) $(TIFF_CFLAGS)
 ifeq ($(OS),Window)
 GMIC_LIBC_STATIC_LIBS = -Bstatic -lpthread
 endif
-GMIC_LIBC_STATIC_LIBS += $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(FFTW_LIBS) $(PNG_LIBS) $(JPEG_LIBS) # $(CURL_LIBS) $(TIFF_LIBS)
+GMIC_LIBC_STATIC_LIBS += $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(PNG_LIBS) $(JPEG_LIBS) # $(CURL_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix.
 GMIC_LIBC_STATIC_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS)
 GMIC_LIBC_STATIC_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
@@ -531,8 +537,8 @@ libgmic_shared.o: CImg.h gmic_stdlib.h
 # G'MIC Online
 #-------------
 GMICOL_LIB_PATH = /usr/lib/x86_64-linux-gnu/
-GMICOL_CFLAGS = $(MANDATORY_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(ZLIB_CFLAGS) -Dcimg_display=0 # $(OPENMP_CFLAGS)
-GMICOL_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(ZLIB_LIBS) $(GMICOL_LIB_PATH)/libfftw3.a $(GMICOL_LIB_PATH)/libfftw3_threads.a # $(OPENMP_LIBS)
+GMICOL_CFLAGS = $(MANDATORY_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(ZLIB_CFLAGS) -Dcimg_display=0 # $(OPENMP_CFLAGS)
+GMICOL_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(ZLIB_LIBS) $(GMICOL_LIB_PATH)/libfftw3.a $(GMICOL_LIB_PATH)/libfftw3_threads.a # $(OPENMP_LIBS)
 
 gmicol:
 	$(MAKE) "CFLAGS+=$(GMICOL_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMICOL_LIBS) $(OPT_LIBS)" _cli
@@ -678,7 +684,7 @@ do_gmic_stdlib.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_stdlib.h
-	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui *,update "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic_stdlib/' >> gmic_stdlib.h
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui update "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic_stdlib/' >> gmic_stdlib.h
 	@echo "\nconst unsigned long size_data_gmic_stdlib = (unsigned long)sizeof(data_gmic_stdlib);" >> gmic_stdlib.h
 	@\gmic v - _upload gmic_stdlib.h
 	@cp -f gmic_stdlib.h /tmp/gmic_stdlib$(VERSION).h
@@ -689,14 +695,14 @@ do_gmic_stdlib.h:
 #-----------------------
 bashcompletion:
 	@mkdir -p ../resources
-	@\gmic v - gmic_stdlib.gmic it gmic_stdlib.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_cli bashcompletion > ../resources/gmic_bashcompletion.sh
 	@echo "Bash completion script 'gmic_bashcompletion.sh' has been successfully generated in '../resources/'."
 
 # Man pages
 #----------
 man:
 	@mkdir -p ../man
-	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic __help man > ../man/gmic.1
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic reference man > ../man/gmic.1
 	@gzip -f ../man/gmic.1
 	@echo "Man file 'gmic.1.gz' has been successfully generated in '../man/'."
 

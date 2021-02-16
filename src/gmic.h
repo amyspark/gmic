@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 292
+#define gmic_version 296
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -60,6 +60,19 @@
 
 #include <cstdio>
 #include <cstring>
+
+// Define gmic_uint64 type.
+#ifndef gmic_uint64
+#if cimg_OS==2
+#define gmic_uint64 __int64
+#else // #if cimg_OS==2
+#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#define gmic_uint64 unsigned long long
+#else
+#define gmic_uint64 unsigned long
+#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#endif // #if cimg_OS==2
+#endif // #ifndef gmic_uint64
 
 #ifndef gmic_build
 
@@ -194,6 +207,12 @@ inline double gmic_mp_run(char *const str,
   return ::gmic_mp_run(str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
+inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers, const char *const str,
+                          void *const p_list, const T& pixel_type);
+#define cimg_mp_func_get(ptr,siz,to_numbers,str) \
+  return ::gmic_mp_get(ptr,siz,to_numbers,str,&mp.listout,(T)0)
+
+template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed, const char *const str,
@@ -206,12 +225,6 @@ inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsi
                            void *const p_list, const T& pixel_type);
 #define cimg_mp_func_name(ind,out_str,siz) \
   return ::gmic_mp_name(ind,out_str,siz,&mp.listout,(T)0)
-
-template<typename T>
-inline double gmic_mp_setname(const unsigned int ind, const char *const str,
-                              void *const p_list, const T& pixel_type);
-#define cimg_mp_func_setname(ind,str) \
-  return ::gmic_mp_setname(ind,str,&mp.listout,(T)0)
 
 #ifndef cimg_display
 #define cimg_display 0
@@ -239,19 +252,6 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 
 #endif // #ifndef gmic_build
 
-// Define gmic_uint64 type.
-#ifndef gmic_uint64
-#if cimg_OS==2
-#define gmic_uint64 __int64
-#else // #if cimg_OS==2
-#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#define gmic_uint64 unsigned long long
-#else
-#define gmic_uint64 unsigned long
-#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#endif // #if cimg_OS==2
-#endif // #ifndef gmic_uint64
-
 // Define main libgmic class 'gmic'.
 //----------------------------------
 #define gmic_image cimg_library::CImg
@@ -266,7 +266,7 @@ struct gmic {
   // Constructors.
   gmic();
 
-  template<typename T=gmic_pixel_type>
+  template<typename T>
   gmic(const char *const commands_line,
        const char *const custom_commands=0,
        const bool include_stdlib=true,
@@ -279,7 +279,7 @@ struct gmic {
        const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0);
 
   // Run G'MIC pipeline on an already-constructed object.
-  template<typename T=gmic_pixel_type>
+  template<typename T>
   gmic& run(const char *const commands_line,
             float *const p_progress=0, bool *const p_is_abort=0,
             const T& pixel_type=(T)0);
@@ -301,6 +301,9 @@ struct gmic {
   static double mp_run(char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
+  static double mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers, const char *const str,
+                       void *const p_list, const T& pixel_type);
+  template<typename Ts, typename T>
   static double mp_store(const Ts *const ptr,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                          const bool is_compressed, const char *const str,
@@ -308,9 +311,6 @@ struct gmic {
   template<typename T, typename Ts>
   static double mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                         void *const p_list, const T& pixel_type);
-  template<typename T>
-  static double mp_setname(const unsigned int ind, const char *const str,
-                           void *const p_list, const T& pixel_type);
   static bool get_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number);
   static int _levenshtein(const char *const s, const char *const t,
                           gmic_image<int>& d, const int i, const int j);
@@ -330,6 +330,9 @@ struct gmic {
              const char *const custom_commands, const bool include_stdlib,
              float *const p_progress, bool *const p_is_abort);
 
+  gmic_image<char> get_variable(const char *const name,
+                                const unsigned int *const variables_sizes=0,
+                                const gmic_list<char> *const images_names=0) const;
   const char *set_variable(const char *const name, const char *const value,
                            const char operation='=',
                            const unsigned int *const variables_sizes=0);
@@ -348,6 +351,7 @@ struct gmic {
                                     const bool _is_debug=false) const;
   gmic_image<char> callstack2string(const gmic_image<unsigned int>* callstack_selection,
                                     const bool _is_debug=false) const;
+  void pop_callstack(const unsigned int callstack_size);
 
   gmic_image<unsigned int> selection2cimg(const char *const string, const unsigned int indice_max,
                                           const gmic_list<char>& names, const char *const command,
@@ -373,7 +377,7 @@ struct gmic {
   gmic_image<char> substitute_item(const char *const source,
                                    gmic_list<T>& images, gmic_list<char>& images_names,
                                    gmic_list<T>& parent_images, gmic_list<char>& parent_images_names,
-				   const unsigned int *const variables_sizes,
+                                   const unsigned int *const variables_sizes,
                                    const gmic_image<unsigned int> *const command_selection,
                                    const bool is_image_expr);
 
@@ -382,7 +386,7 @@ struct gmic {
 
   template<typename T>
   gmic& print(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
-	      const char *format, ...);
+              const char *format, ...);
 
   template<typename T>
   gmic& warn(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
@@ -391,7 +395,7 @@ struct gmic {
   template<typename T>
   gmic& error(const bool output_header, const gmic_list<T>& list,
               const gmic_image<unsigned int> *const callstack_selection,
-	      const char *const command, const char *format, ...);
+              const char *const command, const char *format, ...);
 
   template<typename T>
   bool check_cond(const char *const expr, gmic_list<T>& images, const char *const command);
@@ -464,7 +468,8 @@ struct gmic {
 
   float focale3d, light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
   gmic_uint64 reference_time;
-  unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages, debug_filename, debug_line, cimg_exception_mode;
+  unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
+    debug_filename, debug_line, cimg_exception_mode;
   int verbosity,render3d, renderd3d, network_timeout;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
@@ -507,6 +512,12 @@ inline double gmic_mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
+inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers, const char *const str,
+                          void *const p_list, const T& pixel_type) {
+  return gmic::mp_get(ptr,siz,to_numbers,str,p_list,pixel_type);
+}
+
+template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed, const char *const str,
@@ -518,12 +529,6 @@ template<typename T, typename Ts>
 inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                            void *const p_list, const T& pixel_type) {
   return gmic::mp_name(ind,out_str,siz,p_list,pixel_type);
-}
-
-template<typename T>
-inline double gmic_mp_setname(const unsigned int ind, const char *const str,
-                              void *const p_list, const T& pixel_type) {
-  return gmic::mp_setname(ind,str,p_list,pixel_type);
 }
 
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
