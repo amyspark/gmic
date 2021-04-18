@@ -420,7 +420,7 @@ void MainWindow::retrieveFilterAndParametersFromPluginParameters(QString & hash,
       if (filter.isInvalid()) {
         pluginParameterHash.clear();
         errorMessage = tr("Plugin was called with a command that cannot be recognized as a filter:\n\nCommand: %1").arg(elided80(_pluginParameters.command));
-      } else if ((not pluginParameterHash.isEmpty()) && (filter.hash != pluginParameterHash)) {
+      } else if ((!pluginParameterHash.isEmpty()) && (filter.hash != pluginParameterHash)) {
         pluginParameterHash.clear();
         errorMessage = tr("Plugin was called with a command that does not match the provided path:\n\nPath: %1\nCommand: %2") //
                            .arg(elided80(_pluginParameters.filterPath))
