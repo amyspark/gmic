@@ -189,7 +189,7 @@ void PointParameter::setVisibilityState(AbstractParameter::VisibilityState state
 
 void PointParameter::updateView()
 {
-  if (not _spinBoxX) {
+  if (!_spinBoxX) {
     return;
   }
   disconnectSpinboxes();

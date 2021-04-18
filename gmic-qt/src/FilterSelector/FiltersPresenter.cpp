@@ -395,7 +395,7 @@ bool FiltersPresenter::danglingFaveIsSelected() const
   }
   QString hash = _filtersView->selectedFilterHash();
   if (_favesModel.contains(hash)) {
-    return not _filtersModel.contains(_favesModel.getFaveFromHash(hash).originalHash());
+    return !_filtersModel.contains(_favesModel.getFaveFromHash(hash).originalHash());
   }
   return false;
 }

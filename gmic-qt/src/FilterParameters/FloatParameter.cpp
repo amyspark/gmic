@@ -144,7 +144,7 @@ void FloatParameter::timerEvent(QTimerEvent * event)
 {
   killTimer(event->timerId());
   _timerId = 0;
-  if (not _spinBox->unfinishedKeyboardEditing()) {
+  if (!_spinBox->unfinishedKeyboardEditing()) {
     notifyIfRelevant();
   }
 }
