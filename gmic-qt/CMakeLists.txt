@@ -171,14 +171,16 @@ include_directories(SYSTEM ${ZLIB_INCLUDE_DIRS} )
 #
 # FFTW3
 #
-find_package(FFTW3 REQUIRED)
-add_definitions(-Dcimg_use_fftw3 )
-include_directories(${FFTW3_INCLUDE_DIR})
-find_library(FFTW3_THREADS_LIB fftw3_threads PATHS ${FFTW3_LIBRARY_DIRS})
-if(FFTW3_THREADS_LIB STREQUAL "FFTW3_THREADS_LIB-NOTFOUND")
-    add_definitions(-Dcimg_use_fftw3_singlethread)
-else()
-    list(APPEND EXTRA_LIBRARIES ${FFTW3_LIBRARIES})
+if (ENABLE_FFTW3)
+  find_package(FFTW3 REQUIRED)
+  add_definitions(-Dcimg_use_fftw3 )
+  include_directories(${FFTW3_INCLUDE_DIR})
+  find_library(FFTW3_THREADS_LIB fftw3_threads PATHS ${FFTW3_LIBRARY_DIRS})
+  if(FFTW3_THREADS_LIB STREQUAL "FFTW3_THREADS_LIB-NOTFOUND")
+      add_definitions(-Dcimg_use_fftw3_singlethread)
+  else()
+      list(APPEND EXTRA_LIBRARIES ${FFTW3_LIBRARIES})
+  endif()
 endif()
 
 #
