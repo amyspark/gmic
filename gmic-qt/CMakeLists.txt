@@ -275,17 +275,21 @@ add_definitions(-Dgmic_gui)
 add_definitions(-Dcimg_use_abort)
 add_definitions(-Dcimg_appname=\"gmic\")
 
-if (UNIX AND NOT APPLE)
-    add_definitions(-Dcimg_display=1)
-    add_definitions(-D_IS_LINUX_)
-    add_definitions(-Dcimg_use_vt100)
-    add_definitions(-D_IS_UNIX_)
-    find_package(X11)
-    set(gmic_qt_LIBRARIES
-        ${gmic_qt_LIBRARIES}
-        ${X11_LIBRARIES} # XXX: Search for X11: Wayland is coming!
-    )
-
+if (UNIX)
+    if(ANDROID)
+        add_definitions(-Dcimg_display=0)
+        add_definitions(-D_IS_UNIX_)
+    elseif(NOT APPLE)
+        add_definitions(-Dcimg_display=1)
+        add_definitions(-D_IS_LINUX_)
+        add_definitions(-Dcimg_use_vt100)
+        add_definitions(-D_IS_UNIX_)
+        find_package(X11)
+        set(gmic_qt_LIBRARIES
+            ${gmic_qt_LIBRARIES}
+            ${X11_LIBRARIES} # XXX: Search for X11: Wayland is coming!
+        )
+    endif()
 endif()
 
 if (APPLE)
@@ -654,6 +658,13 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
       ${KIS_IMAGE_INTERFACE_LIBRARY}
       KF5::CoreAddons
       )
+    if (ANDROID)
+      target_link_libraries(
+        krita_gmic_qt
+        PRIVATE
+        log
+      )
+    endif()
     install(TARGETS krita_gmic_qt DESTINATION ${KRITA_PLUGIN_INSTALL_DIR}) # plugin
 
 elseif (${GMIC_QT_HOST} STREQUAL "none")

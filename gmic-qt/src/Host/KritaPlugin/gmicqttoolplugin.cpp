@@ -28,8 +28,17 @@
 #include <QSettings>
 #include <QTranslator>
 
+#ifdef Q_OS_ANDROID
+#include <android/log.h>
+#include <array>
+#include <iostream>
+#include <thread>
+#include <unistd.h>
+#endif
+
 #include "DialogSettings.h"
 #include "HeadlessProcessor.h"
+#include "Host/host.h"
 #include "LanguageSettings.h"
 #include "Logger.h"
 #include "MainWindow.h"
@@ -46,6 +55,45 @@ KritaGmicPlugin::KritaGmicPlugin(QObject *parent, const QVariantList &)
 
 int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i,
                             bool headless) {
+#ifdef Q_OS_ANDROID
+  /* Since on Android stdout and stderr redirect to null, un-redirect them */
+  /* based on https://stackoverflow.com/a/gmic-qt/31777050 */
+
+  std::array<int, 2> oldFd;
+  std::array<int, 2> newStdout, newStderr;
+
+  auto redir_worker = [](std::array<int, 2> &fd, android_LogPriority lvl) {
+    ssize_t rdsz;
+    std::array<char, 1024> buf{};
+    while ((rdsz = read(fd[0], buf.data(), buf.size() - 1)) > 0) {
+      if (buf[rdsz - 1] == '\n')
+        --rdsz;
+      buf[rdsz] = 0; /* add null-terminator */
+      __android_log_write(lvl,
+                          qPrintable(GmicQt::HostApplicationName), buf.data());
+    }
+  };
+
+  /* make stdout line-buffered and stderr unbuffered */
+  setvbuf(stdout, 0, _IOLBF, 0);
+  setvbuf(stderr, 0, _IOLBF, 0);
+
+  /* create the pipe and redirect stdout and stderr */
+  dup2(1, oldFd[0]);
+  dup2(2, oldFd[1]);
+  pipe(newStdout.data());
+  pipe(newStderr.data());
+  dup2(newStdout[1], 1);
+  dup2(newStderr[1], 2);
+
+  /* spawn the logging thread */
+  auto newStdoutRedir = std::thread(redir_worker, std::ref(newStdout), ANDROID_LOG_DEBUG);
+  auto newStderrRedir = std::thread(redir_worker, std::ref(newStderr), ANDROID_LOG_WARN);
+  newStdoutRedir.detach();
+  newStderrRedir.detach();
+#endif
+
+
   // disableInputMode(GmicQt::NoInput);
   // disableInputMode(GmicQt::Active);
   // disableInputMode(GmicQt::All);
@@ -103,6 +151,12 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i,
 
   sharedMemorySegments.clear();
   iface.reset();
+
+#ifdef Q_OS_ANDROID
+  /* un-redirect stdout and stderr */
+  dup2(oldFd[0], 1);
+  dup2(oldFd[1], 2);
+#endif
 
   return r;
 }
