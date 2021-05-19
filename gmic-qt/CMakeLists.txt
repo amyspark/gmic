@@ -709,6 +709,13 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
       ${KIS_IMAGE_INTERFACE_LIBRARY}
       KF5::CoreAddons
       )
+    if (ANDROID)
+      target_link_libraries(
+        krita_gmic_qt
+        PRIVATE
+        log
+      )
+    endif()
     install(TARGETS krita_gmic_qt DESTINATION ${KRITA_PLUGIN_INSTALL_DIR}) # plugin
 
 elseif (${GMIC_QT_HOST} STREQUAL "none")
