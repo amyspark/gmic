@@ -273,6 +273,7 @@ void MainWindow::setIcons()
   ui->tbExpandCollapse->setIcon(_expandIcon);
 }
 
+#ifndef _GMIC_QT_DISABLE_THEMING_
 void MainWindow::setDarkTheme()
 {
   // SHOW(QStyleFactory::keys());
@@ -325,6 +326,7 @@ void MainWindow::setDarkTheme()
   ui->vSplitterLine->setStyleSheet("QFrame{ border-top: 0px none #a0a0a0; border-bottom: 1px solid rgb(160,160,160);}");
   DialogSettings::UnselectedFilterTextColor = DialogSettings::UnselectedFilterTextColor.darker(150);
 }
+#endif
 
 void MainWindow::setPluginParameters(const RunParameters & parameters)
 {
@@ -1026,9 +1028,11 @@ void MainWindow::loadSettings()
   if (settings.value("Config/PreviewPosition", "Left").toString() == "Left") {
     setPreviewPosition(PreviewPosition::Left);
   }
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (DialogSettings::darkThemeEnabled()) {
     setDarkTheme();
   }
+#endif
   if (!DialogSettings::logosAreVisible()) {
     ui->logosLabel->hide();
   }
@@ -1273,12 +1277,14 @@ bool MainWindow::askUserForGTKFavesImport()
                          QMessageBox::Yes | QMessageBox::No, this);
   messageBox.setDefaultButton(QMessageBox::Yes);
   QCheckBox * cb = new QCheckBox(tr("Don't ask again"));
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (DialogSettings::darkThemeEnabled()) {
     QPalette p = cb->palette();
     p.setColor(QPalette::Text, DialogSettings::CheckBoxTextColor);
     p.setColor(QPalette::Base, DialogSettings::CheckBoxBaseColor);
     cb->setPalette(p);
   }
+#endif
   messageBox.setCheckBox(cb);
   int choice = messageBox.exec();
   if (choice != QMessageBox::Yes) {
