@@ -84,6 +84,9 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   const bool savedDarkTheme = QSettings().value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
   ui->rbDarkTheme->setChecked(savedDarkTheme);
   ui->rbDefaultTheme->setChecked(!savedDarkTheme);
+#ifdef _GMIC_QT_DISABLE_THEMING_
+  ui->groupBox_3->setEnabled(false);
+#endif
   ui->cbNativeColorDialogs->setChecked(Settings::nativeColorDialogs());
   ui->cbNativeColorDialogs->setToolTip(tr("Check to use Native/OS color dialog, uncheck to use Qt's"));
   ui->cbShowLogos->setChecked(Settings::visibleLogos());
@@ -100,7 +103,9 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->labelPreviewRight, &ClickableLabel::clicked, ui->rbRightPreview, &QRadioButton::click);
   connect(ui->cbNativeColorDialogs, &QCheckBox::toggled, this, &DialogSettings::onColorDialogsToggled);
   connect(Updater::getInstance(), &Updater::updateIsDone, this, &DialogSettings::enableUpdateButton);
+#ifndef _GMIC_QT_DISABLE_THEMING_
   connect(ui->rbDarkTheme, &QRadioButton::toggled, this, &DialogSettings::onDarkThemeToggled);
+#endif
   connect(ui->cbShowLogos, &QCheckBox::toggled, this, &DialogSettings::onVisibleLogosToggled);
   connect(ui->cbPreviewZoom, &QCheckBox::toggled, this, &DialogSettings::onPreviewZoomToggled);
   connect(ui->sbPreviewTimeout, QOverload<int>::of(&QSpinBox::valueChanged), this, &DialogSettings::onPreviewTimeoutChange);
@@ -111,6 +116,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   ui->languageSelector->selectLanguage(Settings::languageCode());
   ui->languageSelector->enableFilterTranslation(Settings::filterTranslationEnabled());
 
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (Settings::darkThemeEnabled()) {
     QPalette p = ui->cbNativeColorDialogs->palette();
     p.setColor(QPalette::Text, Settings::CheckBoxTextColor);
@@ -126,6 +132,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
     ui->cbNotifyFailedUpdate->setPalette(p);
     ui->cbHighDPI->setPalette(p);
   }
+#endif
   ui->pbOk->setFocus();
   ui->tabWidget->setCurrentIndex(0);
 }
