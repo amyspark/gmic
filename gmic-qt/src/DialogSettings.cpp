@@ -79,11 +79,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 #ifdef _GMIC_QT_DEBUG_
   ui->cbUpdatePeriodicity->addItem(tr("At launch (debug)"), QVariant(0));
 #endif
-  for (int i = 0; i < ui->cbUpdatePeriodicity->count(); ++i) {
-    if (_updatePeriodicity == ui->cbUpdatePeriodicity->itemData(i).toInt()) {
-      ui->cbUpdatePeriodicity->setCurrentIndex(i);
-    }
-  }
+  ui->cbUpdatePeriodicity->setCurrentIndex(ui->cbUpdatePeriodicity->findData(_updatePeriodicity));
 
   ui->outputMessages->setToolTip(tr("Output messages"));
   ui->outputMessages->addItem(tr("Quiet (default)"), GmicQt::Quiet);

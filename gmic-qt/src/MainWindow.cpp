@@ -980,7 +980,7 @@ void MainWindow::loadSettings()
     ui->splitter->setSizes(sizes);
   }
 
-  ui->cbInternetUpdate->setChecked(settings.value("Config/RefreshInternetUpdate", true).toBool());
+  ui->cbInternetUpdate->setChecked(settings.value(REFRESH_USING_INTERNET_KEY, INTERNET_DEFAULT_REFRESH_UPDATE).toBool());
 }
 
 void MainWindow::setPreviewPosition(MainWindow::PreviewPosition position)
