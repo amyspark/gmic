@@ -57,12 +57,14 @@ bool BoolParameter::addTo(QWidget * widget, int row)
   delete _checkBox;
   _checkBox = new QCheckBox(_name, widget);
   _checkBox->setChecked(_value);
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (Settings::darkThemeEnabled()) {
     QPalette p = _checkBox->palette();
     p.setColor(QPalette::Text, Settings::CheckBoxTextColor);
     p.setColor(QPalette::Base, Settings::CheckBoxBaseColor);
     _checkBox->setPalette(p);
   }
+#endif
   _grid->addWidget(_checkBox, row, 0, 1, 3);
   connectCheckBox();
   return true;
