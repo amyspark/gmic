@@ -107,6 +107,9 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   const bool savedDarkTheme = QSettings().value(DARK_THEME_KEY, GmicQt::DarkThemeIsDefault).toBool();
   ui->rbDarkTheme->setChecked(savedDarkTheme);
   ui->rbDefaultTheme->setChecked(!savedDarkTheme);
+#ifdef _GMIC_QT_DISABLE_THEMING_
+  ui->groupBoxTheme->setEnabled(false);
+#endif
   ui->cbNativeColorDialogs->setChecked(_nativeColorDialogs);
   ui->cbNativeColorDialogs->setToolTip(tr("Check to use Native/OS color dialog, uncheck to use Qt's"));
   ui->cbShowLogos->setChecked(_logosAreVisible);
@@ -127,7 +130,9 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 
   connect(Updater::getInstance(), SIGNAL(updateIsDone(int)), this, SLOT(enableUpdateButton()));
 
+#ifndef _GMIC_QT_DISABLE_THEMING_
   connect(ui->rbDarkTheme, SIGNAL(toggled(bool)), this, SLOT(onDarkThemeToggled(bool)));
+#endif
 
   connect(ui->cbShowLogos, SIGNAL(toggled(bool)), this, SLOT(onLogosVisibleToggled(bool)));
 
@@ -140,7 +145,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->cbNotifyFailedUpdate, SIGNAL(toggled(bool)), this, SLOT(onNotifyStartupUpdateFailedToggle(bool)));
 
   ui->languageSelector->selectLanguage(_languageCode);
-  if (_darkThemeEnabled) {
+  if (DialogSettings::darkThemeEnabled()) {
     QPalette p = ui->cbNativeColorDialogs->palette();
     p.setColor(QPalette::Text, DialogSettings::CheckBoxTextColor);
     p.setColor(QPalette::Base, DialogSettings::CheckBoxBaseColor);
@@ -318,7 +323,11 @@ void DialogSettings::onColorDialogsToggled(bool on)
 
 bool DialogSettings::darkThemeEnabled()
 {
+#ifdef _GMIC_QT_DISABLE_THEMING_
+  return GmicQt::DarkThemeIsDefault;
+#else
   return _darkThemeEnabled;
+#endif
 }
 
 QString DialogSettings::languageCode()
