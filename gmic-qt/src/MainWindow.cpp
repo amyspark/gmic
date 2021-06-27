@@ -854,7 +854,7 @@ void MainWindow::onVeryFirstShowEvent()
   const bool useNetwork = false;
 #endif
   ui->progressInfoWidget->startFiltersUpdateAnimationAndShow();
-  Updater::getInstance()->startUpdate(ageLimit, 4, useNetwork);
+  Updater::getInstance()->startUpdate(ageLimit, 60, useNetwork);
 }
 
 void MainWindow::setZoomConstraint()
