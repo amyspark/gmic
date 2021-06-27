@@ -2273,7 +2273,7 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers, const char *const str,
+double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
@@ -2301,8 +2301,9 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers
     if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
       CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
 
-      if (!to_numbers) { // Return variable content as a string
+      if (to_string) { // Return variable content as a string
         CImg<Ts> dest(ptr,siz,1,1,1,true);
+        strreplace_fw(value);
         dest.draw_image(value);
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
 
@@ -2332,24 +2333,19 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers
             if (list.size()!=2) {
               cimg::mutex(24,0);
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' stores %u images, cannot be returned as a vector.",
+                                          "Variable '%s' stores %u images, cannot be returned as a single vector.",
                                           cimg::type<T>::string(),str,list.size());
-            }
-            if (list[0].size()<siz) {
-              cimg::mutex(24,0);
-              throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' stores an image (%u,%u,%u,%u) of size %lu, "
-                                          "cannot be returned as a vector of size %lu.",
-                                          cimg::type<T>::string(),str,
-                                          list[0].width(),list[0].height(),list[0].depth(),list[0].spectrum(),
-                                          list[0].size(),siz);
             }
             dest = list[0].resize(siz,1,1,1,-1);
 
           } else { // Regular string variable
-            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) dest.fill((Ts)dvalue);
-            else try { dest.fill(value,true,false); }
-              catch (...) {
+            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
+              dest[0] = (Ts)dvalue;
+              dest.get_shared_points(1,dest._width - 1).fill(0);
+            } else try {
+                dest.fill(0);
+                dest.fill(value,false,false);
+              } catch (...) {
                 cimg::mutex(24,0);
                 throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                             "Variable '%s' has value '%s', cannot be returned as a vector.",
@@ -2556,7 +2552,7 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
-  "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
+  "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
@@ -3084,18 +3080,18 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     }
   }
   if (is_dquoted) {
-    CImg<char> str; CImg<char>::string(commands_line).move_to(str); // Discard debug info inside string
-    ptrd = str;
-    c = 0;
+    CImg<char> str = CImg<char>::string(commands_line); // Discard debug info inside string
     bool _is_debug_info = false;
-    cimg_for(str,ptrs,char) {
+    ptrd = str;
+    for (const char *ptrs = str; *ptrs; ++ptrs) {
       c = *ptrs;
-      if (c && c!=1) *(ptrd++) = c;
-      else { // Try to retrieve first debug line when discarding debug info
+      if (c!=1) *(ptrd++) = c;
+      else {
         if (!_is_debug_info) is_debug_info|=(_is_debug_info=get_debug_info(ptrs,debug_line,debug_filename));
         while (c && c!=' ') c = *(++ptrs);
       }
-    } *ptrd = 0;
+    }
+    *ptrd = 0;
     error(true,"Invalid command line: Double quotes are not closed, in expression '%s'.",
           str.data());
   }
@@ -7231,6 +7227,29 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = true; ++position; continue;
         }
 
+        // Delete file(s).
+        if (!is_get && !std::strcmp("delete",item)) {
+          gmic_substitute_args(false);
+          const CImg<T> arg = CImg<char>::string(argument);
+          const unsigned int pend = (unsigned int)arg.size();
+          g_list_c.assign();
+          for (unsigned int p = 0; p<pend; ) { // Retrieve list of filenames
+            unsigned int np = p;
+            while (np<pend && arg[np] && arg[np]!=',') ++np;
+            if (np<pend) {
+              CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+              g_list_c.back().back() = 0;
+            }
+            p = np;
+          }
+          print(images,0,"Delete file%s '%s' (%u file%s).",
+                g_list_c.size()!=1?"s":"",gmic_argument_text_printed(),
+                g_list_c.size(),g_list_c.size()!=1?"s":"");
+          cimglist_for(g_list_c,l) { strreplace_fw(g_list_c[l]); std::remove(g_list_c[l]); }
+          g_list_c.assign();
+          ++position; continue;
+        }
+
         // Display.
         if (!is_get && !std::strcmp("display",command)) {
           gmic_substitute_args(false);
@@ -9361,7 +9380,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else CImg<char>::string(argument).move_to(g_list_c);
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
-          cimglist_for(g_list_c,l) { g_list_c[l].unroll('x'); strreplace_fw(g_list_c[l]); }
+          cimglist_for(g_list_c,l) strreplace_fw(g_list_c[l]);
           cimg_forY(selection,l)
             images_names[selection[l]].assign(g_list_c[l%g_list_c.width()]);
           g_list_c.assign();
@@ -10322,6 +10341,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      !std::strcmp(uext,"qt") ||
                      !std::strcmp(uext,"rm") ||
                      !std::strcmp(uext,"vob") ||
+                     !std::strcmp(uext,"webm") ||
                      !std::strcmp(uext,"wmv") ||
                      !std::strcmp(uext,"xvid") ||
                      !std::strcmp(uext,"mpeg")) {
@@ -10348,14 +10368,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   uext.data(),_filename.data(),
                   fps,*name?name.data():"(default)");
-            try {
-              g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
-            } catch (CImgException &e) {
-              warn(images,0,false,
-                   "Command 'output': Cannot encode file '%s' natively (%s). Trying fallback function.",
-                   filename,e.what());
-              g_list.save_ffmpeg_external(filename,(unsigned int)fps);
-            }
+            g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
+            if (!cimg::fsize(filename)) throw CImgException("Output file '%s' is empty. Something went wrong!",
+                                                            _filename.data());
           } else { // Any other extension
 
             // Check if a custom command handling requested file format exists.
@@ -14632,6 +14647,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    !std::strcmp(uext,"qt") ||
                    !std::strcmp(uext,"rm") ||
                    !std::strcmp(uext,"vob") ||
+                   !std::strcmp(uext,"webm") ||
                    !std::strcmp(uext,"wmv") ||
                    !std::strcmp(uext,"xvid") ||
                    !std::strcmp(uext,"mpeg")) {
@@ -14849,6 +14865,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list.size()>1)
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
+        } else if (!std::strcmp(uext,"pdf")) {
+          float resolution = 400;
+          if (!*options || cimg_sscanf(options,"%f%c",&resolution,&end)==1) {
+            const unsigned int _resolution = (int)cimg::round(std::max(resolution,20.0f));
+            print(images,0,"Input file '%s' at position%s, with resolution %u",
+                  _filename0,_gmic_selection.data(),_resolution);
+            g_list_c.insert(__filename0);
+            CImg<T>::get_load_pdf_external(filename,_resolution).move_to(g_list);
+          } else
+            error(true,images,0,0,
+                  "Command 'input': File '%s', "
+                  "invalid file options '%s'.",
+                  _filename0,options.data());
+
         } else if ((allow_entrypoint && !*uext) || !std::strcmp(uext,"gmic")) {
 
           // G'MIC command file.

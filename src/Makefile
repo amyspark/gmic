@@ -281,6 +281,11 @@ JPEG_LIBS = -ljpeg
 TIFF_CFLAGS = -Dcimg_use_tiff $(shell pkg-config --cflags libtiff-4)
 TIFF_LIBS = $(shell pkg-config --libs libtiff-4 || echo -ltiff)
 
+# Enable native support for loading HEIC/AVIF image files, using the libheif library.
+# ( https://github.com/strukturag/libheif )
+HEIF_CFLAGS = -Dcimg_use_heif
+HEIF_LIBS = -lheif
+
 # Enable native support of MINC2 image files, using the MINC2 library.
 # ( http://en.wikibooks.org/wiki/MINC/Reference/MINC2.0_Users_Guide )
 MINC2_CFLAGS = -Dcimg_use_minc2 -I${HOME}/local/include
@@ -347,12 +352,12 @@ native:
 GMIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
 GMIC_CLI_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix
-GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS) # $(XSHM_CFLAGS) # $(MAGICK_CFLAGS)
-GMIC_CLI_LIBS += $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS) # $(XSHM_LIBS) # $(MAGICK_LIBS)
+GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) # $(OPENCV_CFLAGS) # $(XSHM_CFLAGS) # $(MAGICK_CFLAGS)
+GMIC_CLI_LIBS += $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) # $(OPENCV_LIBS) # $(XSHM_LIBS) # $(MAGICK_LIBS)
 else
 ifeq ($(OS),Darwin) # MacOSX
-GMIC_CLI_CFLAGS += $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS)
-GMIC_CLI_LIBS += $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS)
+GMIC_CLI_CFLAGS += $(X11_CFLAGS) $(OPENEXR_CFLAGS) # $(OPENCV_CFLAGS)
+GMIC_CLI_LIBS += $(X11_LIBS) $(OPENEXR_LIBS) # $(OPENCV_LIBS)
 else # Windows
 GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS) # $(OPENCV_CFLAGS)
 GMIC_CLI_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS) # $(OPENCV_LIBS)
@@ -365,6 +370,12 @@ cli:
 
 debug:
 	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=$(GMIC_CLI_LIBS)" _cli
+
+valgrind:
+	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) -g" "LIBS+=$(GMIC_CLI_LIBS)" _cli
+
+opencv:
+	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) $(OPT_CLI_CFLAGS) $(OPENCV_CFLAGS) -g" "LIBS+=$(GMIC_CLI_LIBS) $(OPT_LIBS) $(OPENCV_LIBS)" _cli
 
 half:
 	$(MAKE) "CFLAGS+=$(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) -Dcimg_use_half -I/usr/include/OpenEXR -Dgmic_pixel_type=half" \

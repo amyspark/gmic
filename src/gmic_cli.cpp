@@ -187,7 +187,7 @@ int main(int argc, char **argv) {
   const bool is_first_item_verbose = items.width()>1 &&
     (!std::strncmp("-v ",items[0],3) || !std::strncmp("v ",items[0],2) ||
      !std::strncmp("-verbose ",items[0],9) || !std::strncmp("verbose ",items[0],8));
-  items.insert(CImg<char>::string("cli_start ",false),is_first_item_verbose?2:0);
+  items.insert(CImg<char>::string("cli_start , ",false),is_first_item_verbose?2:0);
 
   if (is_invalid_userfile) { // Display warning message in case of invalid user command file
     CImg<char> tmpstr(1024);
