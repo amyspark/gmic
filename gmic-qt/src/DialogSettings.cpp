@@ -84,6 +84,9 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   const bool savedDarkTheme = QSettings().value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
   ui->rbDarkTheme->setChecked(savedDarkTheme);
   ui->rbDefaultTheme->setChecked(!savedDarkTheme);
+#ifdef _GMIC_QT_DISABLE_THEMING_
+  ui->groupBoxTheme->setEnabled(false);
+#endif
   ui->cbNativeColorDialogs->setChecked(Settings::nativeColorDialogs());
   ui->cbNativeColorDialogs->setToolTip(tr("Check to use Native/OS color dialog, uncheck to use Qt's"));
   ui->cbShowLogos->setChecked(Settings::visibleLogos());
@@ -99,7 +102,9 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->labelPreviewRight, SIGNAL(clicked()), ui->rbRightPreview, SLOT(click()));
   connect(ui->cbNativeColorDialogs, SIGNAL(toggled(bool)), this, SLOT(onColorDialogsToggled(bool)));
   connect(Updater::getInstance(), SIGNAL(updateIsDone(int)), this, SLOT(enableUpdateButton()));
+#ifndef _GMIC_QT_DISABLE_THEMING_
   connect(ui->rbDarkTheme, SIGNAL(toggled(bool)), this, SLOT(onDarkThemeToggled(bool)));
+#endif
   connect(ui->cbShowLogos, SIGNAL(toggled(bool)), this, SLOT(onVisibleLogosToggled(bool)));
   connect(ui->cbPreviewZoom, SIGNAL(toggled(bool)), this, SLOT(onPreviewZoomToggled(bool)));
   connect(ui->sbPreviewTimeout, SIGNAL(valueChanged(int)), this, SLOT(onPreviewTimeoutChange(int)));
@@ -109,6 +114,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   ui->languageSelector->selectLanguage(Settings::languageCode());
   ui->languageSelector->enableFilterTranslation(Settings::filterTranslationEnabled());
 
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (Settings::darkThemeEnabled()) {
     QPalette p = ui->cbNativeColorDialogs->palette();
     p.setColor(QPalette::Text, Settings::CheckBoxTextColor);
@@ -123,6 +129,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
     ui->cbShowLogos->setPalette(p);
     ui->cbNotifyFailedUpdate->setPalette(p);
   }
+#endif
   ui->pbOk->setFocus();
   ui->tabWidget->setCurrentIndex(0);
 }
