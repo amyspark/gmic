@@ -1280,7 +1280,7 @@ void MainWindow::showEvent(QShowEvent * event)
   const bool useNetwork = false;
 #endif
   ui->progressInfoWidget->startFiltersUpdateAnimationAndShow();
-  Updater::getInstance()->startUpdate(ageLimit, 4, useNetwork);
+  Updater::getInstance()->startUpdate(ageLimit, 60, useNetwork);
 }
 
 void MainWindow::resizeEvent(QResizeEvent * e)
