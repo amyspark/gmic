@@ -97,8 +97,13 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 
   connect(ui->pbOk, &QPushButton::clicked, this, &DialogSettings::onOk);
   connect(ui->rbLeftPreview, &QRadioButton::toggled, this, &DialogSettings::onRadioLeftPreviewToggled);
+#ifdef _GMIC_QT_DISABLE_UPDATES_
+  ui->pbUpdate->setEnabled(false);
+  ui->cbUpdatePeriodicity->setEnabled(false);
+#else
   connect(ui->pbUpdate, &QPushButton::clicked, this, &DialogSettings::onUpdateClicked);
   connect(ui->cbUpdatePeriodicity, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DialogSettings::onUpdatePeriodicityChanged);
+#endif
   connect(ui->labelPreviewLeft, &ClickableLabel::clicked, ui->rbLeftPreview, &QRadioButton::click);
   connect(ui->labelPreviewRight, &ClickableLabel::clicked, ui->rbRightPreview, &QRadioButton::click);
   connect(ui->cbNativeColorDialogs, &QCheckBox::toggled, this, &DialogSettings::onColorDialogsToggled);
@@ -110,7 +115,11 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->cbPreviewZoom, &QCheckBox::toggled, this, &DialogSettings::onPreviewZoomToggled);
   connect(ui->sbPreviewTimeout, QOverload<int>::of(&QSpinBox::valueChanged), this, &DialogSettings::onPreviewTimeoutChange);
   connect(ui->outputMessages, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DialogSettings::onOutputMessageModeChanged);
+#ifdef _GMIC_QT_DISABLE_UPDATES_
+  ui->cbNotifyFailedUpdate->setEnabled(false);
+#else
   connect(ui->cbNotifyFailedUpdate, &QCheckBox::toggled, this, &DialogSettings::onNotifyStartupUpdateFailedToggle);
+#endif
   connect(ui->cbHighDPI, &QCheckBox::toggled, this, &DialogSettings::onHighDPIToggled);
 
   ui->languageSelector->selectLanguage(Settings::languageCode());
