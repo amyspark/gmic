@@ -87,14 +87,14 @@ bool NoteParameter::initFromText(const QString & filterName, const char * text, 
   _text = list[1].trimmed(); // Notes are never translated
   _text.remove(QRegExp("^\"")).remove(QRegExp("\"$")).replace(QString("\\\""), "\"");
   _text.replace(QString("\\n"), "<br/>");
-
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (DialogSettings::darkThemeEnabled()) {
     _text.replace(QRegExp("color\\s*=\\s*\"purple\""), QString("color=\"#ff00ff\""));
     _text.replace(QRegExp("foreground\\s*=\\s*\"purple\""), QString("foreground=\"#ff00ff\""));
     _text.replace(QRegExp("color\\s*=\\s*\"blue\""), QString("color=\"#9b9bff\""));
     _text.replace(QRegExp("foreground\\s*=\\s*\"blue\""), QString("foreground=\"#9b9bff\""));
   }
-
+#endif
   _text.replace(QRegExp("color\\s*=\\s*\""), QString("style=\"color:"));
   _text.replace(QRegExp("foreground\\s*=\\s*\""), QString("style=\"color:"));
   _text = HtmlTranslator::fromUtf8Escapes(_text);
