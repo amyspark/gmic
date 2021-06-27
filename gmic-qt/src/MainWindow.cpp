@@ -1247,7 +1247,7 @@ void MainWindow::showEvent(QShowEvent * event)
   }
   const bool useNetwork = (ageLimit != INTERNET_NEVER_UPDATE_PERIODICITY);
   ui->progressInfoWidget->startFiltersUpdateAnimationAndShow();
-  Updater::getInstance()->startUpdate(ageLimit, 4, useNetwork);
+  Updater::getInstance()->startUpdate(ageLimit, 60, useNetwork);
 }
 
 void MainWindow::resizeEvent(QResizeEvent * e)
