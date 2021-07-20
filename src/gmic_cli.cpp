@@ -122,7 +122,8 @@ int main(int argc, char **argv) {
     catch (...) { }
   }
   if (commands_update) try {
-      commands_update.unroll('y').append(CImg<char>::vector(0),'y');
+      commands_update.unroll('y');
+      commands_update.resize(1,commands_update.height() + 1,1,1,0);
       gmic_instance.add_commands(commands_update);
     } catch (...) { is_invalid_updatefile = true; }
   is_invalid_updatefile|=commands_update && (cimg_sscanf(commands_update," #@gmi%c",&sep)!=1 || sep!='c');
@@ -133,7 +134,7 @@ int main(int argc, char **argv) {
   try { commands_user.load_raw(filename_user); }
   catch (...) {}
   if (commands_user) try {
-      commands_user.append(CImg<char>::vector(0),'y');
+      commands_user.resize(1,commands_user.height() + 1,1,1,0);
       gmic_instance.add_commands(commands_user,is_debug?filename_user:0);
     } catch (...) { is_invalid_userfile = true; }
   commands_user.assign();
@@ -212,7 +213,7 @@ int main(int argc, char **argv) {
     CImgList<char> images_names;
     gmic_instance.run(commands_line.data(),images,images_names);
   } catch (gmic_exception &e) {
-    int error_code;
+    int error_code = 0;
     bool is_error_code = false;
 
     const char

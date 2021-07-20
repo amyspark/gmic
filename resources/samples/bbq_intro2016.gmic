@@ -553,7 +553,7 @@ bbq_intro7 :
     zoom={1.6+1.2*sin($_t/20)}
     if $_t>450 zoom={$zoom/(1+0.3*($_t-450))} fi
     f. "
-      begin(R = rot(-(180+1.7*"$_t"))/"$zoom"; C=[(50+"$_t"/5)*w/100,0.5*h]);
+      begin(R = rot(-(180+1.7*"$_t")°)/"$zoom"; C=[(50+"$_t"/5)*w/100,0.5*h]);
       I((R*([x,y]-=C))+=C,0,2)"
     outvideo.
     rm.
