@@ -67,7 +67,7 @@ QString Settings::NegativeSign('-');
 
 void Settings::load(UserInterfaceMode userInterfaceMode)
 {
-  QSettings settings;
+  GMIC_SETTINGS(settings);
   _visibleLogos = settings.value("LogosAreVisible", true).toBool();
   _darkThemeEnabled = settings.value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
   _languageCode = settings.value(LANGUAGE_CODE_KEY, QString()).toString();
