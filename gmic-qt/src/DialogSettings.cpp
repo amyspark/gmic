@@ -129,9 +129,17 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 
   connect(ui->pbOk, SIGNAL(clicked()), this, SLOT(onOk()));
   connect(ui->rbLeftPreview, SIGNAL(toggled(bool)), this, SLOT(onRadioLeftPreviewToggled(bool)));
+#ifdef _GMIC_QT_DISABLE_UPDATES_
+  ui->pbUpdate->setEnabled(false);
+#else
   connect(ui->pbUpdate, SIGNAL(clicked(bool)), this, SLOT(onUpdateClicked()));
+#endif
 
+#ifdef _GMIC_QT_DISABLE_UPDATES_
+  ui->cbUpdatePeriodicity->setEnabled(false);
+#else
   connect(ui->cbUpdatePeriodicity, SIGNAL(currentIndexChanged(int)), this, SLOT(onUpdatePeriodicityChanged(int)));
+#endif
 
   connect(ui->labelPreviewLeft, SIGNAL(clicked()), ui->rbLeftPreview, SLOT(click()));
   connect(ui->labelPreviewRight, SIGNAL(clicked()), ui->rbRightPreview, SLOT(click()));
@@ -152,7 +160,11 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 
   connect(ui->outputMessages, SIGNAL(currentIndexChanged(int)), this, SLOT(onOutputMessageModeChanged(int)));
 
+#ifdef _GMIC_QT_DISABLE_UPDATES_
+  ui->cbNotifyFailedUpdate->setEnabled(false);
+#else
   connect(ui->cbNotifyFailedUpdate, SIGNAL(toggled(bool)), this, SLOT(onNotifyStartupUpdateFailedToggle(bool)));
+#endif
 
 #ifdef _GMIC_QT_DISABLE_TRANSLATION_
   ui->languageSelector->setEnabled(false);
