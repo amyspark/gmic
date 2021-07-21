@@ -39,6 +39,7 @@
 
 #include "DialogSettings.h"
 #include "GmicQt.h"
+#include "Globals.h"
 #include "HeadlessProcessor.h"
 #include "Host/GmicQtHost.h"
 #include "LanguageSettings.h"
@@ -153,7 +154,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
     mainWindow->setWindowModality(Qt::ApplicationModal);
     mainWindow->setAttribute(Qt::WA_DeleteOnClose);
 
-    if (QSettings().value("Config/MainWindowMaximized", false).toBool()) {
+    if (GMIC_SETTINGS.value("Config/MainWindowMaximized", false).toBool()) {
       mainWindow->showMaximized();
     } else {
       mainWindow->show();

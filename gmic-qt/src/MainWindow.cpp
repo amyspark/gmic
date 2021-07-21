@@ -369,7 +369,7 @@ void MainWindow::buildFiltersTree()
     _filtersPresenter->importGmicGTKFaves();
     _filtersPresenter->saveFaves();
     _gtkFavesShouldBeImported = false;
-    QSettings().setValue(FAVES_IMPORT_KEY, true);
+    GMIC_SETTINGS.setValue(FAVES_IMPORT_KEY, true);
   }
 
   QString searchText = ui->searchField->text();
@@ -467,7 +467,7 @@ void MainWindow::onStartupFiltersUpdateFinished(int status)
   } else if (status == (int)Updater::UpdateStatus::NotNecessary) {
   }
 
-  if (QSettings().value(FAVES_IMPORT_KEY, false).toBool() || !FavesModelReader::gmicGTKFaveFileAvailable()) {
+  if (GMIC_SETTINGS.value(FAVES_IMPORT_KEY, false).toBool() || !FavesModelReader::gmicGTKFaveFileAvailable()) {
     _gtkFavesShouldBeImported = false;
   } else {
     _gtkFavesShouldBeImported = askUserForGTKFavesImport();
@@ -484,7 +484,7 @@ void MainWindow::onStartupFiltersUpdateFinished(int status)
   }
 
   // Retrieve and select previously selected filter
-  QString hash = QSettings().value("SelectedFilter", QString()).toString();
+  QString hash = GMIC_SETTINGS.value("SelectedFilter", QString()).toString();
   if (_newSession || !_lastExecutionOK) {
     hash.clear();
   }
@@ -1274,7 +1274,7 @@ bool MainWindow::askUserForGTKFavesImport()
   int choice = messageBox.exec();
   if (choice != QMessageBox::Yes) {
     if (cb->isChecked()) {
-      QSettings().setValue(FAVES_IMPORT_KEY, true);
+      GMIC_SETTINGS.setValue(FAVES_IMPORT_KEY, true);
     }
     return false;
   }
