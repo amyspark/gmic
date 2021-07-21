@@ -275,7 +275,9 @@ void Settings::save(QSettings & settings)
 {
   removeObsoleteKeys(settings);
   settings.setValue("LogosAreVisible", _visibleLogos);
+#ifndef _GMIC_QT_DISABLE_TRANSLATION_
   settings.setValue(LANGUAGE_CODE_KEY, _languageCode);
+#endif
   settings.setValue(ENABLE_FILTER_TRANSLATION, _filterTranslationEnabled);
   settings.setValue("Config/PreviewPosition", (_previewPosition == MainWindow::PreviewPosition::Left) ? "Left" : "Right");
 
