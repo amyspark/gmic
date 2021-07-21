@@ -417,7 +417,7 @@ void FiltersPresenter::expandFaveFolder()
 void FiltersPresenter::expandPreviousSessionExpandedFolders()
 {
   if (_filtersView) {
-    QList<QString> expandedFolderPaths = QSettings().value("Config/ExpandedFolders", QStringList()).toStringList();
+    QList<QString> expandedFolderPaths = GMIC_SETTINGS_INLINE.value("Config/ExpandedFolders", QStringList()).toStringList();
     _filtersView->expandFolders(expandedFolderPaths);
   }
 }
