@@ -14,7 +14,7 @@ JpegQualityDialog::JpegQualityDialog(QWidget * parent) : QDialog(parent), ui(new
   ui->spinBox->setRange(0, 100);
 
   if (_selectedQuality == -1) {
-    _selectedQuality = QSettings().value(JPEG_QUALITY_KEY, 85).toInt();
+    _selectedQuality = GMIC_SETTINGS_INLINE.value(JPEG_QUALITY_KEY, 85).toInt();
   }
 
   ui->slider->setValue(_selectedQuality);
@@ -24,7 +24,7 @@ JpegQualityDialog::JpegQualityDialog(QWidget * parent) : QDialog(parent), ui(new
   connect(ui->spinBox, QOverload<int>::of(&QSpinBox::valueChanged), ui->slider, &QSlider::setValue);
   connect(ui->pbOk, &QPushButton::clicked, [this]() {
     _selectedQuality = ui->spinBox->value();
-    QSettings().setValue(JPEG_QUALITY_KEY, _selectedQuality);
+    GMIC_SETTINGS_INLINE.setValue(JPEG_QUALITY_KEY, _selectedQuality);
   });
   connect(ui->pbOk, &QPushButton::clicked, this, &QDialog::accept);
   connect(ui->pbCancel, &QPushButton::clicked, this, &QDialog::reject);
