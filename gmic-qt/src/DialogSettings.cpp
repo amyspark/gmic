@@ -81,7 +81,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 
   ui->rbLeftPreview->setChecked(Settings::previewPosition() == MainWindow::PreviewPosition::Left);
   ui->rbRightPreview->setChecked(Settings::previewPosition() == MainWindow::PreviewPosition::Right);
-  const bool savedDarkTheme = QSettings().value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
+  const bool savedDarkTheme = GMIC_SETTINGS_INLINE.value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
   ui->rbDarkTheme->setChecked(savedDarkTheme);
   ui->rbDefaultTheme->setChecked(!savedDarkTheme);
 #ifdef _GMIC_QT_DISABLE_THEMING_
@@ -95,6 +95,11 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   ui->sbPreviewTimeout->setValue(Settings::previewTimeout());
   ui->cbPreviewZoom->setChecked(Settings::previewZoomAlwaysEnabled());
   ui->cbNotifyFailedUpdate->setChecked(Settings::notifyFailedStartupUpdate());
+#ifdef _GMIC_USE_HOSTED_SETTINGS_
+  ui->cbHighDPI->setEnabled(false);
+#else
+  ui->cbHighDPI->setChecked(Settings::highDPIEnabled());
+#endif
 
   connect(ui->pbOk, &QPushButton::clicked, this, &DialogSettings::onOk);
   connect(ui->rbLeftPreview, &QRadioButton::toggled, this, &DialogSettings::onRadioLeftPreviewToggled);
@@ -180,7 +185,7 @@ void DialogSettings::onOk()
 
 void DialogSettings::done(int r)
 {
-  QSettings settings;
+  GMIC_SETTINGS(settings);
   ui->sources->saveSettings();
   Settings::save(settings);
   QDialog::done(r);
@@ -243,7 +248,7 @@ void DialogSettings::onUpdateClicked()
 
 void DialogSettings::onDarkThemeToggled(bool on)
 {
-  QSettings().setValue(DARK_THEME_KEY, on);
+  GMIC_SETTINGS_INLINE.setValue(DARK_THEME_KEY, on);
 }
 
 void DialogSettings::onUpdatePeriodicityChanged(int)
