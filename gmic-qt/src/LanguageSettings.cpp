@@ -23,6 +23,7 @@
  *
  */
 
+#include "Globals.h"
 #include "LanguageSettings.h"
 #include <QApplication>
 #include <QDebug>
@@ -67,7 +68,7 @@ const QMap<QString, QString> & LanguageSettings::availableLanguages()
 QString LanguageSettings::configuredTranslator()
 {
 #ifndef _GMIC_QT_DISABLE_TRANSLATION_
-  QString code = QSettings().value(LANGUAGE_CODE_KEY, QString()).toString();
+  QString code = GMIC_SETTINGS_INLINE.value(LANGUAGE_CODE_KEY, QString()).toString();
 #else
   QString code;
 #endif
@@ -109,7 +110,7 @@ void LanguageSettings::installTranslators()
   if (!lang.isEmpty() && (lang != "en")) {
     installQtTranslator(lang);
     installTranslator(QString(":/translations/%1.qm").arg(lang));
-    if (QSettings().value(ENABLE_FILTER_TRANSLATION, false).toBool()) {
+    if (GMIC_SETTINGS_INLINE.value(ENABLE_FILTER_TRANSLATION, false).toBool()) {
       installTranslator(QString(":/translations/filters/%1.qm").arg(lang));
     }
   }
