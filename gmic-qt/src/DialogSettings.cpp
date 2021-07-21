@@ -166,8 +166,12 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->cbNotifyFailedUpdate, SIGNAL(toggled(bool)), this, SLOT(onNotifyStartupUpdateFailedToggle(bool)));
 #endif
 
+#ifdef _GMIC_QT_DISABLE_TRANSLATION_
+  ui->languageSelector->setEnabled(false);
+#else
   ui->languageSelector->selectLanguage(_languageCode);
   ui->languageSelector->enableFilterTranslation(_filterTranslationEnabled);
+#endif
 
 #ifndef _GMIC_QT_DISABLE_THEMING_
   if (DialogSettings::darkThemeEnabled()) {
@@ -289,8 +293,10 @@ void DialogSettings::done(int r)
   QSettings settings;
   saveSettings(settings);
   settings.setValue(DARK_THEME_KEY, ui->rbDarkTheme->isChecked());
+#ifndef _GMIC_QT_DISABLE_TRANSLATION_
   settings.setValue(LANGUAGE_CODE_KEY, ui->languageSelector->selectedLanguageCode());
   settings.setValue(ENABLE_FILTER_TRANSLATION, ui->languageSelector->translateFiltersEnabled());
+#endif
   QDialog::done(r);
 }
 
