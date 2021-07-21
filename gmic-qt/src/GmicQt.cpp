@@ -90,7 +90,7 @@ RunParameters lastAppliedFilterRunParameters(ReturnedRunParametersFlag flag)
 {
   configureApplication();
   RunParameters parameters;
-  QSettings settings;
+  GMIC_SETTINGS(settings);
   const QString path = settings.value(QString("LastExecution/host_%1/FilterPath").arg(GmicQtHost::ApplicationShortname)).toString();
   parameters.filterPath = path.toStdString();
   QString args = settings.value(QString("LastExecution/host_%1/Arguments").arg(GmicQtHost::ApplicationShortname)).toString();
@@ -200,7 +200,7 @@ int run(UserInterfaceMode interfaceMode,                   //
     LanguageSettings::installTranslators();
     MainWindow mainWindow;
     mainWindow.setPluginParameters(parameters);
-    if (QSettings().value("Config/MainWindowMaximized", false).toBool()) {
+    if (GMIC_SETTINGS_INLINE.value("Config/MainWindowMaximized", false).toBool()) {
       mainWindow.showMaximized();
     } else {
       mainWindow.show();
@@ -548,10 +548,12 @@ namespace
 
 void configureApplication()
 {
+#ifndef _GMIC_USE_HOSTED_SETTINGS_
   QCoreApplication::setOrganizationName(GMIC_QT_ORGANISATION_NAME);
   QCoreApplication::setOrganizationDomain(GMIC_QT_ORGANISATION_DOMAIN);
   QCoreApplication::setApplicationName(GMIC_QT_APPLICATION_NAME);
   QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
+#endif
 }
 
 void disableModes(const std::list<GmicQt::InputMode> & disabledInputModes, //
