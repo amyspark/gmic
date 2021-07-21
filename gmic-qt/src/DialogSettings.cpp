@@ -120,6 +120,13 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->cbNotifyFailedUpdate, &QCheckBox::toggled, this, &DialogSettings::onNotifyStartupUpdateFailedToggle);
 #endif
 
+#ifdef _GMIC_QT_DISABLE_TRANSLATION_
+  {
+    // Pierce the veil and disable the combobox of the language selector
+    auto *combobox = ui->languageSelector->findChild<QComboBox*>("comboBox");
+    if (combobox) combobox->setEnabled(false);
+  }
+#endif
   ui->languageSelector->selectLanguage(Settings::languageCode());
   ui->languageSelector->enableFilterTranslation(Settings::filterTranslationEnabled());
 
