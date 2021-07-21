@@ -114,7 +114,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 
   ui->rbLeftPreview->setChecked(_previewPosition == MainWindow::PreviewPosition::Left);
   ui->rbRightPreview->setChecked(_previewPosition == MainWindow::PreviewPosition::Right);
-  const bool savedDarkTheme = QSettings().value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
+  const bool savedDarkTheme = GMIC_SETTINGS.value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
   ui->rbDarkTheme->setChecked(savedDarkTheme);
   ui->rbDefaultTheme->setChecked(!savedDarkTheme);
 #ifdef _GMIC_QT_DISABLE_THEMING_

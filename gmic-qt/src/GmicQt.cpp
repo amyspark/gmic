@@ -197,7 +197,7 @@ int run(UserInterfaceMode interfaceMode,                   //
     LanguageSettings::installTranslators();
     MainWindow mainWindow;
     mainWindow.setPluginParameters(parameters);
-    if (QSettings().value("Config/MainWindowMaximized", false).toBool()) {
+    if (GMIC_SETTINGS.value("Config/MainWindowMaximized", false).toBool()) {
       mainWindow.showMaximized();
     } else {
       mainWindow.show();
