@@ -182,8 +182,12 @@ MainWindow::MainWindow(QWidget * parent) : QMainWindow(parent), ui(new Ui::MainW
     updateShortcutF5->setContext(Qt::ApplicationShortcut);
     QShortcut * updateShortcutCtrlR = new QShortcut(QKeySequence("Ctrl+R"), this);
     updateShortcutCtrlR->setContext(Qt::ApplicationShortcut);
+#ifdef _GMIC_QT_DISABLE_UPDATES_
+    ui->tbUpdateFilters->setEnabled(false);
+#else
     connect(updateShortcutF5, &QShortcut::activated, [this]() { ui->tbUpdateFilters->animateClick(); });
     connect(updateShortcutCtrlR, &QShortcut::activated, [this]() { ui->tbUpdateFilters->animateClick(); });
+#endif
     ui->tbUpdateFilters->setToolTip(updateText);
   }
 
@@ -552,7 +556,9 @@ void MainWindow::onEscapeKeyPressed()
     } else {
       _processor.cancel();
       ui->previewWidget->displayOriginalImage();
+#ifndef _GMIC_QT_DISABLE_UPDATES_
       ui->tbUpdateFilters->setEnabled(true);
+#endif
     }
   }
 }
@@ -664,7 +670,9 @@ void MainWindow::onPreviewUpdateRequested(bool synchronous)
     ui->previewWidget->displayOriginalImage();
     return;
   }
+#ifndef _GMIC_QT_DISABLE_UPDATES_
   ui->tbUpdateFilters->setEnabled(false);
+#endif
 
   const FiltersPresenter::Filter currentFilter = _filtersPresenter->currentFilter();
   GmicProcessor::FilterContext context;
@@ -726,7 +734,9 @@ void MainWindow::onPreviewImageAvailable()
   }
   ui->previewWidget->setPreviewImage(_processor.previewImage());
   ui->previewWidget->enableRightClick();
+#ifndef _GMIC_QT_DISABLE_UPDATES_
   ui->tbUpdateFilters->setEnabled(true);
+#endif
   if (_pendingActionAfterCurrentProcessing == ProcessingAction::Close) {
     close();
   }
@@ -736,7 +746,9 @@ void MainWindow::onPreviewError(const QString & message)
 {
   ui->previewWidget->setPreviewErrorMessage(message);
   ui->previewWidget->enableRightClick();
+#ifndef _GMIC_QT_DISABLE_UPDATES_
   ui->tbUpdateFilters->setEnabled(true);
+#endif
   if (_pendingActionAfterCurrentProcessing == ProcessingAction::Close) {
     close();
   }
@@ -1247,8 +1259,14 @@ void MainWindow::showEvent(QShowEvent * event)
     QSettings settings;
     ageLimit = settings.value(INTERNET_UPDATE_PERIODICITY_KEY, INTERNET_DEFAULT_PERIODICITY).toInt();
   }
+#ifndef _GMIC_QT_DISABLE_UPDATES_
   const bool useNetwork = (ageLimit != INTERNET_NEVER_UPDATE_PERIODICITY);
+#else
+  const bool useNetwork = false;
+#endif
   ui->progressInfoWidget->startFiltersUpdateAnimationAndShow();
+  // GMic-Qt only loads the stdlib (whether bundled or updated)
+  // with an update trigger.
   Updater::getInstance()->startUpdate(ageLimit, 60, useNetwork);
 }
 
