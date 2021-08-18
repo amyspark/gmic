@@ -143,8 +143,13 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
     }
 
     QPointer<ProgressInfoWindow> progressWindow(new ProgressInfoWindow(&processor));
+    // We want a non modal dialog here.
+    progressWindow->setWindowFlags(Qt::Tool | Qt::Dialog);
+    progressWindow->setWindowModality(Qt::ApplicationModal);
+    // Make it destroy itself on close (signaling the event loop)
+    progressWindow->setAttribute(Qt::WA_DeleteOnClose);
 
-    QTimer::singleShot(0, &processor, &HeadlessProcessor::startProcessing);
+    processor.startProcessing();
 
     QEventLoop loop;
     connect(progressWindow, SIGNAL(destroyed()), &loop, SLOT(quit()));
@@ -169,6 +174,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
     // We want a non modal dialog here.
     mainWindow->setWindowFlags(Qt::Tool | Qt::Dialog);
     mainWindow->setWindowModality(Qt::ApplicationModal);
+    // Make it destroy itself on close (signaling the event loop)
     mainWindow->setAttribute(Qt::WA_DeleteOnClose);
 
     if (QSettings(GMIC_SETTINGS).value("Config/MainWindowMaximized", false).toBool()) {
