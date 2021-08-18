@@ -45,6 +45,7 @@
 #include "LanguageSettings.h"
 #include "Logger.h"
 #include "MainWindow.h"
+#include "Widgets/InOutPanel.h"
 #include "Widgets/ProgressInfoWindow.h"
 #include "gmicqttoolplugin.h"
 
@@ -123,6 +124,14 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
   if (headless) {
     GmicQt::RunParameters parameters = GmicQt::lastAppliedFilterRunParameters(
         GmicQt::ReturnedRunParametersFlag::AfterFilterExecution);
+    {
+      for (const GmicQt::InputMode & mode : disabledInputModes) {
+        GmicQt::InOutPanel::disableInputMode(mode);
+      }
+      for (const GmicQt::OutputMode & mode : disabledOutputModes) {
+        GmicQt::InOutPanel::disableOutputMode(mode);
+      }
+    }
     DialogSettings::loadSettings(GmicQt::UserInterfaceMode::ProgressDialog);
     Logger::setMode(DialogSettings::outputMessageMode());
     LanguageSettings::installTranslators();
@@ -143,6 +152,14 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
   } else {
     GmicQt::RunParameters parameters = GmicQt::lastAppliedFilterRunParameters(
         GmicQt::ReturnedRunParametersFlag::AfterFilterExecution);
+    {
+      for (const GmicQt::InputMode & mode : disabledInputModes) {
+        GmicQt::InOutPanel::disableInputMode(mode);
+      }
+      for (const GmicQt::OutputMode & mode : disabledOutputModes) {
+        GmicQt::InOutPanel::disableOutputMode(mode);
+      }
+    }
     DialogSettings::loadSettings(GmicQt::UserInterfaceMode::Full);
     Logger::setMode(DialogSettings::outputMessageMode());
     LanguageSettings::installTranslators();
