@@ -136,7 +136,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
     Logger::setMode(DialogSettings::outputMessageMode());
     LanguageSettings::installTranslators();
 
-    HeadlessProcessor processor(this);
+    HeadlessProcessor processor(nullptr);
     if (!processor.setPluginParameters(parameters)) {
       Logger::error(processor.error());
       return 1;
