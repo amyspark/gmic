@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QStringList>
+#include "Globals.h"
 #include "Common.h"
 #include "DialogSettings.h"
 #include "FilterParameters/FilterParametersWidget.h"
@@ -71,7 +72,7 @@ HeadlessProcessor::~HeadlessProcessor()
 
 bool HeadlessProcessor::setPluginParameters(const RunParameters & parameters)
 {
-  QSettings settings;
+  QSettings settings(GMIC_SETTINGS);
   _path = QString::fromStdString(parameters.filterPath);
   _inputMode = (parameters.inputMode == InputMode::Unspecified) ? DefaultInputMode : parameters.inputMode;
   _outputMode = (parameters.outputMode == OutputMode::Unspecified) ? DefaultOutputMode : parameters.outputMode;
@@ -234,7 +235,7 @@ void HeadlessProcessor::onProcessingFinished()
       GmicQtHost::outputImages(images, _filterThread->imageNames(), _outputMode);
       _processingCompletedProperly = true;
     }
-    QSettings settings;
+    QSettings settings(GMIC_SETTINGS);
     if (!status.isEmpty() && !_hash.isEmpty()) {
       ParametersCache::setValues(_hash, status);
       ParametersCache::save();
@@ -267,7 +268,9 @@ void HeadlessProcessor::endApplication(const QString & errorMessage)
   if (!errorMessage.isEmpty()) {
     Logger::error(errorMessage);
   }
+#ifndef _GMIC_USE_HOSTED_SETTINGS_
   QCoreApplication::exit(!errorMessage.isEmpty());
+#endif
 }
 
 } // namespace GmicQt
