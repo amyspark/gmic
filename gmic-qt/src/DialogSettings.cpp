@@ -170,6 +170,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   ui->languageSelector->setEnabled(false);
 #endif
   ui->languageSelector->selectLanguage(_languageCode);
+#ifndef _GMIC_QT_DISABLE_THEMING_
   if (DialogSettings::darkThemeEnabled()) {
     QPalette p = ui->cbNativeColorDialogs->palette();
     p.setColor(QPalette::Text, DialogSettings::CheckBoxTextColor);
@@ -184,6 +185,7 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
     ui->cbShowLogos->setPalette(p);
     ui->cbNotifyFailedUpdate->setPalette(p);
   }
+#endif
   ui->pbOk->setFocus();
   ui->tabWidget->setCurrentIndex(0);
 }
