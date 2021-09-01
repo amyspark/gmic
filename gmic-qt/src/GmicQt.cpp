@@ -87,7 +87,7 @@ RunParameters lastAppliedFilterRunParameters(ReturnedRunParametersFlag flag)
 {
   configureApplication();
   RunParameters parameters;
-  QSettings settings(GMIC_SETTINGS);
+  GMIC_SETTINGS(settings);
   const QString path = settings.value(QString("LastExecution/host_%1/FilterPath").arg(GmicQtHost::ApplicationShortname)).toString();
   parameters.filterPath = path.toStdString();
   QString args = settings.value(QString("LastExecution/host_%1/Arguments").arg(GmicQtHost::ApplicationShortname)).toString();
@@ -197,7 +197,7 @@ int run(UserInterfaceMode interfaceMode,                   //
     LanguageSettings::installTranslators();
     MainWindow mainWindow;
     mainWindow.setPluginParameters(parameters);
-    if (QSettings(GMIC_SETTINGS).value("Config/MainWindowMaximized", false).toBool()) {
+    if (GMIC_SETTINGS_INLINE.value("Config/MainWindowMaximized", false).toBool()) {
       mainWindow.showMaximized();
     } else {
       mainWindow.show();
