@@ -626,6 +626,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita")
       ${gmic_qt_LIBRARIES}
       )
     install(TARGETS gmic_krita_qt RUNTIME DESTINATION bin)
+    install(FILES gmic_krita_qt.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications OPTIONAL)
 
 elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
     set(MIN_FRAMEWORKS_VERSION 5.44.0)
