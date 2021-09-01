@@ -23,6 +23,7 @@
  *
  */
 
+#include "Globals.h"
 #include "LanguageSettings.h"
 #include <QApplication>
 #include <QDebug>
@@ -65,7 +66,7 @@ const QMap<QString, QString> & LanguageSettings::availableLanguages()
 QString LanguageSettings::configuredTranslator()
 {
 #ifndef _GMIC_QT_DISABLE_TRANSLATION_
-  QString code = QSettings(GMIC_SETTINGS).value("Config/LanguageCode", QString()).toString();
+  QString code = GMIC_SETTINGS_INLINE.value("Config/LanguageCode", QString()).toString();
 #else
   QString code;
 #endif

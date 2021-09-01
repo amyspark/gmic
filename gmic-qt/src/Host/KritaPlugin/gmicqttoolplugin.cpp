@@ -177,7 +177,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
     // Make it destroy itself on close (signaling the event loop)
     mainWindow->setAttribute(Qt::WA_DeleteOnClose);
 
-    if (QSettings(GMIC_SETTINGS).value("Config/MainWindowMaximized", false).toBool()) {
+    if (GMIC_SETTINGS_INLINE.value("Config/MainWindowMaximized", false).toBool()) {
       mainWindow->showMaximized();
     } else {
       mainWindow->show();

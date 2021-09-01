@@ -375,7 +375,7 @@ void MainWindow::buildFiltersTree()
     _filtersPresenter->importGmicGTKFaves();
     _filtersPresenter->saveFaves();
     _gtkFavesShouldBeImported = false;
-    QSettings(GMIC_SETTINGS).setValue(FAVES_IMPORT_KEY, true);
+    GMIC_SETTINGS_INLINE.setValue(FAVES_IMPORT_KEY, true);
   }
 
   QString searchText = ui->searchField->text();
@@ -473,7 +473,7 @@ void MainWindow::onStartupFiltersUpdateFinished(int status)
   } else if (status == (int)Updater::UpdateStatus::NotNecessary) {
   }
 
-  if (QSettings(GMIC_SETTINGS).value(FAVES_IMPORT_KEY, false).toBool() || !FavesModelReader::gmicGTKFaveFileAvailable()) {
+  if (GMIC_SETTINGS_INLINE.value(FAVES_IMPORT_KEY, false).toBool() || !FavesModelReader::gmicGTKFaveFileAvailable()) {
     _gtkFavesShouldBeImported = false;
   } else {
     _gtkFavesShouldBeImported = askUserForGTKFavesImport();
@@ -490,7 +490,7 @@ void MainWindow::onStartupFiltersUpdateFinished(int status)
   }
 
   // Retrieve and select previously selected filter
-  QString hash = QSettings(GMIC_SETTINGS).value("SelectedFilter", QString()).toString();
+  QString hash = GMIC_SETTINGS_INLINE.value("SelectedFilter", QString()).toString();
   if (_newSession || !_lastExecutionOK) {
     hash.clear();
   }
@@ -974,7 +974,7 @@ void MainWindow::saveCurrentParameters()
 
 void MainWindow::saveSettings()
 {
-  QSettings settings(GMIC_SETTINGS);
+  GMIC_SETTINGS(settings);
 
   _filtersPresenter->saveSettings(settings);
 
@@ -1015,7 +1015,7 @@ void MainWindow::saveSettings()
 
 void MainWindow::loadSettings()
 {
-  QSettings settings(GMIC_SETTINGS);
+  GMIC_SETTINGS(settings);
   _filtersPresenter->loadSettings(settings);
 
   _lastExecutionOK = settings.value("LastExecution/ExitedNormally", true).toBool();
@@ -1137,7 +1137,7 @@ void MainWindow::setPreviewPosition(MainWindow::PreviewPosition position)
 void MainWindow::adjustVerticalSplitter()
 {
   QList<int> sizes;
-  QSettings settings(GMIC_SETTINGS);
+  GMIC_SETTINGS(settings);
   sizes.push_back(settings.value(QString("Config/ParamsVerticalSplitterSizeTop"), -1).toInt());
   sizes.push_back(settings.value(QString("Config/ParamsVerticalSplitterSizeBottom"), -1).toInt());
   const int splitterHeight = ui->verticalSplitter->height();
@@ -1258,7 +1258,7 @@ void MainWindow::showEvent(QShowEvent * event)
   Updater::setOutputMessageMode(DialogSettings::outputMessageMode());
   int ageLimit;
   {
-    QSettings settings(GMIC_SETTINGS);
+    GMIC_SETTINGS(settings);
     ageLimit = settings.value(INTERNET_UPDATE_PERIODICITY_KEY, INTERNET_DEFAULT_PERIODICITY).toInt();
   }
 #ifndef _GMIC_QT_DISABLE_UPDATES_
@@ -1298,7 +1298,7 @@ bool MainWindow::askUserForGTKFavesImport()
   int choice = messageBox.exec();
   if (choice != QMessageBox::Yes) {
     if (cb->isChecked()) {
-      QSettings(GMIC_SETTINGS).setValue(FAVES_IMPORT_KEY, true);
+      GMIC_SETTINGS_INLINE.setValue(FAVES_IMPORT_KEY, true);
     }
     return false;
   }
