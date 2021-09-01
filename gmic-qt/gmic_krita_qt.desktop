@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=gmic_krita_qt
+Exec=gmic_krita_qt
+GenericName=G'Mic plugin for Krita
+Comment=G'Mic plugin for Krita
+Type=Application
+Icon=gmic_krita_qt
+Categories=Qt;KDE;Graphics;
+StartupNotify=false
