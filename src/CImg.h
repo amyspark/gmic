@@ -54,7 +54,7 @@
 
 // Set version number of the library.
 #ifndef cimg_version
-#define cimg_version 298
+#define cimg_version 299
 
 /*-----------------------------------------------------------
  #
@@ -28472,25 +28472,55 @@ namespace cimg_library_suffixed {
       if (!expression || !*expression) { res = (t)0; return true; }
       const char c = *expression;
       bool is_success = false;
-      char c1, end;
-      double val;
-      if (c>='0' && c<='9') { // Possible value
+      char sep, end;
+      double val,val2;
+      int err;
+      if ((c>='0' && c<='9') || c=='.') { // Possible value
         if (!expression[1]) { // Single digit
           res = (t)(c - '0');
           is_success = true;
-        } else if (std::sscanf(expression,"%lf%c",&val,&end)==1) { // Single value
+        } else if ((err = std::sscanf(expression,"%lf %c%lf %c",&val,&sep,&val2,&end))==1) { // Single value
           res = (t)val;
           is_success = true;
+        } else if (err==3) { // Value1 Operator Value2
+          switch (sep) {
+          case '+' : res = (t)(val + val2); is_success = true; break;
+          case '-' : res = (t)(val - val2); is_success = true; break;
+          case '*' : res = (t)(val*val2); is_success = true; break;
+          case '/' : res = (t)(val/val2); is_success = true; break;
+          case '%' : res = (t)cimg::mod(val,val2); is_success = true; break;
+          case '&' : res = (t)((long)val & (long)val2); is_success = true; break;
+          case '|' : res = (t)((long)val | (long)val2); is_success = true; break;
+          case '>' : res = (t)(val>val2); is_success = true; break;
+          case '<' : res = (t)(val<val2); is_success = true; break;
+          case ';' : res = (t)val2; is_success = true; break;
+          case '^' : res = (t)std::pow(val,val2); is_success = true; break;
+          }
         }
       } else if ((c=='+' || c=='-' || c=='!') && // +Value, -Value or !Value
-                 (c1=expression[1])>='0' && c1<='0') {
+                 (((sep = expression[1])>='0' && sep<='9') || sep=='.')) {
         if (!expression[2]) { // [+-!] + Single digit
-          const int ival = c1 - '0';
+          const int ival = sep - '0';
           res = (t)(c=='+'?ival:c=='-'?-ival:!ival);
           is_success = true;
-        } else if (std::sscanf(expression + 1,"%lf%c",&val,&end)==1) { // [+-!] Single value
+        } else if ((err = std::sscanf(expression + 1,"%lf %c%lf %c",&val,&sep,&val2,&end))==1) { // [+-!] Single value
           res = (t)(c=='+'?val:c=='-'?-val:(double)!val);
           is_success = true;
+        } else if (err==3) { // [+-!] Value1 Operator Value2
+          const double val1 = c=='+'?val:c=='-'?-val:(double)!val;
+          switch (sep) {
+          case '+' : res = (t)(val1 + val2); is_success = true; break;
+          case '-' : res = (t)(val1 - val2); is_success = true; break;
+          case '*' : res = (t)(val1*val2); is_success = true; break;
+          case '/' : res = (t)(val1/val2); is_success = true; break;
+          case '%' : res = (t)cimg::mod(val1,val2); is_success = true; break;
+          case '&' : res = (t)((long)val1 & (long)val2); is_success = true; break;
+          case '|' : res = (t)((long)val1 | (long)val2); is_success = true; break;
+          case '>' : res = (t)(val1>val2); is_success = true; break;
+          case '<' : res = (t)(val1<val2); is_success = true; break;
+          case ';' : res = (t)val2; is_success = true; break;
+          case '^' : val = std::pow(val,val2); res = (t)(c=='+'?val:c=='-'?-val:!val); is_success = true; break;
+          }
         }
       } else if (!expression[1]) switch (*expression) { // Other common single-char expressions
         case 'w' : res = (t)_width; is_success = true; break;
@@ -38105,9 +38135,7 @@ namespace cimg_library_suffixed {
         w = width(), h = height(), d = depth(),
         w1 = w  - 1, h1 = h - 1, d1 = d - 1,
         w2 = 2*w, h2 = 2*h, d2 = 2*h;
-      const ulongT
-        wh = (ulongT)w*h, whd = wh*d,
-        K_wh = (ulongT)kernel.width()*kernel.height(), K_whd = K_wh*kernel.depth();
+      const ulongT wh = (ulongT)w*h, whd = wh*d;
 
       // Reshape kernel to enable optimizations for a few cases.
       if (boundary_conditions==1 &&
@@ -38390,10 +38418,11 @@ namespace cimg_library_suffixed {
           cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if(is_inner_parallel)) \
           cimg_forXYZ(res,x,y,z) { \
             Ttfloat val = 0; \
+            const t *pK = K._data; \
             cimg_forZ(_kernel,r) { _cimg_correlate_z_##type; _cimg_correlate_z_##type##_##boundary; \
               cimg_forY(_kernel,q) { _cimg_correlate_y_##type; _cimg_correlate_y_##type##_##boundary; \
                 cimg_forX(_kernel,p) { _cimg_correlate_x_##type; _cimg_correlate_x_##type##_##boundary; \
-                  val+=K(p,q,r,0,K_wh,K_whd)*(access); \
+                  val+=*(pK++)*(access); \
                 } \
               } \
             } \
@@ -38404,11 +38433,12 @@ namespace cimg_library_suffixed {
           cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if(is_inner_parallel)) \
           cimg_forXYZ(res,x,y,z) { \
             Ttfloat val = 0, N = 0; \
+            const t *pK = K._data; \
             cimg_forZ(_kernel,r) { _cimg_correlate_z_##type; _cimg_correlate_z_##type##_##boundary; \
               cimg_forY(_kernel,q) { _cimg_correlate_y_##type; _cimg_correlate_y_##type##_##boundary; \
                 cimg_forX(_kernel,p) { _cimg_correlate_x_##type; _cimg_correlate_x_##type##_##boundary; \
                   Ttfloat _val = access; \
-                  val+=K(p,q,r,0,K_wh,K_whd)*_val; \
+                  val+=*(pK++)*_val; \
                   _val*=_val; N+=_val; \
                 } \
               } \
@@ -39728,7 +39758,8 @@ namespace cimg_library_suffixed {
         return CImg<Tfloat>(*this,false).vanvliet(sigma,order,axis,boundary_conditions).move_to(*this);
       const char naxis = cimg::lowercase(axis);
       const float nsigma = sigma>=0?sigma:-sigma*(naxis=='x'?_width:naxis=='y'?_height:naxis=='z'?_depth:_spectrum)/100;
-      if (is_empty() || (nsigma<0.5f && !order)) return *this;
+      if (is_empty()) return *this;
+      if (nsigma<0.5f) return deriche(nsigma,order,axis,boundary_conditions);
       const double
         nnsigma = nsigma<0.5f?0.5f:nsigma,
         m0 = 1.16680, m1 = 1.10783, m2 = 1.40586,
