@@ -175,7 +175,21 @@ if (ENABLE_FFTW3)
   find_package(FFTW3 REQUIRED)
   add_definitions(-Dcimg_use_fftw3 )
   include_directories(${FFTW3_INCLUDE_DIR})
-  if(FFTW3_THREADS_FOUND)
+
+  # Detect 
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_INCLUDES ${FFTW3_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES ${FFTW3_LIBRARIES})
+  check_cxx_source_compiles("
+      #include <fftw3.h>
+
+      int main() {
+          fftw_init_threads();
+      }
+  " HAVE_FFTW3_THREADS)
+
+  if(HAVE_FFTW3_THREADS)
+    message(STATUS "FFTW threads Found")
     list(APPEND EXTRA_LIBRARIES ${FFTW3_THREADS_LIBRARIES})
   else()
     add_definitions(-Dcimg_use_fftw3_singlethread)
