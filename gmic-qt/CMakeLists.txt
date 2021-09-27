@@ -663,7 +663,6 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
     add_definitions(-D_GMIC_QT_CONSENT_TO_UPDATE_FIRST_)
     add_definitions(-D_GMIC_QT_DISABLE_TRANSLATION_)
     add_definitions(-D_GMIC_USE_HOSTED_SETTINGS_)
-    add_definitions(-D_GMIC_QT_DISABLE_UPDATES_)
     add_library(krita_gmic_qt MODULE ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
     target_include_directories(
       krita_gmic_qt
