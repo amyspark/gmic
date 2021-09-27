@@ -105,13 +105,13 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
   using namespace GmicQt;
 
   std::list<GmicQt::InputMode> disabledInputModes;
-  // disabledInputModes.push_back(GmicQt::NoInput);
+  disabledInputModes.push_back(GmicQt::InputMode::NoInput);
   // disabledInputModes.push_back(GmicQt::Active);
   // disabledInputModes.push_back(GmicQt::All);
   // disabledInputModes.push_back(GmicQt::ActiveAndBelow);
   // disabledInputModes.push_back(GmicQt::ActiveAndAbove);
-  // disabledInputModes.push_back(GmicQt::AllVisible);
-  // disabledInputModes.push_back(GmicQt::AllInvisible);
+  disabledInputModes.push_back(GmicQt::InputMode::AllVisible);
+  disabledInputModes.push_back(GmicQt::InputMode::AllInvisible);
 
   std::list<GmicQt::OutputMode> disabledOutputModes;
   // disabledOutputModes.push_back(GmicQt::OutputMode::InPlace);
