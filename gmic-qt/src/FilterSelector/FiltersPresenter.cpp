@@ -39,6 +39,7 @@
 #include "ParametersCache.h"
 #include "Utils.h"
 #include "Widgets/InOutPanel.h"
+#include "Widgets/SearchFieldWidget.h"
 
 namespace GmicQt
 {
@@ -46,6 +47,8 @@ namespace GmicQt
 FiltersPresenter::FiltersPresenter(QObject * parent) : QObject(parent)
 {
   _filtersView = nullptr;
+  _searchField = nullptr;
+  _visibleTagSelector = nullptr;
 }
 
 FiltersPresenter::~FiltersPresenter()
@@ -63,6 +66,12 @@ void FiltersPresenter::setFiltersView(FiltersView * filtersView)
   connect(_filtersView, &FiltersView::faveRenamed, this, &FiltersPresenter::onFaveRenamed);
   connect(_filtersView, &FiltersView::faveRemovalRequested, this, &FiltersPresenter::removeFave);
   connect(_filtersView, &FiltersView::faveAdditionRequested, this, &FiltersPresenter::faveAdditionRequested);
+  connect(_filtersView, &FiltersView::tagToggled, this, &FiltersPresenter::onTagToggled);
+}
+
+void FiltersPresenter::setSearchField(SearchFieldWidget * searchField)
+{
+  _searchField = searchField;
 }
 
 void FiltersPresenter::rebuildFilterView()
@@ -237,7 +246,7 @@ void FiltersPresenter::applySearchCriterion(const QString & text)
   QList<QString> keywords = text.split(QChar(' '), QT_SKIP_EMPTY_PARTS);
 
   rebuildFilterViewWithSelection(keywords);
-  if (text.isEmpty()) {
+  if (text.isEmpty() && _filtersView->visibleTagColors().isEmpty()) {
     _filtersView->restoreExpandedFolders();
   } else {
     _filtersView->expandAll();
@@ -311,6 +320,18 @@ void FiltersPresenter::selectFilterFromCommand(const QString & command)
     }
   }
   setCurrentFilter(QString());
+}
+
+void FiltersPresenter::setVisibleTagSelector(VisibleTagSelector * selector)
+{
+  _visibleTagSelector = selector;
+  connect(selector, &VisibleTagSelector::visibleColorsChanged, this, &FiltersPresenter::setVisibleTagColors);
+}
+
+void FiltersPresenter::setVisibleTagColors(unsigned int colors)
+{
+  _filtersView->setVisibleTagColors(TagColorSet(colors));
+  applySearchCriterion(_searchField->text());
 }
 
 void FiltersPresenter::selectFilterFromAbsolutePath(QString path)
@@ -510,6 +531,7 @@ void FiltersPresenter::toggleSelectionMode(bool on)
       _filtersView->disableSelectionMode();
     }
   }
+  applySearchCriterion(_searchField->text());
 }
 
 void FiltersPresenter::onFilterChanged(const QString & hash)
@@ -531,6 +553,16 @@ void FiltersPresenter::removeFave(const QString & hash)
   saveFaves();
   if (_filtersView) {
     onFilterChanged(_filtersView->selectedFilterHash());
+  }
+}
+
+void FiltersPresenter::onTagToggled(int)
+{
+  TagColorSet colors = _visibleTagSelector->selectedColors();
+  _visibleTagSelector->updateColors();
+  if (_visibleTagSelector->selectedColors() != colors) {
+    _filtersView->setVisibleTagColors(TagColorSet::Empty);
+    applySearchCriterion(_searchField->text());
   }
 }
 

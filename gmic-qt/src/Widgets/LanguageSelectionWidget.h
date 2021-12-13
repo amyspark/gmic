@@ -39,12 +39,16 @@ namespace GmicQt
 class LanguageSelectionWidget : public QWidget {
   Q_OBJECT
 public:
-  explicit LanguageSelectionWidget(QWidget * parent = nullptr);
+  explicit LanguageSelectionWidget(QWidget * parent);
   ~LanguageSelectionWidget();
-  QString selectedLanguageCode();
+  QString selectedLanguageCode() const;
+  bool translateFiltersEnabled() const;
+  void enableFilterTranslation(bool on);
 
 public slots:
   void selectLanguage(const QString & code);
+private slots:
+  void onLanguageSelectionChanged(int index);
 
 private:
   Ui::LanguageSelectionWidget * ui;

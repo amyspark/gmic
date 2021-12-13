@@ -8,6 +8,8 @@
 
 !defined(GMIC_DYNAMIC_LINKING,var) { GMIC_DYNAMIC_LINKING = off }
 
+!defined(ASAN,var) { ASAN = off }
+
 !defined(PRERELEASE, var) {
 # calling 'date' directly crashes on MSYS2!
    PRERELEASE = $$system(bash pre_version.sh)
@@ -112,17 +114,17 @@ equals( COMPILER, "clang" ) {
 }
 
 #
-# Make sure gmic_stdlib.h is in G'MIC source tree
+# Make sure gmic_stdlib_community.h is in G'MIC source tree
 #
-!exists( $$GMIC_PATH/gmic_stdlib.h ) {
-  message( "gmic_stdlib.h is missing. Trying to get it..." )
-  !system(make -C $$GMIC_PATH gmic_stdlib.h) {
-    error("Could not get gmic_stdlib.h from G'MIC repository")
+!exists( $$GMIC_PATH/gmic_stdlib_community.h ) {
+  message( "gmic_stdlib_community.h is missing. Trying to get it..." )
+  !system(make -C $$GMIC_PATH gmic_stdlib_community.h) {
+    error("Could not get gmic_stdlib_community.h from G'MIC repository")
   }
-  !exists($$GMIC_PATH/gmic_stdlib.h) {
-    error("Could not get gmic_stdlib.h from G'MIC repository")
+  !exists($$GMIC_PATH/gmic_stdlib_community.h) {
+    error("Could not get gmic_stdlib_community.h from G'MIC repository")
   }
-  message("gmic_stdlib.h found")
+  message("gmic_stdlib_community.h found")
 }
 
 # Make sure CImg and gmic are the same version
@@ -241,7 +243,7 @@ CONFIG(release, debug|release):gcc|clang:equals(LTO,"on") {
     QMAKE_LFLAGS_RELEASE += -flto
 }
 
-DEFINES += gmic_gui gmic_build gmic_is_parallel cimg_use_abort
+DEFINES += gmic_gui gmic_build gmic_is_parallel gmic_community cimg_use_abort
 
 INCLUDEPATH	+= $$PWD $$PWD/src $$GMIC_PATH
 DEPENDPATH += $$PWD/src \
@@ -282,6 +284,7 @@ HEADERS +=  \
   src/FilterSelector/FiltersView/FiltersView.h \
   src/FilterSelector/FiltersView/TreeView.h \
   src/FilterSelector/FiltersVisibilityMap.h \
+  src/FilterSelector/FilterTagMap.h \
   src/CroppedImageListProxy.h \
   src/CroppedActiveLayerProxy.h \
   src/FilterSyncRunner.h \
@@ -302,9 +305,11 @@ HEADERS +=  \
   src/MainWindow.h \
   src/Misc.h \
   src/ParametersCache.h \
+  src/Tags.h \
   src/TimeLogger.h \
   src/Updater.h \
   src/Utils.h \
+  src/Widgets/VisibleTagSelector.h \
   src/ZoomConstraint.h \
   src/FilterSelector/FiltersView/FilterTreeFolder.h \
   src/FilterSelector/FiltersView/FilterTreeItem.h \
@@ -324,7 +329,7 @@ HEADERS +=  \
 
 HEADERS += $$GMIC_PATH/gmic.h
 HEADERS += $$GMIC_PATH/CImg.h
-HEADERS += $$GMIC_PATH/gmic_stdlib.h
+HEADERS += $$GMIC_PATH/gmic_stdlib_community.h
 
 SOURCES += \
   src/ClickableLabel.cpp \
@@ -357,6 +362,7 @@ SOURCES += \
   src/FilterSelector/FiltersView/FiltersView.cpp \
   src/FilterSelector/FiltersView/TreeView.cpp \
   src/FilterSelector/FiltersVisibilityMap.cpp \
+  src/FilterSelector/FilterTagMap.cpp \
   src/CroppedImageListProxy.cpp \
   src/CroppedActiveLayerProxy.cpp \
   src/FilterSyncRunner.cpp \
@@ -376,6 +382,7 @@ SOURCES += \
   src/Logger.cpp \
   src/MainWindow.cpp \
   src/ParametersCache.cpp \
+  src/Tags.cpp \
   src/TimeLogger.cpp \
   src/Updater.cpp \
   src/Utils.cpp \
@@ -390,6 +397,7 @@ SOURCES += \
   src/Widgets/PreviewWidget.cpp \
   src/Widgets/ProgressInfoWidget.cpp \
   src/Widgets/InOutPanel.cpp \
+  src/Widgets/VisibleTagSelector.cpp \
   src/Widgets/ZoomLevelSelector.cpp \
   src/Widgets/SearchFieldWidget.cpp \
   src/Widgets/LanguageSelectionWidget.cpp \
@@ -422,9 +430,6 @@ RESOURCES += gmic_qt.qrc translations.qrc
 equals(HOST, "none") {
  RESOURCES += standalone.qrc
 }
-equals(TEST_FILTERS_QM, "on") {
- RESOURCES += wip_translations.qrc
-}
 
 TRANSLATIONS = \
 translations/cs.ts \
@@ -443,6 +448,11 @@ translations/ja.ts \
 translations/zh.ts \
 translations/zh_tw.ts
 
+RESOURCES += wip_translations.qrc
+
+# Prevent overwriting of these files by lupdate
+# TRANSLATIONS += translations/filters/fr.ts
+
 # PRE_TARGETDEPS +=
 
 QMAKE_CXXFLAGS_RELEASE += -Ofast # -O3 -s
@@ -460,8 +470,12 @@ CONFIG(debug, debug|release) {
     message(Debug build)
     DEFINES += _GMIC_QT_DEBUG_
 #    QMAKE_CXXFLAGS_DEBUG += -Wfatal-errors
-#    QMAKE_CXXFLAGS_DEBUG += -fsanitize=address
-#    QMAKE_LFLAGS_DEBUG += -fsanitize=address
+}
+
+equals(ASAN, "on" ) {
+    message(Adress sanitizer enabled)
+    QMAKE_CXXFLAGS_DEBUG += -fsanitize=address
+    QMAKE_LFLAGS_DEBUG += -fsanitize=address
 }
 
 UI_DIR = .ui

@@ -40,6 +40,7 @@ const char WarningPrefix = '!';
 #define SLIDER_MIN_WIDTH 60
 #define PARAMETERS_CACHE_FILENAME "gmic_qt_params.dat"
 #define FILTERS_VISIBILITY_FILENAME "gmic_qt_visibility.dat"
+#define FILTERS_TAGS_FILENAME "gmic_qt_tags.dat"
 
 #define FAVE_FOLDER_TEXT "<b>Faves</b>"
 #define FAVES_IMPORT_KEY "Faves/ImportedGTK179"
@@ -47,6 +48,8 @@ const char WarningPrefix = '!';
 #define DARK_THEME_KEY "Config/DarkTheme"
 #define REFRESH_USING_INTERNET_KEY "Config/RefreshInternetUpdate"
 #define INTERNET_UPDATE_PERIODICITY_KEY "Config/UpdatesPeriodicityValue"
+#define ENABLE_FILTER_TRANSLATION "Config/FilterTranslation"
+#define LANGUAGE_CODE_KEY "Config/LanguageCode"
 #define INTERNET_NEVER_UPDATE_PERIODICITY std::numeric_limits<int>::max()
 #define ONE_DAY_HOURS (24)
 #define ONE_WEEK_HOURS (7 * 24)

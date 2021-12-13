@@ -72,7 +72,7 @@ QIcon DialogSettings::RemoveIcon;
 QString DialogSettings::GroupSeparator;
 QString DialogSettings::DecimalPoint('.');
 QString DialogSettings::NegativeSign('-');
-
+bool DialogSettings::_filterTranslationEnabled = false;
 // TODO : Make DialogSetting a view of a Settings class
 
 DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::DialogSettings)
@@ -154,6 +154,8 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
   connect(ui->cbNotifyFailedUpdate, SIGNAL(toggled(bool)), this, SLOT(onNotifyStartupUpdateFailedToggle(bool)));
 
   ui->languageSelector->selectLanguage(_languageCode);
+  ui->languageSelector->enableFilterTranslation(_filterTranslationEnabled);
+
   if (_darkThemeEnabled) {
     QPalette p = ui->cbNativeColorDialogs->palette();
     p.setColor(QPalette::Text, DialogSettings::CheckBoxTextColor);
@@ -186,7 +188,8 @@ void DialogSettings::loadSettings(UserInterfaceMode userInterfaceMode)
     _previewPosition = MainWindow::PreviewPosition::Right;
   }
   _darkThemeEnabled = settings.value(DARK_THEME_KEY, GmicQtHost::DarkThemeIsDefault).toBool();
-  _languageCode = settings.value("Config/LanguageCode", QString()).toString();
+  _languageCode = settings.value(LANGUAGE_CODE_KEY, QString()).toString();
+  _filterTranslationEnabled = settings.value(ENABLE_FILTER_TRANSLATION, false).toBool();
   _nativeColorDialogs = settings.value("Config/NativeColorDialogs", false).toBool();
   _updatePeriodicity = settings.value(INTERNET_UPDATE_PERIODICITY_KEY, INTERNET_DEFAULT_PERIODICITY).toInt();
   FolderParameterDefaultValue = settings.value("FolderParameterDefaultValue", QDir::homePath()).toString();
@@ -224,6 +227,11 @@ int DialogSettings::previewTimeout()
 OutputMessageMode DialogSettings::outputMessageMode()
 {
   return _outputMessageMode;
+}
+
+bool DialogSettings::filterTranslationEnabled()
+{
+  return _filterTranslationEnabled;
 }
 
 void DialogSettings::saveSettings(QSettings & settings)
@@ -266,7 +274,8 @@ void DialogSettings::done(int r)
   QSettings settings;
   saveSettings(settings);
   settings.setValue(DARK_THEME_KEY, ui->rbDarkTheme->isChecked());
-  settings.setValue("Config/LanguageCode", ui->languageSelector->selectedLanguageCode());
+  settings.setValue(LANGUAGE_CODE_KEY, ui->languageSelector->selectedLanguageCode());
+  settings.setValue(ENABLE_FILTER_TRANSLATION, ui->languageSelector->translateFiltersEnabled());
   QDialog::done(r);
 }
 

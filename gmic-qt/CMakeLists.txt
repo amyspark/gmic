@@ -75,9 +75,9 @@ else()
 endif()
 
 #
-# Look for CImg.h and gmic_stdlib.h
+# Look for CImg.h and gmic_stdlib_community.h
 #
-set(GMIC_FILES CImg.h gmic_stdlib.h)
+set(GMIC_FILES CImg.h gmic_stdlib_community.h)
 foreach(F ${GMIC_FILES})
   if(EXISTS ${GMIC_ABSOLUTE_PATH}/${F})
     message("Found " ${GMIC_PATH}/${F})
@@ -332,6 +332,7 @@ set (gmic_qt_SRCS
   src/FilterSelector/FiltersView/FiltersView.h
   src/FilterSelector/FiltersView/TreeView.h
   src/FilterSelector/FiltersVisibilityMap.h
+  src/FilterSelector/FilterTagMap.h
   src/CroppedImageListProxy.h
   src/CroppedActiveLayerProxy.h
   src/FilterSyncRunner.h
@@ -354,6 +355,7 @@ set (gmic_qt_SRCS
   src/MainWindow.h
   src/ParametersCache.h
   src/TimeLogger.h
+  src/Tags.h
   src/Updater.h
   src/Utils.h
   src/Misc.h
@@ -371,11 +373,12 @@ set (gmic_qt_SRCS
   src/Widgets/SearchFieldWidget.h
   src/Widgets/LanguageSelectionWidget.h
   src/Widgets/ProgressInfoWindow.h
+  src/Widgets/VisibleTagSelector.h
   src/ZoomConstraint.h
 
   ${GMIC_PATH}/gmic.h
   ${GMIC_PATH}/CImg.h
-  ${GMIC_PATH}/gmic_stdlib.h
+  ${GMIC_PATH}/gmic_stdlib_community.h
 
   src/ClickableLabel.cpp
   src/Common.cpp
@@ -406,6 +409,7 @@ set (gmic_qt_SRCS
   src/FilterSelector/FiltersView/FiltersView.cpp
   src/FilterSelector/FiltersView/TreeView.cpp
   src/FilterSelector/FiltersVisibilityMap.cpp
+  src/FilterSelector/FilterTagMap.cpp
   src/CroppedImageListProxy.cpp
   src/CroppedActiveLayerProxy.cpp
   src/FilterSyncRunner.cpp
@@ -427,6 +431,7 @@ set (gmic_qt_SRCS
   src/MainWindow.cpp
   src/ParametersCache.cpp
   src/TimeLogger.cpp
+  src/Tags.cpp
   src/Updater.cpp
   src/Utils.cpp
   src/Misc.cpp
@@ -444,6 +449,7 @@ set (gmic_qt_SRCS
   src/Widgets/SearchFieldWidget.cpp
   src/Widgets/LanguageSelectionWidget.cpp
   src/Widgets/ProgressInfoWindow.cpp
+  src/Widgets/VisibleTagSelector.cpp
 )
 
 set (gmic_qt_FORMS

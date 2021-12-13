@@ -26,7 +26,9 @@
 #define GMIC_QT_FILTERTREEITEM_H
 #include <QStandardItem>
 #include <QString>
+#include <QVector>
 #include "FilterSelector/FiltersView/FilterTreeAbstractItem.h"
+#include "Tags.h"
 
 namespace GmicQt
 {
@@ -40,6 +42,11 @@ public:
   bool isFave() const;
   QString hash() const;
   bool operator<(const QStandardItem & other) const override;
+  void setTags(const TagColorSet & colors);
+  void addTag(TagColor tagColor);
+  void removeTag(TagColor tagColor);
+  void toggleTag(TagColor tagColor);
+  const TagColorSet tags() const;
 
 private:
   QString _hash;

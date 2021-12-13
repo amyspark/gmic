@@ -31,6 +31,7 @@
 #include "DialogSettings.h"
 #include "FilterSelector/FiltersView/FilterTreeAbstractItem.h"
 #include "FilterSelector/FiltersView/FilterTreeItem.h"
+#include "Tags.h"
 
 namespace GmicQt
 {
@@ -48,14 +49,30 @@ void FilterTreeItemDelegate::paint(QPainter * painter, const QStyleOptionViewIte
   const QStandardItem * item = model->itemFromIndex(index);
   Q_ASSERT_X(item, "FiltersTreeItemDelegate::paint()", "No item");
   auto filter = dynamic_cast<const FilterTreeItem *>(item);
+  const int height = int(options.rect.height() * 0.4);
+  QString tagString;
+
+  if (filter) {
+    TagColorSet tags = filter->tags();
+    if (!tags.isEmpty()) {
+      tagString = "&nbsp;&nbsp;";
+      for (TagColor color : tags) {
+        tagString += QString("&nbsp;") + TagAssets::markerHtml(color, height);
+      }
+    }
+  }
 
   QTextDocument doc;
   if (!item->isCheckable() && filter && !filter->isVisible()) {
     QColor textColor;
     textColor = DialogSettings::UnselectedFilterTextColor;
-    doc.setHtml(QString("<span style=\"color:%1\">%2</span>").arg(textColor.name()).arg(options.text));
+    doc.setHtml(QString("<span style=\"color:%1\">%2</span>&nbsp;%3").arg(textColor.name()).arg(options.text).arg(tagString));
   } else {
-    doc.setHtml(options.text);
+    if (filter) {
+      doc.setHtml(options.text + tagString);
+    } else {
+      doc.setHtml(options.text);
+    }
   }
   options.text = "";
   options.widget->style()->drawControl(QStyle::CE_ItemViewItem, &options, painter);

@@ -28,8 +28,8 @@
 #include <QColor>
 #include <QDialog>
 #include <QIcon>
-#include "MainWindow.h"
 #include "GmicQt.h"
+#include "MainWindow.h"
 class QCloseEvent;
 class QSettings;
 
@@ -45,12 +45,13 @@ class DialogSettings : public QDialog {
   Q_OBJECT
 
 public:
-  explicit DialogSettings(QWidget * parent = nullptr);
+  explicit DialogSettings(QWidget * parent);
   ~DialogSettings() override;
   static MainWindow::PreviewPosition previewPosition();
   static bool logosAreVisible();
   static bool darkThemeEnabled();
   static QString languageCode();
+  static bool filterTranslationEnabled();
   static bool nativeColorDialogs();
   static void saveSettings(QSettings &);
   static void loadSettings(UserInterfaceMode userInterfaceMode);
@@ -97,6 +98,7 @@ private:
   static OutputMessageMode _outputMessageMode;
   static bool _previewZoomAlwaysEnabled;
   static bool _notifyFailedStartupUpdate;
+  static bool _filterTranslationEnabled;
 };
 
 } // namespace GmicQt

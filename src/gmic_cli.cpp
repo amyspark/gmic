@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
         if (gmic_file) {
           bool allow_entrypoint = false;
           gmic gi(0,0,false,0,0,(gmic_pixel_type)0);
-          gi.add_commands(gmic_file,is_debug?argv[1]:0,0,0,&allow_entrypoint);
+          gi.add_commands(gmic_file,argv[1],is_debug,0,0,&allow_entrypoint);
           if (allow_entrypoint && argc==3) { // Check if command '_main_' has arguments
             const unsigned int hash = (int)gmic::hashcode("_main_",false);
             unsigned int ind = 0;

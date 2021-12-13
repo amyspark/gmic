@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 299
+#define gmic_version 300
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -196,7 +196,7 @@ namespace cimg_library {
 
 #ifdef cimg_use_abort
 inline bool *gmic_abort_ptr(bool *const p_is_abort);
-#define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0)
+#define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0); cimg::unused(gmic_is_abort)
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
@@ -358,9 +358,11 @@ struct gmic {
                            const unsigned int *const variables_sizes=0);
 
   gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
+                     const bool add_debug_info=false,
                      unsigned int *count_new=0, unsigned int *count_replaced=0,
                      bool *const is_entrypoint=0);
   gmic& add_commands(std::FILE *const file, const char *const filename=0,
+                     const bool add_debug_info=false,
                      unsigned int *count_new=0, unsigned int *count_replaced=0,
                      bool *const is_entrypoint=0);
 
