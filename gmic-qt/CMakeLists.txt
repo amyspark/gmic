@@ -287,6 +287,7 @@ add_definitions(-Dgmic_is_parallel)
 add_definitions(-Dgmic_gui)
 add_definitions(-Dcimg_use_abort)
 add_definitions(-Dcimg_appname=\"gmic\")
+add_definitions(-Dgmic_community)
 
 if (UNIX)
     if(ANDROID)
