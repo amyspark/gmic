@@ -148,7 +148,10 @@ QAction * TagAssets::action(QObject * parent, TagColor color, IconMark mark)
   if ((color == TagColor::None) || (color == TagColor::Count)) {
     return nullptr;
   }
-  return new QAction(menuIcon(color, mark), QObject::tr("%1 Tag").arg(colorName(color)), parent);
+  QAction *action = new QAction(menuIcon(color, mark), QObject::tr("%1 Tag").arg(colorName(color)), parent);
+  if (qApp->testAttribute(Qt::AA_DontShowIconsInMenus))
+    action->setIconVisibleInMenu(true);
+  return action;
 }
 
 QString TagAssets::colorName(TagColor color)
