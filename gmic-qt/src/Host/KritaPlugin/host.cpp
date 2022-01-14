@@ -33,6 +33,9 @@
 
 #include "GmicQt.h"
 #include "Host/GmicQtHost.h"
+#ifndef gmic_core
+#include "CImg.h"
+#endif
 #include "gmic.h"
 #include "kis_qmic_interface.h"
 
