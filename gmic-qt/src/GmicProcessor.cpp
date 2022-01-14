@@ -43,6 +43,9 @@
 #include "Misc.h"
 #include "OverrideCursor.h"
 #include "PersistentMemory.h"
+#ifndef gmic_core
+#include "CImg.h"
+#endif
 #include "gmic.h"
 
 namespace GmicQt
