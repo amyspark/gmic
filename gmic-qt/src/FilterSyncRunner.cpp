@@ -30,6 +30,9 @@
 #include "GmicStdlib.h"
 #include "Logger.h"
 #include "Misc.h"
+#ifndef gmic_core
+#include "CImg.h"
+#endif
 #include "gmic.h"
 
 namespace GmicQt
