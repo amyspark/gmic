@@ -160,7 +160,7 @@
 #   A G'MIC command can set new values for each filter parameter, through the status (see command ''status'').
 #   To do so, the returned status must follow the syntax :
 #   '{params1}{params2}{..}{paramsN}' where N must be exactly equal to the number of parameters
-#   for the current filter. Optionnally, you can append to each {param} its visibility state suffix ( e.g: {param}_1 ).
+#   for the current filter. Optionally, you can append to each {param} its visibility state suffix ( e.g: {param}_1 ).
 #
 #   A G'MIC command can also specify the output blending mode, the opacity and the position of each of the output image
 #   (i.e. layer in the plug-in). To do so, set the image name to something like:
@@ -272,7 +272,7 @@ help : skip ${1=""}
   +e[] "\n" rm q
 
 # Command to write reference documentation with various output modes.
-# $1 = output mode, can be { ascii | html | man }.
+# $1 = output mode, can be { ascii | html | man | pdf }.
 # $2 = name of the folder containing additional .gmd pages (optional).
 # Reference and command documentation is written using the G'MIC-markdown syntax.
 reference : skip "${2=}"
@@ -751,7 +751,7 @@ reference : skip "${2=}"
 "specified interpolation mode. 'interpolation' can be "\
 "{ -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic | 6=lanczos }, and "\
 "'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }."\n\
-"* Function 'resize(A,ow,oh,od,os,nw,_,nh,_nd,_ns,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac)' is an "\
+"* Function 'resize(A,ow,oh,od,os,nw,_nh,_nd,_ns,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac)' is an "\
 "extended version of the previous function. It allows to resize the vector 'A', seen as an image of size "\
 "'ow x oh x od x os' as a new image of size 'nw x nh x nd x ns', with specified resizing options."\n\
 "* Function 'find(A,B,_starting_index,_search_step)' returns the index where sub-vector 'B' appears in vector 'A', "\
@@ -1070,7 +1070,7 @@ reference : skip "${2=}"
 "defined in the code of the corresponding custom command (using default argument expressions as '$""{1=default}')."\n\
 "* If one numbered argument required by a custom command misses a value, an error is thrown by the G'MIC "\
 "interpreter."\n\
-"* It is possible to specialize the invokation of a '+command' by defining it as "\
+"* It is possible to specialize the invocation of a '+command' by defining it as "\
 "\n~~~\n+command_name: command_definition\n~~~\n"\
 "* A +-specialization takes priority over the regular command definition when the command is invoked with a "\
 "prepended '+'."\n\
@@ -1223,11 +1223,9 @@ reference_section_html :
 "- "$name"</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div><div class=\"section_content\">"\n\
 "    <a name=\"top\"></a>"\n\
 "<!-- ref_navigation_top -->"\n\n\
@@ -1241,7 +1239,7 @@ reference_end_section_html :
       "<!-- end_content -->"\n\n\
       "<!-- ref_navigation_bottom -->"\n\
       "    </div><div class=\"section_end\"></div>"\n\
-      "    <div id=\"include_footer\"></div>"\n\
+      "    <!--#include file=\"footer.html\" -->"\n\
       "  </body>"':y)
     a[-2,-1] y
   fi
@@ -1266,11 +1264,9 @@ reference_finalize_html :
 "- Table of Contents</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div><div class=\"section_content\">"\n\n\
 "    <a name=\"top\"></a>"\n\
 "<!-- ref_navigation_top -->"\n\n\
@@ -1317,7 +1313,7 @@ reference_finalize_html :
           "<!-- end_content -->"\n\n\
           "<!-- ref_navigation_bottom -->"\n\
           "    </div><div class=\"section_end\"></div>"\n\
-          "    <div id=\"include_footer\"></div>"\n\
+          "    <!--#include file=\"footer.html\" -->"\n\
           "  </body>"
 
     i[0] ({'$html'}:y) nm[0] "Table of Contents"
@@ -1933,10 +1929,10 @@ csv2ts : skip "${1=fr}"
         else # Filter specialization
           i=2
           for {0,i($i,$>)}
-            path={0,`I($i,$>)`} {('$path')} autocrop. {'" "'} _gmd_ascii2html. path={t} rm.
+            path={0,`I($i,$>)`} ({'$path'}) autocrop. {'" "'} _gmd_ascii2html. path={t} rm.
             ('"    <message>"\n\
               "      <source>"$str"</source>"\n\
-              "      <comment>"{0,`I($i,$>)`}"</comment>"\n\
+              "      <comment>"$path"</comment>"\n\
               "      <translation>"$tr"</translation>"\n\
               "    </message>"\n':y)
             i+=1
@@ -3807,7 +3803,7 @@ _input_text :
 #@cli : Default values: 'width=height=800'.
 +lorem : check "isint(${1=800}) && $1>0 && isint(${2=$1}) && $2>0"
   e[^-1] "Input random image of size $1x$2."
-  i "https://picsum.photos/$1/$2"
+  i "https://picsum.photos/$1/$2" nm. lorem
 
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
 merge_multiline :
@@ -4540,11 +4536,9 @@ parse_cli_html :
 "- Reference Documentation</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div><div class=\"section_content\">"\n\n\
 "    <a name=\"top\"></a>"\n\n\
 "<!-- begin_content -->"\n\n\
@@ -4620,7 +4614,7 @@ parse_cli_html :
 "<!-- end_content -->"\n\n\
 "<!-- ref_navigation_bottom -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
-"    <div id=\"include_footer\"></div>"\n\
+"    <!--#include file=\"footer.html\" -->"\n\
 "  </body>"
   ({'$html'}:y)
 
@@ -4672,8 +4666,6 @@ parse_cli_html :
 "- Reference Documentation - "$name"</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\n\
 "    <script src=\"../highslide/highslide-full.js\"></script>"\n\
 "    <script>"\n\
 "      hs.graphicsDir = '../highslide/graphics/';"\n\
@@ -4682,7 +4674,7 @@ parse_cli_html :
 "    </script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div>"\
 "<div class=\"section_content\" style=\"padding-top: 0;\">"\n\n\
 "      <a name=\"top\"></a>"\n\n\
@@ -4864,7 +4856,7 @@ parse_cli_html :
 "<!-- end_content -->"\n\n\
 "<!-- ref_navigation_bottom -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
-"    <div id=\"include_footer\"></div>"\n\
+"    <!--#include file=\"footer.html\" -->"\n\
 "  </body>"
     rm ({'$html'}:y)
     replace_str. "<tutorial_tag>",$tutorial_html # Insert tutorial button
@@ -5860,17 +5852,15 @@ gmd2html : skip "${1=}"
 "    <title>"$title"</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><p>"$section_title"</p></div><div class=\"section_content\">"\n\n\
 "<!-- begin_content -->"\n\n':y)
     ('\n\n\
 "<!-- end_content -->"\n\n\
 "    </div><div class=\"section_end\"></div>"\n\n\
-" <div id=\"include_footer\"></div>"\n\
+"    <!--#include file=\"footer.html\" -->"\n\
 "  </body>"':y)
       a y nm $nm.html
     endl done
@@ -7147,7 +7137,6 @@ parse_gui_trigger_gmicol :
 parse_gui_gmicol :
   e[] "  >> Generate output, in 'gmicol' mode.\n"
   ('"<?xml version=\"1.0\"?>\n\n<categories>\n"')
-
   current_category=
   N={$_nbfilters-1}
   repeat $_nbfilters,f
@@ -7345,6 +7334,13 @@ _parse_gui_strings :
 #@cli : 'xmin', 'xmax', 'ymin', 'ymax' set the coordinates of the displayed xy-axes.
 #@cli : Default values: 'plot_type=1', 'vertex_type=1', 'xmin=xmax=ymin=ymax=0 (auto)' and 'exit_on_anykey=0'.
 
+#@cli portrait : _size>0
+#@cli : Input random portrait image of specified size, retrieved from Internet.
+#@cli : Default values: 'size=800'.
++portrait : check "isint(${1=800}) && $1>0"
+  e[^-1] "Input random portrait image of size $1x$1."
+  i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1 nm. portrait
+
 #@cli p : eq. to 'print'. : (+)
 
 #@cli print : (+)
@@ -7456,7 +7452,7 @@ _random_pattern_check_image :
 #@cli : Default values: 'X=Y=Z=(undefined)', 'exit_on_anykey=0' and 'is_deep_selection=0'.
 
 #@cli serialize : _datatype,_is_compressed={ 0 | 1 },_store_names={ 0 | 1 } : (+)
-#@cli : Serialize selected list of images into a single image, optionnally in a compressed form.
+#@cli : Serialize selected list of images into a single image, optionally in a compressed form.
 #@cli : 'datatype' can be { auto | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
 #@cli : Specify 'datatype' if all selected images have a range of values constrained to a particular datatype,
 #@cli : in order to minimize the memory footprint.
@@ -7946,7 +7942,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.0.0').
+# $1 = version number (e.g. '3.0.1').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8204,8 +8200,6 @@ update_color_presets_html : check "isbool(${1=0})"
 "- Color Presets</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\n\
 "    <script src=\"../highslide/highslide-full.js\"></script>"\n\
 "    <script>"\n\
 "      hs.graphicsDir = '../highslide/graphics/';"\n\
@@ -8214,7 +8208,7 @@ update_color_presets_html : check "isbool(${1=0})"
 "    </script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><p>Color Presets</p></div><div class=\"section_content\">"\n\n\
 "      <p>Among all features available in <span class=\"gmd_gmic\">G&apos;MIC</span>, our <b>Color Presets</b> and "\
 "<b>Simulate Film</b> filters are able to apply various pre-defined <b>color CLUTs</b> on your images "\
@@ -8335,7 +8329,7 @@ update_color_presets_html : check "isbool(${1=0})"
         "      </p><hr/>"\n\
         "<!-- end_content -->"\n\n\
         "    </div><div class=\"section_end\"></div>"\n\
-        "    <div id=\"include_footer\"></div>"\n\
+        "    <!--#include file=\"footer.html\" -->"\n\
         "  </body>"')
       a[$nb_samples--1] x ot. ${category}_$basename.html rm.
     done
@@ -8419,8 +8413,6 @@ update_gallery_html : check "isbool(${1=0})"
 "- Gallery</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
-"    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_footer\").load(\"../footer.html\"); });</script>"\n\n\
 "    <script src=\"https://code.jquery.com/jquery-1.12.4.js\"></script>"\n\
 "    <script src=\"https://code.jquery.com/ui/1.12.1/jquery-ui.js\"></script>"\n\n\
 "    <script src=\"../highslide/highslide-full.js\"></script>"\n\
@@ -8431,7 +8423,7 @@ update_gallery_html : check "isbool(${1=0})"
 "    </script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div id=\"include_header\"></div>"\n\n\
+"    <!--#include file=\"header.html\" -->"\n\n\
 "    <div class=\"section_title\"><p>Image Gallery</p></div><div class=\"section_content\">"\n\n\
 "      <p>This gallery gives a quick overview of the kind of features and generic filters available in the "\
 "<span class=\"gmd_gmic\">G&apos;MIC</span> open-source image processing framework.</p>"\n\
@@ -8663,7 +8655,9 @@ update_gallery_html : check "isbool(${1=0})"
     if $col html=${html}"          <td colspan=\""{$nb_cols-$col}"\"></td></tr>\n" fi
     html=${html}"      </table><br/>\n"\
          ${html_menu}\
-         "    </div><div class=\"section_end\"></div>"\n"    <div id=\"include_footer\"></div>"\n"  </body>"
+         "    </div><div class=\"section_end\"></div>"\n\
+         "    <!--#include file=\"footer.html\" -->"\n\
+         "  </body>"
     ('$html') ot. $category.html rm.
   done
   rm
@@ -9189,6 +9183,7 @@ _update_gmicol : # Keep only a subset of existing filters
   "Repair/Upscale [Edge]",\
   "Repair/Upscale [Scale2x]"
   k[${}]
+  sort_list +,n
 
 # Generate reference documentation pages for the G'MIC website.
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
@@ -9628,7 +9623,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (300,$_version) store. compat
+  (301,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -9662,7 +9657,7 @@ upload_filters :
     o cimgz:/tmp/update$_version.gmic,uchar
 
     $compat
-    repeat w
+    repeat h
       v={i[$>]}
       _upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
       _upload[] /tmp/update$_version.gmic,update$v.gmic,1
@@ -9680,7 +9675,7 @@ upload_filters :
     ot ${_path_rc}/update$_version.json
 
     $compat
-    repeat w
+    repeat h
       v={i[$>]}
       _upload[] ${_path_rc}/update$_version.json,update$v.json,1
     done
@@ -9734,22 +9729,11 @@ upload_binaries : check "isbool(${2=1})"
   file$N=gmic_$1_gimp2.10_ubuntu21-04_hirsute_amd64.zip N+=1
   file$N=gmic_$1_gimp2.10_ubuntu21-10_impish_amd64.zip  N+=1
 
-  file$N=gmic_$1_krita_debian9-2_stretch_amd64.zip      N+=1
-  file$N=gmic_$1_krita_debian10_buster_amd64.zip        N+=1
-  file$N=gmic_$1_krita_ubuntu18-10_cosmic_amd64.zip     N+=1
-  file$N=gmic_$1_krita_ubuntu19-04_disco_amd64.zip      N+=1
-  file$N=gmic_$1_krita_ubuntu19-10_eoan_amd64.zip       N+=1
-  file$N=gmic_$1_krita_ubuntu20-04_focal_amd64.zip      N+=1
-  file$N=gmic_$1_krita_ubuntu20-10_groovy_amd64.zip     N+=1
-  file$N=gmic_$1_krita_ubuntu21-04_hirsute_amd64.zip    N+=1
-  file$N=gmic_$1_krita_ubuntu21-10_impish_amd64.zip     N+=1
-
   file$N=gmic_$1_cli_win64.zip                          N+=1
   file$N=gmic_$1_lib_win64.zip                          N+=1
   file$N=gmic_$1_qt_win64.zip                           N+=1
   file$N=gmic_$1_gimp2.10_win64.zip                     N+=1
   file$N=gmic_$1_gimp2.10_win64.exe                     N+=1
-  file$N=gmic_$1_krita_win64.zip                        N+=1
 
   if !$2 # Only get list of URLs
     e[0--3] "List URLs of released binaries ($1) from the G'MIC web server.\n"
@@ -11021,78 +11005,93 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
                  grad(p[B + 1],fx1,fy1),u),v)"
   fi done
 
-#@cli noise_poissondisk : _radius[%]>0,_max_sample_attempts>0
+#@cli noise_poissondisk : _radius[%]>0,_max_sample_attempts>0,_p_norm>0
 #@cli : Add poisson disk sampling noise to selected images.
 #@cli : Implements the algorithm from the article "Fast Poisson Disk Sampling in Arbitrary Dimensions",
 #@cli : by Robert Bridson (SIGGRAPH'2007).
-#@cli : Default values: 'radius=8' and 'max_sample_attempts=30'.
+#@cli : Default values: 'radius=8', 'max_sample_attempts=30' and 'p_norm=2'.
 #@cli : $ 300,300 noise_poissondisk 8
-##### : Original G'MIC code by Garagecoder (Andy Kelday)
-noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
-  e[^-1] "Add poisson disk sampling points to image$?, with radius $1 and max sample attempts $2."
+noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
+  e[^-1] "Add poisson disk sampling points to image$?, with radius $1, max sample attempts $2 and p-norm $3."
+  R0,K,P=${1-3}
   repeat $! l[$>]
-    R={${"is_percent $1"}?max(w,h,d)*$1:$1} # [0] input image to draw samples on
-    dim={d>1?3:h>1?2:1} cw={0.999*$R/sqrt($dim)} # dimensions, grid cell width
-    ({[w,h,d,1]}) y. c  # [1] image dimensions vector
-    {[ceil(I/$cw)]}     # [2] "accelerator" grid/cells
-    r[1] 1,1,1,$dim,-1  # keep only used dimensions in [1]
-    1,1,1,$dim 1,1,1,1  # [3] samples list, [4] active list
-    {vector$dim(2*ceil(sqrt($dim))+1)} r. 100%,100%,100%,2 # [5] cell proximity kernel
-    f. "P=[x,y,z]-int([w/2,h/2,d/2]);[sum(sqr(P)),dot(P,[1,w#2,w#2*h#2])]"
-    r. {[whd,s,1,1,-1]} sort. +,x z. 0,1,100%,100% y. c # sort kernel by distance
-    nm[1] dims nm[2] grid nm[3] samples nm[4] active nm[5] prox
+    W,H,D={[w,h,d]}
+    value={iM+(im==iM?1:0)}
+    R={${is_percent\ $R0}?max(w,h,d)*$R0:$R0}
+    C={$R/sqrt(sum([$W,$H,$D]>1))} # Cell size
+
+    # Determing optimal set of neighbors.
+    _poissondisk[] $R,$P,$C
+    f. "($W<2 && i0) || ($H<2 && i1) || ($D<2 && i2)?[8,8,8]:I" discard. 8 s. y,3 a[-3--1] x # Discard useless dims
+    neighbors={^} rm.
+
+    # Start point sampling.
+    {ceil([$W,$H,$D]/$C)},1,-1 nm. grid # Grid used for quick testing neighboring points
+    1,32,1,3 nm. points # List of points
+    1,32,1,1 nm. active # List of active indices
     eval "
-      begin(
-        dotoff = resize([ 1,w#2,w#2*h#2 ],d#2>1?3:h#2>1?2:1,0);
+      insert_active_point(X) = (
+        i(#$grid,int(X/$C)) = new_ind = da_size(#$points);
+        da_push(#$points,X);
+        da_push(#$active,new_ind);
+        I(#0,X) = $value;
       );
-      const N = "$dim";
-      const radius = "$R";
-      const grid_cw = "$cw";
-      const max_sample_attempts = $2;
-      const value = iM#0 + (im#0==iM#0);
-      mag2(vec) = sum(sqr(vec));
-      prox = I#5;
-      lim = I#1;
+      const eps = 1e-8;
+      neighbors = ["$neighbors"];
 
-      da_push(#3,I#1);                    # Dummy sample to simplify bounds checks
-      da_push(#3,u(I#1));                 # Add initial sample to list
-      da_push(#4,1);                      # Add its index to active list
-      I(#2,int(I[#3,1]/grid_cw)) = 1;     # Add its index to grid cell
-      I(#0,I[#3,1]) = value;              # Draw the point
+      # Initialize list of active points.
+      X = int(u([$W,$H,$D] - eps));
+      insert_active_point(X);
 
-      while (da_size(#4)>0,
-        R = int(u(da_size(#4) - 1e-4));   # Choose a random active list index
-        P = i[#4,R];                      # Get the index of that sample
-        T = I[#3,P];                      # Position vector of that sample
+      # Propagate new points.
+      while (siz = da_size(#$active),
+        indX = int(u(siz - eps));
+        X = I[#$points,i[#$active,indX]];
 
-        repeat (max_sample_attempts,attempts,
-          do (S = 4*(u(vectorN(1)) - 0.5); M = mag2(S), M <= 1 || M > 4);
-
-          X = T + radius * S;             # Potential sample from annulus around T
-          if (min(X)<0 || min(lim-X)<0, continue()); # Check within bounds
-
-          # check proximity of surrounding points
-          G = int(X/grid_cw);             # Grid cell position vector
-          GI = dot(G,dotoff);             # Grid cell direct buffer index
-
-          for (K = 0; rejected = 0, K<size(prox), ++K,
-            V = i[#2,GI+prox[K]];         # Sample index from grid to check
-            if (V>0 && mag2(I[#3,V]-X)<sqr(radius), rejected = 1; break())
-          );
-
-          if (!rejected,
-            Q = da_size(#3);              # Sample found, get new index
-            da_push(#3,X);                # Insert into samples list
-            da_push(#4,Q);                # Insert its index into active
-            I(#2,G) = Q;                  # Insert its index into grid
-            I(#0,X) = value;              # Draw the point
-            break();
+        for (k = 0, k<$K, ++k,
+          U = [ $W>1?u(-1,1):0, $H>1?u(-1,1):0, $D>1?u(-1,1):0 ];
+          U*=u($R,2*$R)/(norm(U) + eps);
+          Y = round(X + U);
+          min(inrange(Y,0,[$W,$H,$D] - 1))?(
+            P = int(Y/$C);
+            i(#$grid,P)<0?(
+              is_sample_ok = 1;
+              repeat(size(neighbors)/3,n, # Test neighboring points
+                ind = i(#$grid,P + neighbors[3*n,3]);
+                ind>=0?(nY = I[#$points,ind]; norm"$P"(nY - Y)<=$R?(is_sample_ok = 0; break())); # Invalid point
+              );
+              is_sample_ok?(insert_active_point(Y); break()); # Add new point
+            );
           );
         );
-        if (attempts==max_sample_attempts, da_remove(#4,R));
-      )"
+        k>=$K?da_remove(#$active,indX); # Remove point from active list
+      );
+      resize(#$points,1,da_size(#$points),1,3,0)"
     k[0]
   endl done
+
+# Determine optimal list of 3D neighbors to be tested.
++_poissondisk :
+  R,P,C=${1-3}
+  0 eval "
+    dmin(dx,dy,dz,C) = (
+      _dx = dx*C; _dy = dy*C; _dz = dz*C;
+      norm"$P"(min(abs(_dx),abs(_dx + C),abs(_dx - C)),
+               min(abs(_dy),abs(_dy + C),abs(_dy - C)),
+               min(abs(_dz),abs(_dz + C),abs(_dz - C)));
+    );
+    for (n = 1, n<4, ++n,
+      is_none_added = 1;
+      for (k = -n, k<=n, ++k,
+        for (j = -n, j<=n, ++j,
+          for (i = -n, i<=n, ++i,
+            abs(maxabs(i,j,k))==n && dmin(i,j,k,$C)<$R?(da_push([i,j,k]); is_none_added = 0)
+          )
+        )
+      );
+      is_none_added?break();
+    );
+    resize(#-1,1,da_size(),1,3,0)"
 
 #@cli normp : p>=0
 #@cli : Compute the pointwise Lp-norm norm of vector-valued pixels in selected images.
@@ -15374,15 +15373,16 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     rm[0] / $3 r $w,$h,$d,100%,0
   nm $nm endl done
 
-#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (faster) | 3=poisson+gaussian },_patch_size>0
+#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (faster) | 3=poisson+gaussian | \
+# 4=poisson+gaussian2 },_patch_size>0
 #@cli : Denoise selected images using a convolutional neural network (CNN).
 #@cli : Input value range should be [0,255]. Output value range is [0,255].
 #@cli : Default value: 'patch_size=64'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_cnn
 denoise_cnn : skip "${1=0},${2=64}"
   N=$!
-  if isint($1)" && "inrange($1,0,3) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
-  s0,s1,s2,s3=soft,heavy,heavy,poisson+gaussian
+  if isint($1)" && "inrange($1,0,4) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
+  s0,s1,s2,s3,s4=soft,heavy,heavy,poisson+gaussian,poisson+gaussian2
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
@@ -15398,7 +15398,9 @@ denoise_cnn : skip "${1=0},${2=64}"
 
   # Process images.
   repeat $N l[$>,$N--1] to_color[0]
-    if $type==3 srgb2rgb[0] fi
+    if $type==3 srgb2rgb[0]
+    elif $type==4 srgb2rgb[0] /[0] 255
+    fi
 
     # Extract overlapping psxps tiles.
     nx,ny={0,ceil([w,h]/($ps-6))}
@@ -15434,7 +15436,11 @@ denoise_cnn : skip "${1=0},${2=64}"
       draw(#-1,V,X,Y,0,0,$ps,$ps,1,3,-1,mask);
       draw(#-1,mask,X,Y,0,3,$ps,$ps,1,1,-1,mask)"
     rm[-3,-1]
-    l. s c,-3 max. 1 / if $type==3 rgb2srgb. fi c 0,255 endl
+    l. s c,-3 max. 1 /
+    if $type==3 rgb2srgb.
+    elif $type==4 *. 255 rgb2srgb.
+    fi
+    c 0,255 endl
     j[0] . rm.
 
   endl done
@@ -17077,7 +17083,7 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
     +*[-4,-1] +*[-4,-3] +[-2,-1]
     *[-5,-3] *[-3,-2] -[-3,-2]
 
-    # Get synthetized result and normalize it.
+    # Get synthetised result and normalize it.
     repeat s =.. ${sum$>},0,0,0,$> =. 0,0,0,0,$> done
     ifft rm.
     repeat s sh. $> avg={ia} -. $avg *. {sqrt(${var$>}/if(iv,iv,1))} +. $avg rm. done
@@ -22485,7 +22491,7 @@ nn_lib :
     # Sigmoid.
     #---------
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
-    nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
+    nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1 - _nn_sig));
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
     nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
 
@@ -23211,6 +23217,38 @@ nn_lib :
                              3);
     );
 
+    # softmax: Softmax function.
+    #---------------------------
+    nn_layer_softmax_init_forward(L,IN) = (
+      const L#_out_width = IN#_out_width;
+      const L#_out_height = IN#_out_height;
+      const L#_out_depth = IN#_out_depth;
+      const L#_out_spectrum = IN#_out_spectrum;
+    );
+
+    nn_layer_softmax_forward(L,IN) = (
+      L#_out = vector(#size(IN#_out));
+      L#_sumexp = 0;
+      fill(L#_out,k,
+        _sm_val = exp(IN#_out[k]);
+        L#_sumexp+=_sm_val;
+        _sm_val;
+      );
+      L#_out/=L#_sumexp;
+    );
+
+    nn_layer_softmax_backward(L,IN) = (
+      IN#_deriv_out = vector(#size(IN#_out));
+      L#_fact = (L#_sumexp - 1)/L#_sumexp;
+      fill(IN#_deriv_out,i,
+        _sm_val = 0;
+        repeat(size(L#_out),j,
+          _sm_val+=L#_deriv_out[j]*(i!=j?-L#_out[j]/L#_sumexp:L#_out[i]*L#_fact);
+        );
+        _sm_val;
+      );
+    );
+
     # split: Split input as two outputs.
     #-----------------------------------
     nn_layer_split_init_forward(L0,L1,IN,nb_channels0) = (
@@ -23241,6 +23279,24 @@ nn_lib :
     # Loss functions.
     #----------------
 
+    # bce : Binary cross entropy.
+    #-----------------------------
+    nn_loss_bce_init_backward(L) = (
+      L#_batch_out = 0;
+    );
+
+    nn_loss_bce_backward(L,IN,TRUTH) = (
+      L#_out = -sum(TRUTH*log(IN#_out) + (1 - TRUTH)*log(1 - IN#_out));
+      IN#_deriv_out = vsum((IN#_out - TRUTH)/(IN#_out*(1 - IN#_out)));
+      L#_batch_out+=L#_out;
+    );
+
+    nn_loss_bce_end_backward(L) = (
+      merge(L#_batch_out,+);
+      L#_batch_out/=nn_nb_samples;
+      L#_out = L#_batch_out;
+    );
+
     # mse : Mean-squared error.
     #--------------------------
     nn_loss_mse_init_backward(L) = (
@@ -23257,8 +23313,7 @@ nn_lib :
       merge(L#_batch_out,+);
       L#_batch_out/=nn_nb_samples;
       L#_out = L#_batch_out;
-    );
-    "
+    );"
 
 #@cli nn_init
 #@cli : Initialize a new network.
@@ -23447,14 +23502,21 @@ nn_layer_maxpool2d : nn_check_layer "$2" check "isvarname('$1')"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_nl : name,in,_activation
-#@cli : Add a 'nl' layer (non-linearity) to the network.
+#@cli : Add a 'nl' (nonlinearity) layer to the network.
+#@cli : 'activation' can be { elu | gelu | leakyrelu | linear | relu | sigmoid | softmax | sqr | sqrt | swish | tanh }.
 #@cli : Default value: 'activation=leakyrelu'.
 nn_layer_nl : nn_check_layer "$2" check "isvarname('$1')" skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
-               "nn_layer_nl_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
+  if s=['$3'];s=='softmax'
+    _nn_forward.="begin(nn_layer_$3_init_forward($1,$2));"\
+                 "nn_layer_$3_forward($1,$2);"
+    _nn_backward..="nn_layer_$3_backward($1,$2);"
+  else
+    _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
+                 "nn_layer_nl_forward($1,$2,$3);"
+    _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
+  fi
   _nn_init.="$0 $* "
 
 #@cli nn_layer_rename : name,in
@@ -23520,9 +23582,18 @@ nn_layer_split : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
+#@cli nn_loss_bce : name,in,ground_truth
+#@cli : Add a 'bce' loss to the network (binary cross entropy).
+nn_loss_bce : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
+  e[^-1] "[nn_lib] Add BCE loss '$1', with input '$2' and ground truth '$3'."
+  _nn_$1_out_size=1,1,1,1
+  _nn_backward..="begin(nn_loss_bce_init_backward($1));"\
+                 "nn_loss_bce_backward(${1-3});"\
+                 "end(nn_loss_bce_end_backward($1));"
+  _nn_init.="$0 $* "
+
 #@cli nn_loss_mse : name,in,ground_truth
-#@cli : Add a 'mse' loss to the network.
-#@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
+#@cli : Add a 'mse' loss to the network (mean-squared error).
 nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add MSE loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
@@ -24261,19 +24332,19 @@ tunnel : check "${1=9}>=0 && ${2=80%}>0" skip ${3=0.5},${4=0.5},${5=0.1},${6=0}
 #
 #-----------------------------
 
-#@cli boxfitting : _min_box_size>=1,_max_box_size>=0,_initial_density>=0,_nb_attempts>=1
+#@cli boxfitting : _min_box_size>=1,_max_box_size>=0,_initial_density>=0,_min_spacing>0
 #@cli : Apply box fitting effect on selected images, as displayed the web page:
 #@cli : <http://www.complexification.net/gallery/machines/boxFittingImg/>.
-#@cli : Default values: 'min_box_size=1', 'max_box_size=0', 'initial_density=0.1' and 'nb_attempts=3'.
+#@cli : Default values: 'min_box_size=1', 'max_box_size=0', 'initial_density=0.25' and 'min_spacing=1'.
 #@cli : $ image.jpg boxfitting ,
-boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}>=0 && isint(${4=3}) && $4>=1"
-  e[^-1] "Apply box fitting effect on image$?, with box sizes ($1,$2), density $3 and $4 attempts."
-  min_size=$1
-  max_size={if($2,$2,max(w,h))}
+boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.25}>=0 && isint(${4=1}) && $4>0"
+  e[^-1] "Apply box fitting effect on image$?, with box sizes ($1,$2), initial density $3 and min spacing $4."
+  min_spacing,min_size={[$4,$1+$4-1]}
   repeat $! l[$>]
-    nb_attempts=0 prec=5
+    max_size={$4-1+($2?$2:max(w,h))}
+    prec=5
     100%,100%
-    repeat 1e8
+    repeat inf
 
       # Add random non-intersecting squares with min size.
       if $><1 # Takes random points for the first iteration.
@@ -24282,22 +24353,67 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
         +distance. 1 +rand. 0,1 *[-2,-1] max_patch. {round($prec*$min_size)}
         prec={max(1,$prec*0.9)}
       fi
+      0 eval.. ">i && !max(crop(#-3,x-1,y-1,3,3))?(da_push([x,y,1]); i(#-3,x,y) = 1)"
+      if !i[h-1] rm[-2,-1] break fi
+      r. 1,{i[h-1]},1,3,0 rm..
 
-      # Discard new squares that intersect something.
-      dilate. $min_size area_fg. 0,1 ==. {($min_size)^2}
-      +dilate.. 3 ==. 0 *[-2,-1] area_fg. 0,1 ==. {($min_size)^2}
-      if !iM nb_attempts+=1 if $nb_attempts>$4 rm. break fi # If no new squares have been placed.
-      else nb_attempts=0 fi
-      +[-2,-1]
+      # Dilate each square as much as possible.
+      do
+        f. ">
+          begin(is_new = 0; const boundary = 1);
+          Xc = i0; Yc = i1; N = i2;
 
-      # Make current squares grown until max square size is reached.
-      repeat int(($max_size-$min_size)/2)
-        +dilate. 3 area_fg. 0,1 ==. {($min_size+2*$>+2)^2}
-        if !iM rm. break fi  # No more squares to grow.
-        -|[-2,-1]
-      done
+          N>0?(
+            N2 = int(N/2); N1 = N - N2 - 1;
+            is_odd = N%2; is_new = 0;
+            X0 = Xc - N1 - 1; X0m1 = X0 - 1; Y0 = Yc - N1 - 1; Y0m1 = Y0 - 1;
+            X1 = Xc + N2 + 1; X1p1 = X1 + 1; Y1 = Yc + N2 + 1; Y1p1 = Y1 + 1;
 
+            is_up = is_down = 1;
+            for (X = X0, (is_up || is_down) && X<=X1, ++X,
+              is_up&=!i(#-2,X,Y0) && !i(#-2,X,Y0m1);
+              is_down&=!i(#-2,X,Y1) && !i(#-2,X,Y1p1);
+            );
+            is_left = is_right = 1;
+            for (Y = Y0, (is_left || is_right) && Y<=Y1, ++Y,
+              is_left&=!i(#-2,X0,Y) && !i(#-2,X0m1,Y);
+              is_right&=!i(#-2,X1,Y) && !i(#-2,X1p1,Y);
+            );
+
+            is_left && is_up && !i(#-2,X0m1,Y0m1)?( # Left/Up
+              polygon(#-2,2,X0,Y0,X1 - 1,Y0,1,1); polygon(#-2,2,X0,Y0,X0,Y1 - 1,1,1);
+              Xc-=is_odd; Yc-=is_odd; is_new=1;
+            ):is_right && is_up && !i(#-2,X1p1,Y0m1)?( # Right/Up
+              polygon(#-2,2,X0 + 1,Y0,X1,Y0,1,1); polygon(#-2,2,X1,Y0,X1,Y1 - 1,1,1);
+              Xc+=!is_odd; Yc-=is_odd; is_new=1;
+            ):is_left && is_down && !i(#-2,X0m1,Y1p1)?( # Left/Bottom
+              polygon(#-2,2,X0,Y1,X1 - 1,Y1,1,1); polygon(#-2,2,X0,Y1,X0,Y0 + 1,1,1);
+              Xc-=is_odd; Yc+=!is_odd; is_new=1;
+            ):is_right && is_down && !i(#-2,X1p1,Y1p1)?( # Right/Bottom
+              polygon(#-2,2,X1,Y0 + 1,X1,Y1,1,1); polygon(#-2,2,X1,Y1,X0 + 1,Y1,1,1);
+              Xc+=!is_odd; Yc+=!is_odd; is_new=1;
+            );
+            is_new?(++N>=$max_size?(N = -N)):(N = -N);
+          );
+          [ Xc,Yc,N ]"
+        sh. 100% is_new={iM>0} rm.
+      while $is_new
+
+      # Remove too small squares.
+      f. "
+        Xc = i0; Yc = i1; N = abs(i2);
+        N<$min_size?(
+          N2 = int(N/2); N1 = N - N2 - 1;
+          X0 = Xc - N1; Y0 = Yc - N1;
+          X1 = Xc + N2; Y1 = Yc + N2;
+          polygon(#-2,4,X0,Y0,X1,Y0,X1,Y1,X0,Y1,1,0);
+          [ -1,-1,-1 ];
+        ):[ Xc,Yc,N ]"
+      discard. -1
+      if !h rm. break fi
+      rm.
     done
+    if $min_spacing>1 r. {[w,h]+2},1,1,0,0,0.5,0.5 erode. {$min_spacing} z. 1,1,{[w,h]-2} fi
     blend shapeaverage0
   endl done
 
@@ -28543,7 +28659,8 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
   l[]
     # Parse CSV data.
     "$1"
-    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate).
+#    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate in 2020).
+    eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
     nb_entries={h}
     repeat $nb_entries,e
       date_$e={`I(0,$e)`}
@@ -32386,7 +32503,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
   do
 
     # Create and display visualization.
-    if !narg($visu_3d) # Update 3D vizualization.
+    if !narg($visu_3d) # Update 3D visualization.
       +-[centroids] 2 ++[centroids] 2 a[-2,-1] x permute. cxyz y. -. 128
       j[obj3d] .,0,8 rm.  # Update centroids position in 3D object.
       [obj3d]
@@ -35292,13 +35409,13 @@ fx_gmicky_preview :
 #@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
-#@gui : - <span foreground="purple"><b>2021/12/09</b> : version <i>3.0.0</i> (Current stable).</span>\n
-##@gui : - <b>2021/10/05</b> : version <i>3.0.0</i> (Current pre-release).\n
+#@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
+#@gui : - <span foreground="purple"><b>2022/01/13</b> : version <i>3.0.1</i> (Current stable).</span>\n
+##@gui : - <b>2021/01/xx</b> : version <i>3.0.2</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
-##@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
-##@gui : url = link{"View latest minor changelog (2.9)","https://discuss.pixls.us/t/release-of-gmic-2-9"}
-#@gui : url = link{"View latest major changelog (3.0)","https://discuss.pixls.us/t/release-of-gmic-3-0-0"}
+#@gui : url = link{"View changelog to upcoming minor version (3.1)","https://discuss.pixls.us/t/on-the-road-to-3-1"}
+#@gui : url = link{"View latest major changelog (3.0)","https://discuss.pixls.us/t/release-of-gmic-3-0"}
 
 #@gui What's New? : _none_,fx_whatsnew_preview
 #@gui : note = note("Here you'll find a list of filter additions and deletions in the plug-in, since your last visit.
@@ -39953,8 +40070,7 @@ fx_colorful_blobs :
   x8,y8,rx8,ry8,R8,G8,B8,p_x8,p_y8,p_rx8,p_ry8,\
   x9,y9,rx9,ry9,R9,G9,B9,p_x9,p_y9,p_rx9,p_ry9,\
   x10,y10,rx10,ry10,R10,G10,B10,p_x10,p_y10,p_rx10,p_ry10,\
-  x11,y11,rx11,ry11,R11,G11,B11,p_x11,p_y11,p_rx11,p_ry11,\
-  =$*
+  x11,y11,rx11,ry11,R11,G11,B11,p_x11,p_y11,p_rx11,p_ry11=$*
   if !0$_is_preview display_controls=0 fi
   if $1==1 srgb2cs=srgb2rgb cs2srgb=rgb2srgb
   elif $1==2 srgb2cs=srgb2lab cs2srgb=lab2srgb
@@ -46960,12 +47076,13 @@ _fx_slice_luminosity :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 
-#@gui Box Fitting : fx_boxfitting, fx_boxfitting_preview(0)
+#@gui Box Fitting : fx_boxfitting, fx_boxfitting(0)
 #@gui : Minimal Size = int(3,1,32)
 #@gui : Maximal Size = int(0,0,32)
 #@gui : note = note("<small><b>Note:</b> Set <i>Maximal size</i> to <i>0</i> to allow any size
 #@gui : for the squares.</small>")
-#@gui : Initial Density = float(0.1,0,1)
+#@gui : Initial Density = float(0.25,0,1)
+#@gui : Minimal Spacing = int(2,1,16)
 #@gui : Transparency = bool(0)
 #@gui : sep = separator()
 #@gui : note = note("<small><b>Note:</b> This filter has been highly inspired by the work of Jared Tarbell,
@@ -46974,12 +47091,8 @@ _fx_slice_luminosity :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/06/06</i>.</small>")
 fx_boxfitting :
-  boxfitting ${1-3},3
-  if $4 to_rgba replace_color 0,0,0,0,0,255,0,0,0,0 fi
-
-fx_boxfitting_preview :
-  boxfitting ${1-3},1
-  if $4 to_rgba replace_color 0,0,0,0,0,255,0,0,0,0 fi
+  boxfitting ${1-4}
+  if $5 to_rgba replace_color 0,0,0,0,0,255,0,0,0,0 fi
 
 #@gui Camouflage : fx_camouflage, fx_camouflage
 #@gui : Scale = int(9,2,12)
@@ -48282,7 +48395,7 @@ fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
 
 #@gui Denoise : fx_denoise,fx_denoise_preview(0)
-#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)","Poisson + Gaussian"}
+#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)","Poisson + Gaussian","Poisson + Gaussian (v2)"}
 #@gui : Iterations = int(1,1,5)
 #@gui : sep = separator()
 #@gui : Update Neural Network = button()
@@ -48656,16 +48769,16 @@ _fx_smooth_skin :
   fi
 
 fx_smooth_skin_preview :
-  if $-2==0
+  if $14==0
     gui_split_preview "if $5 balance_gamma 128,128,128 fi if $1==0 f 1 elif $1==2 detect_skin $2 "\
      "else detect_skin $2,$6%,$7%,$8% fi M={iM} b $3% * {255*$M/iM} * $4 c 0,255",${-3--1}
-  elif $-2==1
+  elif $14==1
     gui_split_preview "b $9%",${-3--1}
-  elif $-2==2
+  elif $14==2
     gui_split_preview "split_details 4,$9%,$10% k.. n 0,255",${-3--1}
-  elif $-2==3
+  elif $14==3
     gui_split_preview "split_details 4,$9%,$10% k.. _fx_smooth_skin $12,$11 n 0,255",${-3--1}
-  elif $-2==4
+  elif $14==4
     gui_split_preview "split_details 4,$9%,$10% k. n 0,255",${-3--1}
   else
     gui_split_preview "fx_smooth_skin $*",${-3--1}

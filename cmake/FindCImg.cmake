@@ -156,7 +156,7 @@ if(ENABLE_OPENEXR)
 endif()
 
 if(MINGW)
-  list(APPEND COMPILE_FLAGS "-Wl,--stack,16777216")
+  list(APPEND LINK_FLAGS "-Wl,--stack,16777216")
 endif()
 
 find_package(Threads)

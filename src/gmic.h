@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 300
+#define gmic_version 301
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -204,31 +204,31 @@ template<typename T>
 inline double gmic_mp_dollar(const char *const str,
                              void *const p_list, const T& pixel_type);
 #define cimg_mp_operator_dollar(str) \
-  ::gmic_mp_dollar(str,&listout,(T)0)
+  ::gmic_mp_dollar(str,&imglist,(T)0)
 
 template<typename Ts, typename T>
 inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type);
 #define cimg_mp_func_get(ptr,siz,to_string,str) \
-  return ::gmic_mp_get(ptr,siz,to_string,str,&mp.listout,(T)0)
+  return ::gmic_mp_get(ptr,siz,to_string,str,&mp.imglist,(T)0)
 
 template<typename Ts, typename T>
 inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
                           void *const p_list, const T& pixel_type);
 #define cimg_mp_func_set(ptr,siz,str) \
-  return ::gmic_mp_set(ptr,siz,str,&mp.listout,(T)0)
+  return ::gmic_mp_set(ptr,siz,str,&mp.imglist,(T)0)
 
 template<typename T, typename Ts>
 inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                            void *const p_list, const T& pixel_type);
 #define cimg_mp_func_name(ind,out_str,siz) \
-  return ::gmic_mp_name(ind,out_str,siz,&mp.listout,(T)0)
+  return ::gmic_mp_name(ind,out_str,siz,&mp.imglist,(T)0)
 
 template<typename T>
 inline double gmic_mp_run(char *const str,
                           void *const p_list, const T& pixel_type);
 #define cimg_mp_func_run(str) \
-  return ::gmic_mp_run(str,&mp.listout,(T)0)
+  return ::gmic_mp_run(str,&mp.imglist,(T)0)
 
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
@@ -236,7 +236,7 @@ inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
                             const bool is_compressed, const char *const str,
                             void *const p_list, const T& pixel_type);
 #define cimg_mp_func_store(ptr,siz,w,h,d,s,is_compressed,str) \
-  return ::gmic_mp_store(ptr,siz,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
+  return ::gmic_mp_store(ptr,siz,w,h,d,s,is_compressed,str,&mp.imglist,(T)0)
 
 #ifndef cimg_display
 #define cimg_display 0
@@ -351,8 +351,8 @@ struct gmic {
   gmic_image<char> get_variable(const char *const name,
                                 const unsigned int *const variables_sizes=0,
                                 const gmic_list<char> *const images_names=0) const;
-  const char *set_variable(const char *const name, const char *const value,
-                           const char operation='=',
+  const char *set_variable(const char *const name, const char operation='=',
+                           const char *const value=0, const double *const pvalue=0,
                            const unsigned int *const variables_sizes=0);
   const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
                            const unsigned int *const variables_sizes=0);

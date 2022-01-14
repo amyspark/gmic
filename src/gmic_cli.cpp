@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 
   // Declare main G'MIC instance.
   gmic gmic_instance;
-  gmic_instance.set_variable("_host","cli",0);
+  gmic_instance.set_variable("_host",0,"cli");
   gmic_instance.add_commands("cli_start : ");
 
   // Load startup command files.

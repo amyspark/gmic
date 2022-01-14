@@ -406,7 +406,7 @@ SOURCES += \
 
 equals(GMIC_DYNAMIC_LINKING, "on" ) {
   message(Dynamic linking with libgmic)
-  LIBS += $$GMIC_PATH/libgmic.so
+  LIBS += -Wl,-rpath,. $$GMIC_PATH/libgmic.so
 }
 
 equals(GMIC_DYNAMIC_LINKING, "off" ) {
@@ -473,7 +473,7 @@ CONFIG(debug, debug|release) {
 }
 
 equals(ASAN, "on" ) {
-    message(Adress sanitizer enabled)
+    message(Address sanitizer enabled)
     QMAKE_CXXFLAGS_DEBUG += -fsanitize=address
     QMAKE_LFLAGS_DEBUG += -fsanitize=address
 }
