@@ -35,6 +35,9 @@
 #include "Globals.h"
 #include "Logger.h"
 #include "Utils.h"
+#ifndef gmic_build
+#include "CImg.h"
+#endif
 #include "gmic.h"
 
 namespace GmicQt

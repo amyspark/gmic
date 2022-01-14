@@ -29,6 +29,9 @@
 #include "GmicStdlib.h"
 #include "Logger.h"
 #include "Misc.h"
+#ifndef gmic_build
+#include "CImg.h"
+#endif
 #include "gmic.h"
 
 namespace GmicQt

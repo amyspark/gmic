@@ -61,6 +61,9 @@
 #include "Utils.h"
 #include "Widgets/VisibleTagSelector.h"
 #include "ui_mainwindow.h"
+#ifndef gmic_build
+#include "CImg.h"
+#endif
 #include "gmic.h"
 
 namespace
