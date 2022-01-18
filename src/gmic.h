@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 301
+#define gmic_version 302
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -74,7 +74,11 @@
 #endif // #if cimg_OS==2
 #endif // #ifndef gmic_uint64
 
-#ifndef gmic_build
+// Define some special character codes used for replacement in double quoted strings.
+const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
+  gmic_store = 29; // <- this one is only used in variable names.
+
+#ifndef gmic_core
 
 // Define classes 'gmic_image<T>' and 'gmic_list<T>'.
 //---------------------------------------------------
@@ -173,7 +177,7 @@ namespace cimg_library {
 #undef gmic_list
 #endif // #ifndef cimg_version
 
-#else // #ifndef gmic_build
+#else // #ifndef gmic_core
 
 // Define private functions, used to compile libgmic.
 //---------------------------------------------------
@@ -191,8 +195,12 @@ namespace cimg_library {
 #ifdef cimg_version
 #error "[gmic] *** Error *** File 'CImg.h' has been already included (should have been done first in file 'gmic.h')."
 #endif
+#ifndef cimg_plugin
 #define cimg_plugin "gmic.cpp"
+#endif
+#ifndef cimglist_plugin
 #define cimglist_plugin "gmic.cpp"
+#endif
 
 #ifdef cimg_use_abort
 inline bool *gmic_abort_ptr(bool *const p_is_abort);
@@ -257,12 +265,7 @@ inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
 #include <signal.h>
 
 #endif // #if cimg_OS==2
-
-// Define some special character codes used for replacement in double quoted strings.
-const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
-  gmic_store = 29; // <- this one is only used in variable names.
-
-#endif // #ifndef gmic_build
+#endif // #ifndef gmic_core
 
 // Define main libgmic class 'gmic'.
 //----------------------------------

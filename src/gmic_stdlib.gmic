@@ -1225,7 +1225,7 @@ reference_section_html :
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div><div class=\"section_content\">"\n\
 "    <a name=\"top\"></a>"\n\
 "<!-- ref_navigation_top -->"\n\n\
@@ -1266,7 +1266,7 @@ reference_finalize_html :
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div><div class=\"section_content\">"\n\n\
 "    <a name=\"top\"></a>"\n\
 "<!-- ref_navigation_top -->"\n\n\
@@ -3765,9 +3765,13 @@ _input_glob :
   path_test1=$_path_rc
   path_test2=${-path_gimp}plug-ins/
   path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
-  path_test4=$g_path_unix
+  if !${-is_windows}
+    path_test4=/usr/share/gmic/
+    path_test5=$g_path_unix
+  fi
   file_found=0
-  repeat 5
+  repeat inf
+    if ['${path_test$>}']==0 break fi
     file=${path_test$>}$basename
     l[] i $file file_found=1 onfail endl
     if $file_found break fi
@@ -4538,7 +4542,7 @@ parse_cli_html :
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div><div class=\"section_content\">"\n\n\
 "    <a name=\"top\"></a>"\n\n\
 "<!-- begin_content -->"\n\n\
@@ -4614,7 +4618,7 @@ parse_cli_html :
 "<!-- end_content -->"\n\n\
 "<!-- ref_navigation_bottom -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
-"    <!--#include file=\"footer.html\" -->"\n\
+"    <!--#include file=\"../footer1.html\" -->"\n\
 "  </body>"
   ({'$html'}:y)
 
@@ -4674,7 +4678,7 @@ parse_cli_html :
 "    </script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div>"\
 "<div class=\"section_content\" style=\"padding-top: 0;\">"\n\n\
 "      <a name=\"top\"></a>"\n\n\
@@ -5854,7 +5858,7 @@ gmd2html : skip "${1=}"
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><p>"$section_title"</p></div><div class=\"section_content\">"\n\n\
 "<!-- begin_content -->"\n\n':y)
     ('\n\n\
@@ -7942,7 +7946,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.0.1').
+# $1 = version number (e.g. '3.0.2').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8109,6 +8113,8 @@ update_color_presets_html : check "isbool(${1=0})"
 
   # Prepare folder structure.
   e[] $_vt100_g"\n  * Prepare folder structure."$_vt100_n
+  x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
+  x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   x "mkdir -p img"
 
   # Generate thumbnails.
@@ -8208,7 +8214,7 @@ update_color_presets_html : check "isbool(${1=0})"
 "    </script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><p>Color Presets</p></div><div class=\"section_content\">"\n\n\
 "      <p>Among all features available in <span class=\"gmd_gmic\">G&apos;MIC</span>, our <b>Color Presets</b> and "\
 "<b>Simulate Film</b> filters are able to apply various pre-defined <b>color CLUTs</b> on your images "\
@@ -8423,7 +8429,7 @@ update_gallery_html : check "isbool(${1=0})"
 "    </script>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <!--#include file=\"header.html\" -->"\n\n\
+"    <!--#include file=\"header1.html\" -->"\n\n\
 "    <div class=\"section_title\"><p>Image Gallery</p></div><div class=\"section_content\">"\n\n\
 "      <p>This gallery gives a quick overview of the kind of features and generic filters available in the "\
 "<span class=\"gmd_gmic\">G&apos;MIC</span> open-source image processing framework.</p>"\n\
@@ -8664,6 +8670,8 @@ update_gallery_html : check "isbool(${1=0})"
 
   # Transfer on G'MIC server
   x "ln -fs artistic.html index.html"
+  x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
+  x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   if $1
     e[] "\n  * Transfer gallery on G'MIC server.\n"
     x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -eRL . /www/gmic/gallery ; quit\""
@@ -9208,6 +9216,8 @@ update_reference_html : check "isbool(${1=0})"
 
   # Generate reference pages in html.
   rm
+  x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
+  x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   x "cp -rf "$HOME/work/src/gmic-community/reference/images" ."
   reference html,$HOME/work/src/gmic-community/reference
 
@@ -9234,6 +9244,8 @@ update_tutorial_html : check "isbool(${1=0})"
 
   # Build directory structure.
   e[] " > Build directory structure."
+  x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
+  x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   x "mkdir -p images scripts"
   files 5,$path_tutorial/*
   l[]
@@ -9623,7 +9635,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (301,$_version) sort. discard. store. compat
+  (300,301,302,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -9837,7 +9849,7 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
 #@cli verbose : level : { + | - } : (+)
 #@cli : Set or increment/decrement the verbosity level. Default level is 0.
 #@cli : (eq. to 'v').\n
-#@cli : When 'level'>0, G'MIC log messages are displayed on the standard error (stderr).
+#@cli : When 'level>0', G'MIC log messages are displayed on the standard error (stderr).
 #@cli : Default value: 'level=1'.
 
 #@cli wait : delay : (no arg) : (+)
@@ -13333,18 +13345,22 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
 _transfer_pca :
   $_transfer_pca_reference
   f.. "*begin(
-         cov = [ "${"covariance_colors[0] _avg"}" ];
-         avg = [ "$_avg" ];
-         eig = eig(cov);
-         lambda = 1/sqrt(1e-6 + eig[0,s]);
-         rot = mul(diag(lambda),eig[s,s*s],s);
-
-         cov_ref = [ "${"covariance_colors[1] _avg_ref"}" ];
+         cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
+         cov = [ "${"covariance_vectors[0] _avg"}" ];
          avg_ref = [ "$_avg_ref" ];
+         avg = [ "$_avg" ];
          eig_ref = eig(cov_ref);
+         eig = eig(cov);
          lambda_ref = sqrt(eig_ref[0,s]);
+         lambda = 1/sqrt(1e-6 + eig[0,s]);
+         repeat(s,k, # Align eigenvectors.
+           sks = s + k*s;
+           Uref = eig_ref[sks,s];
+           U = eig[sks,s];
+           dot(Uref,U)<0?copy(eig[sks],U*=-1);
+         );
          rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
-
+         rot = mul(diag(lambda),eig[s,s*s],s);
          M = mul(rot_ref,rot,s);
        );
        avg_ref + M*(I - avg)"
@@ -16027,7 +16043,7 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
   if !$nb_iter # Inversion in Fourier space
     if $is_estimate
       e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $2."
-      pass$2 1 ia=${-average_colors} rm.
+      pass$2 1 ia=${-average_vectors} rm.
     else
       e[0--4] "Invert Laplacian image$? in Fourier space."
       ia=0
@@ -17062,7 +17078,7 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
     if $nw>w||$nh>h # Spot extension required when rendering on bigger image.
       periodize_poisson
       100%,100% rectangle. 5,5,{w-6},{h-6},1,1 b. 2 n. 0,1
-      $nw,$nh,1,{-2,s} fc. ${average_colors...}
+      $nw,$nh,1,{-2,s} fc. ${average_vectors...}
       j. ...,{(w-{-2,w})/2},{(h-{-2,h})/2},0,0,1,..
       rm[-3,-2]
     else
@@ -20303,7 +20319,8 @@ cubes3d : check ${1=1}>=0
   ellipse. 0,0,35%,35%,0,1,0
   polygon. 4,0,45%,8%,45%,20%,90%,0,90%,1,1
   ellipse. 0%,100%,30%,10%,0,1,1 b. 0.1%
-  lathe3d. $1,2 nm. [3D\ cup]
+  lathe3d. $1,2
+  nm. [3D\ cup]
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
@@ -20788,7 +20805,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
   repeat $!
     +p3d[$>] 0 l. s3d rm[-3--1]
     nbp={-2,@0} =.. $nbp,0,1                               # Set correct number of primitives
-    (1,0;1,{$nbp-1}) r. 2,$nbp,1,1,3 r. 1,{2*h},1,1,-1    # Create new primitive data
+    (1,0;1,{$nbp-1}) r. 2,$nbp,1,1,3 r. 1,{2*h},1,1,-1     # Create new primitive data
     repeat $nbp                                            # Create texture labels as primitive colors.
       0 t. $>,0,0,$1,1,255,255,255 autocrop. 0
       i.. (-128;{w};{h};3) y.
@@ -20808,7 +20825,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
 #@cli : $ 300,300 rand -1,1 blur 40 sign normalize 0,255 lathe3d ,
 lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   e[^-1] "Generate lathed 3D object from XY-profile$?, with resolution $1, smoothness $2 and maximum angle $3 deg."
-  tmax={($3-180)*pi/180} norm n 0,1 autocrop 0
+  tmax={($3-180)*pi/180} round norm n 0,1 autocrop 0
   repeat $! l[$>]
     wr={max(1,w2=2*w;if(w2>h,min($1,w2),min($1,h)*w2/h))}
     hr={max(1,w2=2*w;if(w2>h,min($1,w2)*h/w2,min($1,h)))}
@@ -27349,12 +27366,12 @@ autocrop_coords : skip ${1=auto}
 _autocrop0 : autocrop $*
 _autocrop1 : skip $* autocrop
 
-#@cli average_colors
-#@cli : Return the average vector-value of the latest of the selected images.
-average_colors :
-  res=""
-  repeat s-1 sh. {1+$>} res=$res,{ia} rm. done
-  sh. 0 u {ia}$res rm.
+#@cli average_vectors
+#@cli : Return the vector-valued average of the latest of the selected images.
+average_vectors :
+  if !w u "" return fi
+  repeat s-1 sh. $> res.={ia}, rm. done
+  sh. 100% u $res{ia} rm.
 
 #@cli base642img : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted image at the end of the list.
@@ -27427,6 +27444,7 @@ _bin2dec :
 _check120 :
   use_vt100
   it[] "$1" s +,10
+  if !$! return fi
   1,$!,1,2,">begin(line = 1); is_lines=i[#y,0]==10; line+=is_lines?h#y:0; [is_lines || h#y<=120?-1:y,line]"
   lines={{@-1}-1} f. "I = I; if(I[0]<0,I[1]=-1); I"
   discard. -1
@@ -27455,16 +27473,16 @@ check120 :
   done
   e[] " - Total scanned : "${_total_lines}" lines"
 
-#@cli covariance_colors : _avg_outvarname
+#@cli covariance_vectors : _avg_outvarname
 #@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
 #@cli : (for arbitrary number of channels).
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
-covariance_colors : skip "${1=avg}"
-  $1=${-average_colors}
-  f ">begin( avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
-      mI = I - avg; C+=mul(mI,mI,s);
-      end( C/=whd - 1; run('u ',vtos(C)) );
-      I"
+covariance_vectors : skip "${1=avg}"
+  $1=${-average_vectors}
+  eval. "*begin(avg = [ "$""$1" ]; C = vector(#s^2,0));
+         mI = I - avg;
+         C+=mul(mI,mI,s);
+         end(merge(C,+); C/=whd - 1; run('u ',vtos(C)))"
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -28849,7 +28867,7 @@ RGBA : rgba
 #@cli shell_cols
 #@cli : Return the estimated number of columns of the current shell.
 shell_cols :
-  if ${-is_windows} u 80
+  if ${-is_windows}" || "${-is_macos} u 80
   else
     file_rand filename=${}
     l[] cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm endl
@@ -35410,8 +35428,8 @@ fx_gmicky_preview :
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
-#@gui : - <span foreground="purple"><b>2022/01/13</b> : version <i>3.0.1</i> (Current stable).</span>\n
-##@gui : - <b>2021/01/xx</b> : version <i>3.0.2</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2022/01/18</b> : version <i>3.0.2</i> (Current stable).</span>\n
+##@gui : - <b>2021/01/15</b> : version <i>3.0.2</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.1)","https://discuss.pixls.us/t/on-the-road-to-3-1"}
@@ -35956,7 +35974,7 @@ fx_imagegrid_triangular :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/24/02</i>.</small>")
 fx_make_seamless :
   repeat $! l[$>]
-    if $1 +b {20.5-$1/50}% -[0] [1] fc. ${average_colors.} + fi
+    if $1 +b {20.5-$1/50}% -[0] [1] fc. ${average_vectors.} + fi
   endl done
   periodize_poisson c 0,255
 
@@ -35985,7 +36003,7 @@ fx_make_seamless_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/15/12</i>.</small>")
 fx_frame_seamless :
   repeat $! l[$>]
-    if $5 +b {20.5-$5/50}% -[0] [1] fc. ${average_colors.} + fi
+    if $5 +b {20.5-$5/50}% -[0] [1] fc. ${average_vectors.} + fi
   endl done
   frame_seamless ${1-4} c 0,255
 
@@ -40900,7 +40918,7 @@ fx_mix_pca :
     # Get image covariance (and remember it to speed up multiple calls of the filter).
     if [$14]==round(stats()[0,4],0.1) _avg={[$15][0,3]} C={[$15][3,9]} status=
     else
-      +rr2d 256,256,0,2 C=${"covariance_colors. _avg"} rm.
+      +rr2d 256,256,0,2 C=${"covariance_vectors. _avg"} rm.
       __status="{$1}{$2}{$3}{$4}"\
                "{$5}{$6}{$7}{$8}"\
                "{$9}{$10}{$11}{$12}"\
@@ -47663,7 +47681,7 @@ fx_random_pattern_preview :
 #@gui :       Latest Update: <i>2014/09/04</i>.</small>")
 fx_syntexturize :
   repeat $! l[$>]
-    if $3 +b {20.5-$3/50}% -[0] [1] fc. ${average_colors.} + c 0,255 fi
+    if $3 +b {20.5-$3/50}% -[0] [1] fc. ${average_vectors.} + c 0,255 fi
     syntexturize $1,$2
   endl done
 
@@ -47691,7 +47709,7 @@ fx_syntexturize_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/22/10</i>.</small>")
 _fx_syntexturize_matchpatch_preview :
   repeat $! l[$>]
-    if $7 +b {20.5-$7/50}% -[0] [1] fc. ${average_colors.} + c 0,255 fi
+    if $7 +b {20.5-$7/50}% -[0] [1] fc. ${average_vectors.} + c 0,255 fi
     w={w} h={h}
     syntexturize_matchpatch 100%,100%,${3--1}
     to_rgba r $w,$h,1,4,0,0,0.5,0.5

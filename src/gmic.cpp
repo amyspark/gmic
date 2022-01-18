@@ -3359,7 +3359,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     is_name_found = false;
   } else if (!operation || operation=='=' || operation==':' || operation=='.' || operation==',') {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
-    else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
+    else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
   } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
 
   // Check state of existing variable and update if it exists.

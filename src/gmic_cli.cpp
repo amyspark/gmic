@@ -48,6 +48,8 @@
  #
 */
 
+#include <signal.h>
+#include "CImg.h"
 #include "gmic.h"
 using namespace cimg_library;
 
