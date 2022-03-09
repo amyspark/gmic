@@ -616,6 +616,11 @@ qt5_add_translation(gmic_qt_QM
 
 # install(FILES ${gmic_qt_QM} DESTINATION ${CMAKE_SOURCE_DIR}/translations)
 
+include(GNUInstallDirs)
+
+install(FILES ${CMAKE_SOURCE_DIR}/../resources/gmic_cluts.gmz DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gmic)
+install(FILES ${CMAKE_SOURCE_DIR}/../resources/gmic_denoise_cnn.gmz DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gmic)
+
 set(gmic_qt_QRC
     gmic_qt.qrc
     translations.qrc
