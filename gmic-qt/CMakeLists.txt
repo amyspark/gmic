@@ -628,6 +628,11 @@ execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/trans
 message("Producing filter translation .qm files")
 execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters OUTPUT_QUIET)
 
+include(GNUInstallDirs)
+
+install(FILES ${CMAKE_SOURCE_DIR}/../resources/gmic_cluts.gmz DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gmic)
+install(FILES ${CMAKE_SOURCE_DIR}/../resources/gmic_denoise_cnn.gmz DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/gmic)
+
 set(gmic_qt_QRC
     gmic_qt.qrc
     translations.qrc
