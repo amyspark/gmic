@@ -3,7 +3,7 @@
  *  editors, offering hundreds of filters thanks to the underlying G'MIC
  *  image processing framework.
  *
- *  Copyright (C) 2020-2021 L. E. Segovia <amy@amyspark.me>
+ *  Copyright (C) 2020-2022 L. E. Segovia <amy@amyspark.me>
  *
  *  Description: Krita painting suite plugin for G'Mic-Qt.
  *
@@ -23,6 +23,9 @@
  */
 
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QEventLoop>
 #include <QPointer>
 #include <QSettings>
@@ -47,6 +50,7 @@
 #include "MainWindow.h"
 #include "Widgets/InOutPanel.h"
 #include "Widgets/ProgressInfoWindow.h"
+#include "Utils.h"
 #include "gmicqttoolplugin.h"
 
 #include "kpluginfactory.h"
@@ -58,6 +62,28 @@ K_PLUGIN_FACTORY_WITH_JSON(KritaGmicPluginFactory,
 KritaGmicPlugin::KritaGmicPlugin(QObject *parent, const QVariantList &)
     : QObject(parent)
 {
+#ifdef Q_OS_WIN
+  // Workaround for deploying basic CLUTs
+  // See https://krita-artists.org/t/unknown-filename-gmic-qt/37813
+  {
+    const auto srcPath = QDir(QCoreApplication::applicationDirPath().append(QStringLiteral("/../share/gmic/"))).absolutePath();
+    const auto dstPath = GmicQt::gmicConfigPath(true);
+    const std::list<QString> files = {"/gmic_cluts.gmz", "/gmic_denoise_cnn.gmz"};
+
+    for (const auto file: files) {
+      const auto src = srcPath + file;
+      const auto dst = dstPath + file;
+      if (QFileInfo(src).exists() && !QFileInfo(dst).exists()) {
+        qWarning() << src << dst;
+        QFile::copy(src, dst);
+      }
+    }
+
+    if (!qEnvironmentVariableIsSet("GMIC_SYSTEM_PATH")) {
+      qputenv("GMIC_SYSTEM_PATH", QString(srcPath).replace(L'/', L'\\').toLocal8Bit());
+    }
+  }
+#endif
 }
 
 int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
