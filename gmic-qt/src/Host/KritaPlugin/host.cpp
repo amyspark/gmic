@@ -109,7 +109,7 @@ void getCroppedImages(gmic_list<float> &images,
   // Get the layers as prepared by Krita in G'Mic format
   for (int i = 0; i < imagesList.length(); ++i) {
     const auto &layer = imagesList[i];
-    QByteArray ba = layer->m_layerName.toUtf8().toHex();
+    QByteArray ba = layer->m_layerName.toUtf8();
     gmic_image<char>::string(ba.constData()).move_to(imageNames[i]);
 
     // Fill images from the shared memory areas
