@@ -48,6 +48,7 @@
  #
 */
 
+#undef gmic_core
 #include <signal.h>
 #include "CImg.h"
 #include "gmic.h"
@@ -137,14 +138,14 @@ int main(int argc, char **argv) {
   catch (...) {}
   if (commands_user) try {
       commands_user.resize(1,commands_user.height() + 1,1,1,0);
-      gmic_instance.add_commands(commands_user,is_debug?filename_user:0);
+      gmic_instance.add_commands(commands_user,filename_user,is_debug);
     } catch (...) { is_invalid_userfile = true; }
   commands_user.assign();
 
   // Convert 'argv' into G'MIC command line.
   CImgList<char> items;
   if (argc==1) // When no args have been specified
-    CImg<char>::string("l[] cli_noarg onfail endl").move_to(items);
+    CImg<char>::string("l[] cli_noarg onfail done").move_to(items);
   else {
     for (int l = 1; l<argc; ++l) { // Split argv as items
       if (std::strchr(argv[l],' ')) {
@@ -219,7 +220,7 @@ int main(int argc, char **argv) {
     bool is_error_code = false;
 
     const char
-      *const it1 = std::strstr(gmic_instance.status,"***"),
+      *const it1 = gmic_instance.status?std::strstr(gmic_instance.status,"***"):"",
       *const it2 = it1?std::strstr(it1 + 3,"***"):0;
     if (it2 && std::sscanf(it2,"*** %d%c",&error_code,&sep)!=1) error_code = -1;
     else is_error_code = true;
@@ -242,8 +243,8 @@ int main(int argc, char **argv) {
         images.insert(gmic::stdlib);
         CImg<char> tmp_line(1024);
         cimg_snprintf(tmp_line,tmp_line.width(),
-                      "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
-                      "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
+                      "l[] i raw:\"%s\",char m \"%s\" onfail rm done "
+                      "l[] i raw:\"%s\",char m \"%s\" onfail rm done "
                       "rv help \"%s\",0",
                       filename_update.data(),filename_update.data(),
                       filename_user,filename_user,

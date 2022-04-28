@@ -11,7 +11,7 @@ go :
 
   # Render animation frames.
   nbf=200
-  repeat $nbf,f
+  repeat $nbf f=$>
     e[] "\r  > Frame "{$f+1}/$nbf
     300,300,1,3,"*
       const f = $f;

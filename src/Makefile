@@ -2,13 +2,34 @@
 #  File        : Makefile
 #                ( Makefile for GNU 'make' utility )
 #
-#  Description : Makefile for compiling :
+#  Description : This Makefile exposes the following entries:
 #
-#                 . the G'MIC command line tool (type 'make cli').
-#                 . the G'MIC library, with the C++ API (type 'make lib').
-#                 . the G'MIC library, with the C API (type 'make libc' or 'make libcstatic').
-#                 . the G'MIC plug-in for GIMP (type 'make gimp').
-#                 . To compile all of them, just type 'make', or 'make all').
+#                 . 'all':
+#                   Equivalent to 'lib','cli','gimp','gmic_qt','libc','zart' (see below).
+#
+#                 . 'lib':
+#                   C++ API for the G'MIC library. Generate files 'src/libgmic.*'.
+#
+#                 . 'libc' and 'libc_static':
+#                   C API for the G'MIC library. Generate files 'src/libcgmic.*'.
+#                   'libc_static' tries to embed most libraries as static.
+#
+#                 . 'cli', 'cli_shared' and 'cli_static':
+#                    G'MIC command line tool. Generate file 'src/gmic[.exe]'
+#                    'cli_shared' generates an executable that is dynamically linked with 'libgmic'.
+#                    'cli_static' generates an executable where most libraries are statically linked.
+#
+#                 . 'gimp' and 'gimp_shared':
+#                   G'MIC-Qt plug-in for GIMP. Generate file 'gmic-qt/gmic_gimp_qt'.
+#                   'gimp_shared' generates a binary that is dynamically linked with 'libgmic'.
+#
+#                 . 'gmic_qt' and 'gmic_qt_shared':
+#                   G'MIC-Qt stand-alone application. Generate file 'gmic-qt/gmic_qt'.
+#                   'gimp_shared' generates a binary that is dynamically linked with 'libgmic'.
+#
+#                 . 'zart':
+#                   ZArt interface for real-time processing of videos coming from webcams or files.
+#                   Generate file 'zart/zart'.
 #
 #                ( https://gmic.eu )
 #
@@ -404,7 +425,7 @@ half:
 
 _cli: gmic$(EXE)
 
-gmic$(EXE): gmic_cli.cpp gmic.cpp gmic.h CImg.h
+gmic$(EXE): gmic_cli.cpp gmic.o
 	$(CXX) -o gmic$(EXE) gmic_cli.cpp $(CFLAGS) $(LIBS)
 
 gmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
@@ -420,16 +441,17 @@ cli_shared:
 #--------------
 GMIC_STATIC_CLI_PATH = $(USR)/$(LIB)/x86_64-linux-gnu
 GMIC_STATIC_CLI_EXTRA =
-GMIC_STATIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(ZLIB_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) -Dcimg_display=0
-GMIC_STATIC_CLI_LIBS = $(PARALLEL_LIBS) \
+GMIC_STATIC_CLI_CFLAGS = -Dcimg_display=0 $(MANDATORY_CFLAGS) $(OPENMP_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(ZLIB_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(FFTW_CFLAGS)
+GMIC_STATIC_CLI_LIBS = ./libgmic.o $(PARALLEL_LIBS) \
+                       $(GMIC_STATIC_CLI_PATH)/libz.a \
 	               $(GMIC_STATIC_CLI_PATH)/libpng.a \
 	               $(GMIC_STATIC_CLI_PATH)/libjpeg.a \
-                       $(GMIC_STATIC_CLI_PATH)/libz.a \
-                       $(GMIC_STATIC_CLI_PATH)/libfftw3.a $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a \
+	               $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a $(GMIC_STATIC_CLI_PATH)/libfftw3.a \
 	               $(GMIC_STATIC_CLI_EXTRA)
 
 cli_static:
-	$(MAKE) "CFLAGS+=$(GMIC_STATIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STATIC_CLI_LIBS) $(OPT_LIBS)" _cli
+	rm -f libgmic.o
+	$(MAKE) "CFLAGS+=$(GMIC_STATIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STATIC_CLI_LIBS) $(OPT_LIBS)" libgmic.o _cli
 	$(STRIP) gmic$(EXE)
 
 # libcgmic.
@@ -543,31 +565,41 @@ gimp: gmic_qt_files CImg.h gmic_stdlib_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=off HOST=gimp gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
 
+gimp_debug :  gmic_qt_files CImg.h gmic_stdlib_community.h
+	cd ../gmic-qt && $(QMAKE) CONFIG+=debug GMIC_PATH=$(SRC_PATH) ASAN=on PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=off HOST=gimp gmic_qt.pro && $(MAKE)
+	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
+
 gmic_qt: gmic_qt_files CImg.h gmic_stdlib_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=off HOST=none gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
 
+gmic_qt_debug: gmic_qt_files CImg.h gmic_stdlib_community.h
+	cd ../gmic-qt && $(QMAKE) CONFIG+=debug GMIC_PATH=$(SRC_PATH) ASAN=on PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=off HOST=none gmic_qt.pro && $(MAKE)
+	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
+
 gmic_qt_files:
-	@if [ ! -d ../gmic-qt ]; then \
-	  if [ ! -d ../../gmic-qt ]; then \
-	    echo "**"; \
-	    echo "** Warning: folder 'gmic-qt' was not found !"; \
-	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
-	    echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
-            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
-	    echo "**"; \
-	    if cd ../../ && git clone https://github.com/c-koi/gmic-qt.git; then \
-	      echo "**"; \
-              echo "** Success !"; \
-	      echo "**"; \
-	    else \
-	      echo "**"; \
-              echo "** Fatal error: Failed to retrieve folder 'gmic-qt', compilation will probably ends shortly !"; \
-	      echo "**"; \
-	    fi; \
-	  fi; \
-	  if [ -d ../../gmic-qt ]; then ln -fs ../gmic-qt ..; fi \
-	fi
+	@if [ ! -e ../gmic-qt ]; then \
+	   curr_pwd=`pwd`; \
+	   if [ ! -d ../../gmic-qt ]; then \
+	     echo "**"; \
+	     echo "** Warning: folder 'gmic-qt' was not found !"; \
+	     echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
+	     echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
+             echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
+	     echo "**"; \
+	     if cd ../../ && git clone https://github.com/c-koi/gmic-qt.git; then \
+	       echo "**"; \
+               echo "** Success !"; \
+	       echo "**"; \
+	     else \
+	       echo "**"; \
+               echo "** Fatal error: Failed to retrieve folder 'gmic-qt', compilation will probably ends shortly !"; \
+	       echo "**"; \
+	     fi; \
+	   fi; \
+	   cd $$curr_pwd; \
+	   if [ -d ../../gmic-qt ]; then ln -fs ../gmic-qt ..; fi \
+	 fi
 
 # G'MIC-Qt (shared).
 #-------------------
@@ -590,25 +622,27 @@ endif
 	@echo "Executable 'zart' has been successfully compiled in '../zart/'."
 
 zart_files:
-	@if [ ! -d ../zart ]; then \
-	  if [ ! -d ../../zart ]; then \
-	    echo "**"; \
-	    echo "** Warning: folder 'zart' was not found !"; \
-	    echo "** It is mandatory to compile 'zart'."; \
-            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/zart.git"; \
-	    echo "**"; \
-	    if cd ../../ && git clone https://github.com/c-koi/zart.git; then \
-	      echo "**"; \
-              echo "** Success !"; \
-	      echo "**"; \
-	    else \
-              echo "**"; \
-              echo "** Fatal error: Failed to retrieve folder 'zart', compilation will probably ends shortly !"; \
-              echo "**"; \
-	    fi; \
-	  fi; \
-	  if [ -d ../../zart ]; then ln -fs ../zart ..; fi \
-	fi
+	@if [ ! -e ../zart ]; then \
+	   curr_pwd=`pwd`; \
+	   if [ ! -d ../../zart ]; then \
+	     echo "**"; \
+	     echo "** Warning: folder 'zart' was not found !"; \
+	     echo "** It is mandatory to compile 'zart'."; \
+             echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/zart.git"; \
+	     echo "**"; \
+	     if cd ../../ && git clone https://github.com/c-koi/zart.git; then \
+	       echo "**"; \
+               echo "** Success !"; \
+	       echo "**"; \
+	     else \
+               echo "**"; \
+               echo "** Fatal error: Failed to retrieve folder 'zart', compilation will probably ends shortly !"; \
+               echo "**"; \
+	     fi; \
+	   fi; \
+	   cd $$curr_pwd; \
+	   if [ -d ../../zart ]; then ln -fs ../zart ..; fi \
+	 fi
 
 # Get header files.
 #------------------
@@ -683,7 +717,7 @@ do_gmic_stdlib.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_stdlib.h
-	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui update "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib.h
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui update "(0)" a y serialize uint8,1,0 o -.h | sed 's/uint8/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib.h
 	@echo "\nconst unsigned long size_data_gmic = (unsigned long)sizeof(data_gmic);" >> gmic_stdlib.h
 	@\gmic v - _upload gmic_stdlib.h
 	@cp -f gmic_stdlib.h /tmp/gmic_stdlib$(VERSION).h
@@ -751,7 +785,7 @@ do_gmic_stdlib_community.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_stdlib_community.h
-	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib_community.h
+	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic "(0)" a y serialize uint8,1,0 o -.h | sed 's/uint8/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib_community.h
 	@echo "\nconst unsigned long size_data_gmic = (unsigned long)sizeof(data_gmic);" >> gmic_stdlib_community.h
 	@\gmic v - _upload gmic_stdlib_community.h
 	@cp -f gmic_stdlib_community.h /tmp/gmic_stdlib_community$(VERSION).h
