@@ -8031,7 +8031,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.1.0').
+# $1 = version number (e.g. '3.1.2').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8716,13 +8716,13 @@ update_gallery_html : check "isbool(${1=0})"
                   "          <td><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}","\
                   "height: "{$height+64}" })\">\n"\
                   "                <img alt=\""gallery_$command$nex"\" src=\""$filename_thumb"\" "\
-                  "onmouseover=\"javascript:this.src='"$filename_thumb_original"'; "\
+                  "onmouseover=\"javascript:this.src='"$filename_thumb_original"';\" "\
                   "onmouseout=\"javascript:this.src='"$filename_thumb"';\"/><br/><b>"\
                   ${_label}${html_codesample}"</b></a>\n"\
                   "              <div class=\"highslide-maincontent\">\n"\
                   "                <img alt=\""gallery_$command$nex"\" width=\""$width"\" "\
-                  "src=\""$filename_full" "\
-                  "onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$filename_full"'; "\
+                  "src=\""$filename_full"\" "\
+                  "onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$filename_full"';\" "\
                   "onmouseout=\"javascript:this.src='"$filename_original"';\"/>\n"\
                   "              </div>\n"\
                   "              <div class=\"highslide-caption\">Command: "\
@@ -9728,7 +9728,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (310,$_version) sort. discard. store. compat
+  (310,311,312,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -10585,22 +10585,14 @@ balance_gamma : check "isnum(${1=128})"
 # { uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }.
 cast :
   e[^-1] "Cast datatype of image buffer$? from '$1' to '$2'."
-  stype="$1"
-  if s='$stype';s[0]==_'u'" && "s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
-  elif s='$stype';s[0]==_'u'" && "s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
-  fi
-  dtype="$2"
-  if s='$dtype';s[0]==_'u'" && "s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
-  elif s='$dtype';s[0]==_'u'" && "s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
-  fi
-  ssize:=s='$stype';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
-  dsize:=s='$dtype';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
+  ssize:=s='"$1"';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
+  dsize:=s='"$2"';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
   foreach {
     w,h,d,s:=[w,h,d,s]
     serialize $1,0,0
     s -,{'\n$w\ $h\ $d\ $s\n'}
     i[1] ('\n1\ {int($w*$h*$d*$s*$ssize/$dsize)}\ 1\ 1\n') y[1]
-    replace_str[0] $stype,$dtype
+    replace_str[0] "$1","$2"
     a y unserialize
   }
 
@@ -26512,9 +26504,9 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #@cli : divide | dodge | edges | exclusion | freeze | grainextract | grainmerge | green | hardlight |
 #@cli : hardmix | hue | interpolation | lchlightness | lighten | lightness | linearburn | linearlight | luminance |
 #@cli : multiply | negation | or | overlay | pinlight | red | reflect | saturation |
-#@cli : screen | shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 | shapeaverage | shapeaverage0 |
-#@cli : shapemedian | shapemedian0 | shapemin | shapemin0 | shapemax | shapemax0 | softburn | softdodge |
-#@cli : softlight | stamp | subtract | value | vividlight | xor }.
+#@cli : screen | seamless | seamless_mixed | shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 |
+#@cli : shapeaverage | shapeaverage0 | shapemedian | shapemedian0 | shapemin | shapemin0 | shapemax | shapemax0 |
+#@cli : softburn | softdodge | softlight | stamp | subtract | value | vividlight | xor }.
 #@cli : 'opacity' must be in range '[0,1]' (or '[0%,100%]').
 #@cli : Default values: 'blending_mode=alpha', 'opacity=1' and 'selection_is=0'.
 #@cli : $ image.jpg +drop_shadow , resize2dy[-1] 200 rotate[-1] 20 +blend alpha display_rgba[-2]
@@ -26539,39 +26531,49 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 # ex softdodge,softlight,stamp,subtract,value,vividlight,xor
 #@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : \
 # blending_mode,_opacity[%]
-blend : check "isbool(${4=0}) && isin(${5=1},0,1,2)" skip "${1=alpha},${2=1},${3=1}"
+blend : skip "${1=},${2=},${3=},${4=}"
   if !${"is_image_arg $1"}
-    e[0--3] "Blend image$? together, using '$1' mode and opacity $2."
-    repeat $!-1 { $0.. .,$1,$2 rm. }
+    if ['$1']!=0 mode=$1 else mode=alpha fi
+    if ['$2']!=0 opacity=$2 else opacity=1 fi
+    e[0--3] "Blend image$? together, using '"$mode"' mode and opacity "$opacity"."
+    repeat $!-1 { $0.. .,$mode,$opacity rm. }
     return
   fi
-  if $4 s0,s1=foreground,background else s0,s1=background,foreground fi
-  e[^-1] "Blend "$s0" image$? with "$s1" image $1, using '$2' mode and opacity $3."
-  if !$3 return fi
-  opacity:=$3
+  if ['$2']!=0 mode=$2 else mode=alpha fi
+  if ['$3']!=0 opacity:=$3 else opacity=1 fi
+  if ['$4']!=0 selection_mode=$4 else selection_mode=0 fi
+  if $selection_mode s0,s1=foreground,background else s0,s1=background,foreground fi
+
+  e[^-1] "Blend "$s0" image$? with "$s1" image $1, using '"$mode"' mode and opacity "$opacity"."
+  if !$opacity return fi
   pass$1 1
-  foreach[^-1] {
-    pass. 0 if $4 rv fi # -> [0] = background, [1] = foreground
+  foreach[^-1] { nm={n}
+    pass. 0 if $selection_mode rv fi # -> [0] = background, [1] = foreground
     nb_col_channels,is_alpha_b,is_alpha_f:=max(s#0,s)>=3?3:1,!(s#0%2),!(s%2)||w<w#0||h<h#0||d<d#0||$opacity!=1
     to_colormode[0] {$nb_col_channels+$is_alpha_b}
     to_colormode[1] {$nb_col_channels+$is_alpha_f}
     if $opacity<1 sh[1] 100% *. $opacity rm. fi
     r[1] [0],[0],[0],100%,0,0,0.5,0.5
-    s[0,1] c,-$nb_col_channels
-    if $is_alpha_b # Background has alpha
-      _$0_$2[0,2]
-      if $is_alpha_f # Foreground has alpha
-        *[0] [1] /[0] 255 j[0] [2],0,0,0,0,1,[3],255 # Co = Cf*Af + Cb*Ab*(1-Af)
-        +f. 255 j[1] .,0,0,0,0,1,[3],255 # Ao = Af + Ab*(1 - Af)
-        k[0,1] +max. 1 /. 255 /[0,-1] a c # [ Co/Ao, Ao ]
-      else j[0] [2],0,0,0,0,1 rm. f. 255 a c # Foreground has no alpha
-      fi
-    else # Background has no alpha
-      _$0_$2[0,1]
-      if $is_alpha_f j[0] [1],0,0,0,0,1,.,255 k[0] # Foreground has alpha
-      else k[1] # Foreground has no alpha
+    if ['$mode']=='seamless' blend_seamless 0
+    elif ['$mode']=='seamless_mixed' blend_seamless 1
+    else
+      s[0,1] c,-$nb_col_channels
+      if $is_alpha_b # Background has alpha
+        _$0_$mode[0,2]
+        if $is_alpha_f # Foreground has alpha
+          *[0] [1] /[0] 255 j[0] [2],0,0,0,0,1,[3],255 # Co = Cf*Af + Cb*Ab*(1-Af)
+          +f. 255 j[1] .,0,0,0,0,1,[3],255 # Ao = Af + Ab*(1 - Af)
+          k[0,1] +max. 1 /. 255 /[0,-1] a c # [ Co/Ao, Ao ]
+        else j[0] [2],0,0,0,0,1 rm. f. 255 a c # Foreground has no alpha
+        fi
+      else # Background has no alpha
+        _$0_$mode[0,1]
+        if $is_alpha_f j[0] [1],0,0,0,0,1,.,255 k[0] # Foreground has alpha
+        else k[1] # Foreground has no alpha
+        fi
       fi
     fi
+    => $nm
   }
   rm.
 
@@ -27704,7 +27706,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
       64,64 polygon 3,50%,10%,10%,90%,90%,90%,1,1 b 3 >= 50%
       +erode. 5 -. .. ==. 0
       polygon. 4,47%,43%,53%,43%,53%,66%,47%,66%,1,0 circle. 50%,76%,2,1,0
-      +*[0] 255 . 100%,100% a[-3--1] c -. '3*(y-h/2)'
+      +*[0] 255 . 100%,100% a[-3--1] c -. '3*(y-h/2)' c. 0,255
       *. .. rm.. *[0] 255 rv a c
       drop_shadow 3,3,1 i[0] 100%,100%,1,3,200 blend alpha
     fi
@@ -34687,7 +34689,7 @@ gui_resize_preview :
   if narg($_preview_width) r $_preview_width,$_preview_height,100%,100%,2 fi
 
 gui_resize_preview_area :
-  if narg($_preview_area_width) r $_preview_width,$_preview_height,100%,100%,2 fi
+  if narg($_preview_area_width) r $_preview_area_width,$_preview_area_height,100%,100%,2 fi
 
 gui_crop_resize_preview :
   gui_crop_preview gui_resize_preview
@@ -35981,12 +35983,13 @@ fx_gmicky_preview :
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
-#@gui : - <span foreground="purple"><b>2022/04/26</b> : version <i>3.1.0</i> (Current stable).</span>\n
-##@gui : - <b>2022/04/27</b> : version <i>3.1.0</i> (Current pre-release).\n
+#@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
+#@gui : - <span foreground="purple"><b>2022/05/10</b> : version <i>3.1.1</i> (Current stable).</span>\n
+##@gui : - <b>2022/xx/xx</b> : version <i>3.1.2</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
-#@gui : url = link{"View changelog to upcoming minor version (3.1)","https://discuss.pixls.us/t/on-the-road-to-3-1"}
-#@gui : url = link{"View latest major changelog (3.0)","https://discuss.pixls.us/t/release-of-gmic-3-0"}
+#@gui : url = link{"View changelog to upcoming minor version (3.2)","https://discuss.pixls.us/t/on-the-road-to-3-2"}
+#@gui : url = link{"View latest major changelog (3.1)","https://discuss.pixls.us/t/release-of-gmic-3-1"}
 
 #@gui What's New? : _none_,fx_whatsnew_preview
 #@gui : note = note("Here you'll find a list of filter additions and deletions in the plug-in, since your last visit.
@@ -39473,6 +39476,55 @@ fx_apply_haldclut : skip "${2=}"
 fx_apply_haldclut_preview : skip "${2=}"
   if $1<2 gui_warning_preview "No preview available in this mode" return fi
   gui_split_preview "fx_apply_haldclut $1,\"$2\",${3--2}",${-3--1}
+
+#@gui Apply From CLUT Set : apply_from_clut_set, apply_from_clut_set_preview(1)+
+#@gui : CLUT Set (.gmz File) = file("")
+#@gui : Index = int(1,1,1024)
+#@gui : sep = separator()
+#@gui : Strength (%) = float(100,0,100)
+#@gui : Brightness (%) = float(0,-100,100)
+#@gui : Contrast (%) = float(0,-100,100)
+#@gui : Gamma (%) = float(0,-100,100)
+#@gui : Hue (%) = float(0,-100,100)
+#@gui : Saturation (%) = float(0,-100,100)
+#@gui : Normalize Colors = choice("None","Pre-Normalize","Post-Normalize","Both")
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2022/05/08</i>.</small>")
+apply_from_clut_set : skip "${1=}"
+  m "_title : ('\"$""*\"') replace_str. \"_\",\" \" replace_str. \"iii\",\"III\" f. \"(!y || j(0,-1)==32) &&
+     i>=_'a' && i<=_'z'?uppercase(i):i\" u {t} rm."
+  is_file_error=0
+  l[] {
+    "$1" nb_cluts,ind:=l,($2-1)%l k[$ind]
+    onfail rm is_file_error=1
+  }
+  if $is_file_error
+    gui_error_preview "Unable to load specified CLUT set"
+  else
+    _title {n} clut_name=${}
+    decompress_clut. {0$_is_preview?17:33} store. _clut
+    if 0$_is_preview
+      foreach { gui_split_preview "_apply_from_clut_set \"$1\",${2--1}",${-3--1} }
+      to "#"{$ind+1}"/"$nb_cluts":\n"$clut_name,0.01~,1~,5%
+    else
+      foreach { _apply_from_clut_set $"*" }
+    fi
+  fi
+
+apply_from_clut_set_preview : skip "${1=}"
+  _is_preview=1
+  k[0] apply_from_clut_set $"*"
+
+_apply_from_clut_set : skip "${1=}"
+  if isin($9,1,3) split_opacity n[0] 0,255 a c fi
+  $_clut +map_clut.. . rm.. j.. .,0,0,0,0,{$3%} rm.
+  adjust_colors ${4-8},0,255
+  if isin($9,2,3) split_opacity n[0] 0,255 a c fi
 
 #@gui Basic Adjustments : fx_adjust_colors, fx_adjust_colors_preview
 #@gui : Brightness (%) = float(0,-100,100)
@@ -46467,18 +46519,26 @@ fx_display_fft :
 fx_fourier_transform :
   if $1 remove_opacity fi
   ind=0
+  _preview_error=0
   for $ind<$! {
     gui_layer_name[$ind] nm=${}
     p:="s=['"$nm"'];find(s,' [FFT Magnitude] | ',size(s)-1,-1)"
-    if $p>=0 l[$ind,{$ind+1}] { # Inverse transform
-      ('$nm') +z. {$p+19},100% a0,b0=${u\ {t}} rm. z. 0,{$p-1} nm={t} rm.
-      /.. $a0 +.. $b0          # Denormalize magnitude
-      /. {255/(2*pi)} -. {pi}  # Denormalize phase
-      exp.. -.. 1 ifftpolar
-      c 0,255
-      gui_set_layer_name $nm
-      ind+=1
-    } else l[$ind] { # Direct transform
+    if $p>=0
+      if $ind+1>=$!
+        gui_resize_preview_area[$ind]
+        gui_error_preview[$ind] "Two input layers are required. Please set 'Input Layers' mode accordingly."
+        ind=$!
+        _preview_error=1
+      else l[$ind,{$ind+1}] { # Inverse transform
+        ('$nm') +z. {$p+19},100% a0,b0=${u\ {t}} rm. z. 0,{$p-1} nm={t} rm.
+        /.. $a0 +.. $b0          # Denormalize magnitude
+        /. {255/(2*pi)} -. {pi}  # Denormalize phase
+        exp.. -.. 1 ifftpolar
+        c 0,255
+        gui_set_layer_name $nm
+        ind+=1
+      } fi
+    else l[$ind] { # Direct transform
       fftpolar +.. 1 log..
       a0,b0={0,_[255/(iM-im),im]}
       -.. $b0 *.. $a0         # Normalize magnitude
@@ -46492,7 +46552,60 @@ fx_fourier_transform :
 
 fx_fourier_transform_preview :
   fx_fourier_transform $* k[0]
-  gui_resize_preview
+  if !$_preview_error gui_resize_preview fi
+
+
+#@gui Fourier Transform [Old] : fx_fourier_old,fx_fourier_old_preview(1)* : *
+#@gui :Magnitude / Phase=choice{0,"One Layer (Horizontal)","One Layer (Vertical)","Two Layers"}
+#@gui :Discard Transparency=bool(1)
+#@gui :_=separator()
+#@gui :_=note("<small><b>Note:</b> Apply this filter once to get the direct FFT, and once again to get the reverse \
+# transform.</small>")
+#@gui :_=link("Click here for a video tutorial","http://www.youtube.com/watch?v=3137dDa6P4s")
+#@gui :_=separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/06/16</i>.</small>")
+fx_fourier_old : skip ${2=0}
+  if $2 remove_opacity fi
+  magic="GMICFFT" i=0
+  for $i<$! {
+    ni={$i+1} nm={$i,n} is_ifft=0
+    +columns[$i] 100%
+    l. {
+      mag,m0,M0,m1,M1=${u\ {t}}
+      if ['$mag']=='$magic' is_ifft=1 fi
+      onfail
+    }
+    rm.
+    if !$is_ifft +rows[$i] 100% l. { mag,m0,M0,m1,M1=${u\ {t}} if ['$mag']=='$magic' is_ifft=2 fi onfail } rm. fi
+    if !$is_ifft
+      +rows[$i] 100% l. { mag,m0,M0=${u\ {t}} if ['$mag']=='$magic' is_ifft=3 fi onfail } rm.
+      if $is_ifft==3
+        is_ifft=0 +rows[$ni] 100%
+        l. { mag,m1,M1=${u\ {t}} if ['$mag']=='$magic' is_ifft=3 fi onfail } rm.
+      fi
+    fi
+    if !$is_ifft
+      l[$i] {
+        fftpolar +.. 1 log.. m0,M0,m1,M1={[im#0,iM#0,im#1,iM#1]} n[-2,-1] 0,255
+        if $1==0 ({'$magic,$m0,$M0,$m1,$M1'},0) y. a x
+        elif $1==1 ({'$magic,$m0,$M0,$m1,$M1'},0) a y
+        else ({'$magic,$m0,$M0'},0) a[-3,-1] y ({'$magic,$m1,$M1'},0) a[-2,-1] y
+        fi
+        nm $nm
+      }
+    else
+      if $is_ifft==1 columns[$i] 0,{$i,w-2} s[$i] x,2
+      elif $is_ifft==2 rows[$i] 0,{$i,h-2} s[$i] y,2
+      else rows[$i,$ni] 0,{$i,h-2}
+      fi
+      l[$i,{$i+1}] { n[0] $m0,$M0 n[1] $m1,$M1 exp[0] -[0] 1 ifftpolar c 0,255 }
+    fi
+    i+={$1<2" || "$is_ifft>2?1:2}
+  }
+
+fx_fourier_old_preview :
+  if $2 remove_opacity fi
+  dfft
 
 #@gui Fourier Watermark : fx_watermark_fourier, _none_
 #@gui : Text = text{"(c) G'MIC"}
@@ -52293,6 +52406,37 @@ fx_dragoncurve :
 
 #@gui ____<b>Various</b>
 #------------------------
+
+#@gui Custom Code [Full] : fx_custom_code, fx_custom_code_preview(1)*
+#@gui : Code = text(1,"foreach {\n\n  to_rgb\n  +deform 20\n  blend_edges 3\n\n}\n\n\n")
+#@gui : sep = separator()
+#@gui : Channel(s) = choice{"None (Allows Multi-layers)","All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]",
+#@gui : "RGB [Blue]","RGBA [Alpha]","Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]",
+#@gui : "YCbCr [Luminance]","YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
+#@gui : "YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]",
+#@gui : "Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]",
+#@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
+#@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]"}
+#@gui : Value Action = choice("None","Cut","Normalize")
+#@gui : Display Debug Info on Preview = bool(0)
+#@gui : Debug Font Size = choice(2,"Tiny","Small","Normal","Large")
+#@gui : sep = separator()
+#@gui : Preview Type = choice{"Full (Allows Multi-Layers)","Forward Horizontal","Forward Vertical",
+#@gui : "Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom",
+#@gui : "Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"}
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note{"<small><b>Note: </b>
+#@gui : This filter can execute any set of instructions understood by the <b>G'MIC</b> language interpreter.
+#@gui : Here, you can then test some commands before creating your own G'MIC custom commands and plug-in
+#@gui : menu entries.\n\n
+#@gui : Please look at the documentation reference web page :</small>"}
+#@gui : url = link("https://gmic.eu/reference/")
+#@gui : note = note{"<small>
+#@gui : to learn more about available <b>G'MIC</b> commands.
+#@gui : </small>"}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2022/04/28</i>.</small>")
 
 #@gui Custom Code [Global] : fx_custom_code, fx_custom_code_preview(1)
 #@gui : Code = text(1,"foreach {\n\n  to_rgb\n  +deform 20\n  blend_edges 3\n\n}\n\n\n")

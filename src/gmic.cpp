@@ -2437,44 +2437,42 @@ double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned i
   return cimg::type<double>::nan();
 }
 
+// This method is not thread-safe. Ensure it's never run in parallel!
 template<typename T>
 double gmic::mp_run(char *const str,
                     void *const p_list, const T& pixel_type) {
   const CImg<void*> gr = get_current_run("Function 'run()'",p_list,pixel_type);
   double res = cimg::type<double>::nan();
 
-  cimg_pragma_openmp(critical(mp_run))
-  {
-    gmic &gmic_instance = *(gmic*)gr[0];
-    CImgList<T> &images = *(CImgList<T>*)gr[1];
-    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-    CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
-    CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
-    const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
-    const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
+  gmic &gmic_instance = *(gmic*)gr[0];
+  CImgList<T> &images = *(CImgList<T>*)gr[1];
+  CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+  CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
+  CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
+  const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+  const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
 
-    CImg<char> is_error;
-    char sep;
-    if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
-      CImg<char> title(32);
-      cimg_snprintf(title,title.width(),"*expr#%u",gmic_instance.debug_line);
-      CImg<char>::string(title).move_to(gmic_instance.callstack);
-    } else CImg<char>::string("*expr").move_to(gmic_instance.callstack);
-    unsigned int pos = 0;
-    try {
-      gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
-                         parent_images,parent_images_names,variables_sizes,0,0,command_selection);
-    } catch (gmic_exception &e) {
-      CImg<char>::string(e.what()).move_to(is_error);
-    }
-    gmic_instance.callstack.remove();
-    if (is_error || !gmic_instance.status || !*gmic_instance.status ||
-        cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
-      res = cimg::type<double>::nan();
-    if (is_error)
-      throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'run()': %s",
-                                  cimg::type<T>::string(),is_error.data());
+  CImg<char> is_error;
+  char sep;
+  if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
+    CImg<char> title(32);
+    cimg_snprintf(title,title.width(),"*expr#%u",gmic_instance.debug_line);
+    CImg<char>::string(title).move_to(gmic_instance.callstack);
+  } else CImg<char>::string("*expr").move_to(gmic_instance.callstack);
+  unsigned int pos = 0;
+  try {
+    gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
+                       parent_images,parent_images_names,variables_sizes,0,0,command_selection);
+  } catch (gmic_exception &e) {
+    CImg<char>::string(e.what()).move_to(is_error);
   }
+  gmic_instance.callstack.remove();
+  if (is_error || !gmic_instance.status || !*gmic_instance.status ||
+      cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
+    res = cimg::type<double>::nan();
+  if (is_error)
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'run()': %s",
+                                cimg::type<T>::string(),is_error.data());
   return res;
 }
 
@@ -13482,7 +13480,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               continue;
             }
 
-            if (nb_levels || position>=commands_line.size())
+            if (nb_levels)
               error(true,images,0,0,
                     "Command '%s': Missing associated '%s' command.",stb,ste);
             if (is_continue || callstack_local || callstack_foreach) {
@@ -14175,9 +14173,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                   const bool is_rounded = s_equal[1]=='_';
                   s = s_equal + 1 + (is_rounded?1:0);
-                  name.assign(std::strlen(s) + 3);
-                  *name = '['; name[name._width - 2] = ']'; name.back() = 0;
-                  std::memcpy(name.data() + 1,s,name.width() - 3);
+                  name.assign(std::strlen(s) + 4);
+                  *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
+                  std::memcpy(name.data() + 2,s,name.width() - 4);
                   strreplace_fw(name);
                   try { img.eval(varvalues_d,name,0,0,0,0,&images); }
                   catch (CImgException &e) {
