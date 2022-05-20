@@ -40,7 +40,7 @@
 #include <unistd.h>
 #endif
 
-#include "DialogSettings.h"
+#include "Settings.h"
 #include "GmicQt.h"
 #include "Globals.h"
 #include "HeadlessProcessor.h"
@@ -158,8 +158,8 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
         GmicQt::InOutPanel::disableOutputMode(mode);
       }
     }
-    DialogSettings::loadSettings(GmicQt::UserInterfaceMode::ProgressDialog);
-    Logger::setMode(DialogSettings::outputMessageMode());
+    Settings::load(GmicQt::UserInterfaceMode::ProgressDialog);
+    Logger::setMode(Settings::outputMessageMode());
     LanguageSettings::installTranslators();
 
     HeadlessProcessor processor(nullptr);
@@ -191,8 +191,8 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
         GmicQt::InOutPanel::disableOutputMode(mode);
       }
     }
-    DialogSettings::loadSettings(GmicQt::UserInterfaceMode::Full);
-    Logger::setMode(DialogSettings::outputMessageMode());
+    Settings::load(GmicQt::UserInterfaceMode::Full);
+    Logger::setMode(Settings::outputMessageMode());
     LanguageSettings::installTranslators();
 
     QPointer<MainWindow> mainWindow(new MainWindow());

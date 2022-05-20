@@ -31,11 +31,11 @@
 #include <QSettings>
 #include <QStyleFactory>
 #include "Common.h"
-#include "DialogSettings.h"
 #include "FilterThread.h"
 #include "Globals.h"
 #include "GmicStdlib.h"
 #include "HeadlessProcessor.h"
+#include "Settings.h"
 #include "Updater.h"
 #include "ui_progressinfowindow.h"
 #ifndef gmic_core
@@ -63,7 +63,7 @@ ProgressInfoWindow::ProgressInfoWindow(HeadlessProcessor * processor) : QMainWin
   _isShown = false;
 
 #ifndef _GMIC_QT_DISABLE_THEMING_
-  if (DialogSettings::darkThemeEnabled()) {
+  if (Settings::darkThemeEnabled()) {
     setDarkTheme();
   }
 #endif

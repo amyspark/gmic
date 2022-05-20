@@ -29,7 +29,6 @@
 #include <QStringList>
 #include "Globals.h"
 #include "Common.h"
-#include "DialogSettings.h"
 #include "FilterParameters/FilterParametersWidget.h"
 #include "FilterSelector/FiltersPresenter.h"
 #include "FilterTextTranslator.h"

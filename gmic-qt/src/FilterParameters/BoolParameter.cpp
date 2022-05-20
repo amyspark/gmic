@@ -30,9 +30,9 @@
 #include <QPalette>
 #include <QWidget>
 #include "Common.h"
-#include "DialogSettings.h"
 #include "FilterTextTranslator.h"
 #include "HtmlTranslator.h"
+#include "Settings.h"
 
 namespace GmicQt
 {
@@ -58,10 +58,10 @@ bool BoolParameter::addTo(QWidget * widget, int row)
   _checkBox = new QCheckBox(_name, widget);
   _checkBox->setChecked(_value);
 #ifndef _GMIC_QT_DISABLE_THEMING_
-  if (DialogSettings::darkThemeEnabled()) {
+  if (Settings::darkThemeEnabled()) {
     QPalette p = _checkBox->palette();
-    p.setColor(QPalette::Text, DialogSettings::CheckBoxTextColor);
-    p.setColor(QPalette::Base, DialogSettings::CheckBoxBaseColor);
+    p.setColor(QPalette::Text, Settings::CheckBoxTextColor);
+    p.setColor(QPalette::Base, Settings::CheckBoxBaseColor);
     _checkBox->setPalette(p);
   }
 #endif
