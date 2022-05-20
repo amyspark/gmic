@@ -198,7 +198,7 @@ int KritaGmicPlugin::launch(std::shared_ptr<KisImageInterface> i, bool headless)
     QPointer<MainWindow> mainWindow(new MainWindow());
     mainWindow->setPluginParameters(parameters);
     // We want a non modal dialog here.
-    mainWindow->setWindowFlags(Qt::Tool | Qt::Dialog);
+    mainWindow->setWindowFlags(Qt::Dialog);
     mainWindow->setWindowModality(Qt::ApplicationModal);
     // Make it destroy itself on close (signaling the event loop)
     mainWindow->setAttribute(Qt::WA_DeleteOnClose);
