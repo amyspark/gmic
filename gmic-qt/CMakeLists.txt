@@ -590,25 +590,36 @@ set(gmic_translation_files
     translations/fr.ts
     translations/id.ts
     translations/it.ts
+    translations/ja.ts
     translations/nl.ts
     translations/pl.ts
     translations/pt.ts
     translations/ru.ts
+    translations/sv.ts
     translations/ua.ts
-    translations/ja.ts
     translations/zh.ts
+    translations/zh_tw.ts
 )
 
 set_source_files_properties(${gmic_translation_files} PROPERTIES OUTPUT_LOCATION translations)
 
 set(gmic_filters_translation_files
+    translations/filters/de.ts
+    translations/filters/es.ts
     translations/filters/fr.ts
+    translations/filters/it.ts
+    translations/filters/ja.ts
+    translations/filters/nl.ts
+    translations/filters/pl.ts
+    translations/filters/pt.ts
+    translations/filters/ru.ts
+    translations/filters/zh.ts
 )
 
 set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION translations/filters)
 
 # qt5_create_translation(
-#     qmic_qt_QM
+#     gmic_qt_QM
 #     ${CMAKE_SOURCE_DIR}/translations
 #     ${gmic_qt_SRCS}
 #     ${gmic_translation_files}
@@ -616,6 +627,7 @@ set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_
 
 qt5_add_translation(gmic_qt_QM
     ${gmic_translation_files}
+    ${gmic_filters_translation_files}
 )
 
 # install(FILES ${gmic_qt_QM} DESTINATION ${CMAKE_SOURCE_DIR}/translations)
@@ -628,6 +640,7 @@ install(FILES ${CMAKE_SOURCE_DIR}/../resources/gmic_denoise_cnn.gmz DESTINATION 
 set(gmic_qt_QRC
     gmic_qt.qrc
     translations.qrc
+    wip_translations.qrc
 )
 
 if (${GMIC_QT_HOST} STREQUAL "gimp" OR ${GMIC_QT_HOST} STREQUAL "gimp3")
