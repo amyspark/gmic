@@ -453,6 +453,7 @@ translations/uk.ts \
 translations/zh.ts \
 translations/zh_tw.ts
 
+RESOURCES += translations.qrc
 RESOURCES += wip_translations.qrc
 
 # message(Build QM translation files)
