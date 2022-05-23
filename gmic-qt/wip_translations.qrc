@@ -1,6 +1,14 @@
 <RCC>
     <qresource prefix="/">
+       <file>translations/filters/de.qm</file>
+       <file>translations/filters/es.qm</file>
        <file>translations/filters/fr.qm</file>
+       <file>translations/filters/it.qm</file>
+       <file>translations/filters/ja.qm</file>
+       <file>translations/filters/nl.qm</file>
+       <file>translations/filters/pl.qm</file>
+       <file>translations/filters/pt.qm</file>
+       <file>translations/filters/ru.qm</file>
        <file>translations/filters/zh.qm</file>
     </qresource>
 </RCC>
