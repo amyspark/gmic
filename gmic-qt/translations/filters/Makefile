@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-QMS = fr.qm zh.qm
+QMS = de.qm es.qm fr.qm it.qm ja.qm nl.qm pl.qm pt.qm ru.qm zh.qm
 
 .PRECIOUS: $(patsubst %.qm,%.ts,$(QMS))
 
