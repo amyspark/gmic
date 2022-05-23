@@ -576,10 +576,52 @@ else(ENABLE_DYNAMIC_LINKING)
     )
 endif(ENABLE_DYNAMIC_LINKING)
 
-message("Producing translation .qm files")
-execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations OUTPUT_QUIET)
-message("Producing filter translation .qm files")
-execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters OUTPUT_QUIET)
+if (UNIX OR APPLE OR MSYS)
+  message("Producing translation .qm files")
+  execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations OUTPUT_QUIET)
+  message("Producing filter translation .qm files")
+  execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters OUTPUT_QUIET)
+else()
+  set(gmic_translation_files
+      translations/cs.ts
+      translations/de.ts
+      translations/es.ts
+      translations/fr.ts
+      translations/id.ts
+      translations/it.ts
+      translations/ja.ts
+      translations/nl.ts
+      translations/pl.ts
+      translations/pt.ts
+      translations/ru.ts
+      translations/sv.ts
+      translations/uk.ts
+      translations/zh.ts
+      translations/zh_tw.ts
+  )
+
+  set_source_files_properties(${gmic_translation_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/translations)
+
+  set(gmic_filters_translation_files
+      translations/filters/de.ts
+      translations/filters/es.ts
+      translations/filters/fr.ts
+      translations/filters/it.ts
+      translations/filters/ja.ts
+      translations/filters/nl.ts
+      translations/filters/pl.ts
+      translations/filters/pt.ts
+      translations/filters/ru.ts
+      translations/filters/zh.ts
+  )
+
+  set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters)
+
+  qt5_add_translation(gmic_qt_QM
+      ${gmic_translation_files}
+      ${gmic_filters_translation_files}
+  )
+endif()
 
 include(GNUInstallDirs)
 
@@ -607,7 +649,7 @@ if (${GMIC_QT_HOST} STREQUAL "gimp" OR ${GMIC_QT_HOST} STREQUAL "gimp3")
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/Gimp/host_gimp.cpp)
     qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
     add_definitions(-DGMIC_HOST=gimp -DGIMP_DISABLE_DEPRECATED)
-    add_executable(gmic_gimp_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
+    add_executable(gmic_gimp_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
     target_link_libraries(
       gmic_gimp_qt
       PRIVATE
@@ -621,7 +663,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita")
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/Krita/host_krita.cpp)
     qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
     add_definitions(-DGMIC_HOST=krita)
-    add_executable(gmic_krita_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
+    add_executable(gmic_krita_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
     target_link_libraries(
       gmic_krita_qt
       PRIVATE
@@ -673,7 +715,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
     add_definitions(-D_GMIC_QT_DISABLE_TRANSLATION_)
     add_definitions(-D_GMIC_USE_HOSTED_SETTINGS_)
     add_definitions(-D_GMIC_HOSTED_PLUGIN_)
-    add_library(krita_gmic_qt MODULE ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
+    add_library(krita_gmic_qt MODULE ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
     target_include_directories(
       krita_gmic_qt
       PUBLIC
@@ -709,7 +751,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "none")
     )
   qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
   add_definitions(-DGMIC_HOST=standalone)
-  add_executable(gmic_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
+  add_executable(gmic_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
   target_link_libraries(gmic_qt PRIVATE ${gmic_qt_LIBRARIES})
   install(TARGETS gmic_qt RUNTIME DESTINATION bin)
 
@@ -718,7 +760,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "paintdotnet")
   set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/PaintDotNet/host_paintdotnet.cpp)
   qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
   add_definitions(-DGMIC_HOST=paintdotnet)
-  add_executable(gmic_paintdotnet_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
+  add_executable(gmic_paintdotnet_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
   target_link_libraries(
     gmic_paintdotnet_qt
     PRIVATE ${gmic_qt_LIBRARIES}
@@ -729,7 +771,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "8bf")
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/8bf/host_8bf.cpp)
     qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
     add_definitions(-DGMIC_HOST=plugin8bf)
-    add_executable(gmic_8bf_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
+    add_executable(gmic_8bf_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
     target_link_libraries(
       gmic_8bf_qt
       PRIVATE
