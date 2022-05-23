@@ -167,11 +167,14 @@ DialogSettings::DialogSettings(QWidget * parent) : QDialog(parent), ui(new Ui::D
 #endif
 
 #ifdef _GMIC_QT_DISABLE_TRANSLATION_
-  ui->languageSelector->setEnabled(false);
-#else
+  {
+    // Pierce the veil and disable the combobox of the language selector
+    auto *combobox = ui->languageSelector->findChild<QComboBox*>("comboBox");
+    if (combobox) combobox->setEnabled(false);
+  }
+#endif
   ui->languageSelector->selectLanguage(_languageCode);
   ui->languageSelector->enableFilterTranslation(_filterTranslationEnabled);
-#endif
 
 #ifndef _GMIC_QT_DISABLE_THEMING_
   if (DialogSettings::darkThemeEnabled()) {
