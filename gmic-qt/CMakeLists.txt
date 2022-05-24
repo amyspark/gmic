@@ -606,18 +606,7 @@ set(gmic_translation_files
 set_source_files_properties(${gmic_translation_files} PROPERTIES OUTPUT_LOCATION translations)
 
 # Prevent overwriting of these files by lupdate
-# set(gmic_filters_translation_files
-#     translations/filters/de.ts
-#     translations/filters/es.ts
-#     translations/filters/fr.ts
-#     translations/filters/it.ts
-#     translations/filters/ja.ts
-#     translations/filters/nl.ts
-#     translations/filters/pl.ts
-#     translations/filters/pt.ts
-#     translations/filters/ru.ts
-#     translations/filters/zh.ts
-# )
+# set(gmic_filters_translation_files translations/filters/fr.ts )
 # set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION translations/filters)
 
 # qt5_create_translation(
