@@ -7,13 +7,13 @@
 
     <message>
       <source>Light</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Légère</translation>
     </message>
 
     <message>
       <source>None</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Aucune</translation>
     </message>
 
@@ -24,7 +24,7 @@
 
     <message>
       <source>Line Strength</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Dose de lignes</translation>
     </message>
 
@@ -35,7 +35,7 @@
 
     <message>
       <source>Colors to Black or White</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Transformer en noir et blanc</translation>
     </message>
 
