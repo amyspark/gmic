@@ -64,7 +64,11 @@ std::shared_ptr<KisImageInterface> iface;
 
 void getLayersExtent(int *width, int *height, GmicQt::InputMode mode)
 {
+#if defined(KRITA_QMIC_INTERFACE_VERSION) && KRITA_QMIC_INTERFACE_VERSION >= 0x05010001
+  const auto size = iface->gmic_qt_get_image_size(static_cast<int>(mode));
+#else
   const auto size = iface->gmic_qt_get_image_size();
+#endif
   *width = size.width();
   *height = size.height();
 
