@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2017 Boudewijn Rempt <boud@valdyas.org>
- * Copyright (C) 2020-2021 L. E. Segovia <amy@amyspark.me>
+ * Copyright (C) 2020-2022 L. E. Segovia <amy@amyspark.me>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -169,9 +169,10 @@ void outputImages(gmic_list<float> &images,
     {
       QMutexLocker lock(&m->m_mutex);
 
-      const size_t length =
-          gimg._width * gimg._height * gimg._spectrum * sizeof(float);
-      std::memcpy(m->m_data, gimg._data, length);
+      const auto slice = gimg.get_slice(0);
+
+      const auto length = slice._width * slice._height * slice._spectrum * sizeof(float);
+      std::memcpy(m->m_data, slice._data, length);
     }
 
     layers << m;
