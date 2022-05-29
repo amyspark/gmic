@@ -15314,7 +15314,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     }
     verbosity = starting_verbosity;
 
-  } catch (gmic_exception& e) {
+  } catch (gmic_exception&) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
     pop_callstack(initial_callstack_size);
