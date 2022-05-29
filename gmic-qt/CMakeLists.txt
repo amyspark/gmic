@@ -603,21 +603,26 @@ set(gmic_translation_files
     translations/zh_tw.ts
 )
 
-set_source_files_properties(${gmic_translation_files} PROPERTIES OUTPUT_LOCATION translations)
+set_source_files_properties(${gmic_translation_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/translations)
 
-# Prevent overwriting of these files by lupdate
-# set(gmic_filters_translation_files translations/filters/fr.ts )
-# set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION translations/filters)
+set(gmic_filters_translation_files
+    translations/filters/de.ts
+    translations/filters/es.ts
+    translations/filters/fr.ts
+    translations/filters/it.ts
+    translations/filters/ja.ts
+    translations/filters/nl.ts
+    translations/filters/pl.ts
+    translations/filters/pt.ts
+    translations/filters/ru.ts
+    translations/filters/zh.ts
+)
 
-# qt5_create_translation(
-#     gmic_qt_QM
-#     ${CMAKE_SOURCE_DIR}/translations
-#     ${gmic_qt_SRCS}
-#     ${gmic_translation_files}
-# )
+set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters)
 
-qt5_add_translation(gmic_qt_QM
+qt5_add_translation(qmic_qt_QM
     ${gmic_translation_files}
+    ${gmic_filters_translation_files}
 )
 
 # install(FILES ${gmic_qt_QM} DESTINATION ${CMAKE_SOURCE_DIR}/translations)

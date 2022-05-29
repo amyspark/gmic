@@ -21,9 +21,6 @@
 # Possible values are "on" or "off"
 !defined(LTO,var) { LTO=off }
 
-# Possible values are "on" or "off"
-!defined(TEST_FILTERS_QM,var) { TEST_FILTERS_QM=off }
-
 #
 #
 #
@@ -410,7 +407,6 @@ SOURCES += \
   src/Widgets/LanguageSelectionWidget.cpp \
   src/Widgets/ProgressInfoWindow.cpp
 
-
 equals(GMIC_DYNAMIC_LINKING, "on" ) {
   message(Dynamic linking with libgmic)
   LIBS += -Wl,-rpath,. $$GMIC_PATH/libgmic.so
@@ -455,7 +451,12 @@ translations/uk.ts \
 translations/zh.ts \
 translations/zh_tw.ts
 
+RESOURCES += translations.qrc
 RESOURCES += wip_translations.qrc
+
+QMAKE_DISTCLEAN = \
+  translations/*.qm \
+  translations/filters/*.qm
 
 # Prevent overwriting of these files by lupdate
 # TRANSLATIONS += translations/filters/fr.ts

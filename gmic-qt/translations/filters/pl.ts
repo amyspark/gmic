@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!DOCTYPE TS>
 <TS version="2.1" language="pl">
-  <context>
-    <name>FilterTextTranslator</name>
+<context>
+  <name>FilterTextTranslator</name>
 
     <message>
       <source>&lt;b&gt;Arrays &amp; Tiles&lt;/b&gt;</source>
@@ -16319,5 +16320,5 @@
       <translation>Powiększenie</translation>
     </message>
 
-  </context>
+</context>
 </TS>

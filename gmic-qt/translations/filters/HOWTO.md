@@ -1,7 +1,7 @@
 # G'MIC-Qt: Contribute to filters translation
 
 We describe here the steps you should follow
-if you want to help with the Italian translation of the filters
+if you want to help with the *Italian* translation of the filters
 (names, parameters, etc.).
 
 ## Step 1: Edit the `it.ts` file
@@ -10,7 +10,7 @@ if you want to help with the Italian translation of the filters
 [translations/filters](https://github.com/c-koi/gmic-qt/tree/master/translations/filters)
 folder.
 
-* They contain only automatic translations for now.
+* They contain only automatic translations for now (except for French and Chinese).
 Therefore they really need some editing!
 
 * Editing can be done using a simple text editor, although the
@@ -34,6 +34,7 @@ $ lrelease-qt5 -compress fr.ts
 <RCC>
     <qresource prefix="/">
        <file>translations/filters/fr.qm</file>
+       <file>translations/filters/zh.qm</file>
        <file>translations/filters/it.qm</file>
     </qresource>
 </RCC>
