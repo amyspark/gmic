@@ -166,7 +166,7 @@ void DialogSettings::done(int r)
   QDialog::done(r);
 }
 
-void DialogSettings::onVisibleLogosToggled(bool on)
+void DialogSettings::onLogosVisibleToggled(bool on)
 {
   Settings::setVisibleLogos(on);
 }
