@@ -35,10 +35,10 @@
 #include <QWidget>
 #include <cstdio>
 #include "Common.h"
-#include "DialogSettings.h"
 #include "FilterTextTranslator.h"
 #include "HtmlTranslator.h"
 #include "Logger.h"
+#include "Settings.h"
 
 namespace GmicQt
 {
@@ -88,6 +88,7 @@ bool ColorParameter::addTo(QWidget * widget, int row)
   updateButtonColor();
 
   _grid->addWidget(_label = new QLabel(_name, widget), row, 0, 1, 1);
+  setTextSelectable(_label);
   _grid->addWidget(_button, row, 1, 1, 1);
   connect(_button, SIGNAL(clicked()), this, SLOT(onButtonPressed()));
   return true;
@@ -198,7 +199,7 @@ bool ColorParameter::initFromText(const QString & filterName, const char * text,
 void ColorParameter::onButtonPressed()
 {
   QColor color = QColorDialog::getColor(_value, QApplication::activeWindow(), tr("Select color"),
-                                        (DialogSettings::nativeColorDialogs() ? QColorDialog::ColorDialogOptions() : QColorDialog::DontUseNativeDialog) |
+                                        (Settings::nativeColorDialogs() ? QColorDialog::ColorDialogOptions() : QColorDialog::DontUseNativeDialog) |
                                             (_alphaChannel ? QColorDialog::ShowAlphaChannel : QColorDialog::ColorDialogOptions()));
   if (color.isValid()) {
     _value = color;

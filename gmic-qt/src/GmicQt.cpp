@@ -35,13 +35,13 @@
 #include <cstdlib>
 #include <cstring>
 #include "Common.h"
-#include "DialogSettings.h"
 #include "Globals.h"
 #include "HeadlessProcessor.h"
 #include "LanguageSettings.h"
 #include "Logger.h"
 #include "MainWindow.h"
 #include "Misc.h"
+#include "Settings.h"
 #include "Updater.h"
 #include "Widgets/InOutPanel.h"
 #include "Widgets/ProgressInfoWindow.h"
@@ -156,10 +156,10 @@ int run(UserInterfaceMode interfaceMode,                   //
 
   disableModes(disabledInputModes, disabledOutputModes);
   if (interfaceMode == UserInterfaceMode::Silent) {
-    QCoreApplication app(dummy_argc, dummy_argv);
     configureApplication();
-    DialogSettings::loadSettings(interfaceMode);
-    Logger::setMode(DialogSettings::outputMessageMode());
+    QCoreApplication app(dummy_argc, dummy_argv);
+    Settings::load(interfaceMode);
+    Logger::setMode(Settings::outputMessageMode());
     HeadlessProcessor processor(&app);
     if (!processor.setPluginParameters(parameters)) {
       Logger::error(processor.error());
@@ -171,11 +171,11 @@ int run(UserInterfaceMode interfaceMode,                   //
     setValueIfNotNullPointer(dialogWasAccepted, processor.processingCompletedProperly());
     return status;
   } else if (interfaceMode == UserInterfaceMode::ProgressDialog) {
+    configureApplication();
     QApplication app(dummy_argc, dummy_argv);
     QApplication::setWindowIcon(QIcon(":resources/gmic_hat.png"));
-    configureApplication();
-    DialogSettings::loadSettings(interfaceMode);
-    Logger::setMode(DialogSettings::outputMessageMode());
+    Settings::load(interfaceMode);
+    Logger::setMode(Settings::outputMessageMode());
     LanguageSettings::installTranslators();
     HeadlessProcessor processor(&app);
     if (!processor.setPluginParameters(parameters)) {
@@ -190,10 +190,10 @@ int run(UserInterfaceMode interfaceMode,                   //
     setValueIfNotNullPointer(dialogWasAccepted, processor.processingCompletedProperly());
     return status;
   } else if (interfaceMode == UserInterfaceMode::Full) {
+    configureApplication();
     QApplication app(dummy_argc, dummy_argv);
     QApplication::setWindowIcon(QIcon(":resources/gmic_hat.png"));
-    configureApplication();
-    DialogSettings::loadSettings(interfaceMode);
+    Settings::load(interfaceMode);
     LanguageSettings::installTranslators();
     MainWindow mainWindow;
     mainWindow.setPluginParameters(parameters);

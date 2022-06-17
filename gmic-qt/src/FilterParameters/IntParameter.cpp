@@ -29,12 +29,12 @@
 #include <QSlider>
 #include <QTimerEvent>
 #include <QWidget>
-#include "DialogSettings.h"
 #include "FilterParameters/CustomSpinBox.h"
 #include "FilterTextTranslator.h"
 #include "Globals.h"
 #include "HtmlTranslator.h"
 #include "Logger.h"
+#include "Settings.h"
 
 namespace GmicQt
 {
@@ -80,17 +80,17 @@ bool IntParameter::addTo(QWidget * widget, int row)
 
   _spinBox = new CustomSpinBox(widget, _min, _max);
   _spinBox->setValue(_value);
-  if (DialogSettings::darkThemeEnabled()) {
+  if (Settings::darkThemeEnabled()) {
     QPalette p = _slider->palette();
     p.setColor(QPalette::Button, QColor(100, 100, 100));
     p.setColor(QPalette::Highlight, QColor(130, 130, 130));
     _slider->setPalette(p);
   }
   _grid->addWidget(_label = new QLabel(_name, widget), row, 0, 1, 1);
+  setTextSelectable(_label);
   _grid->addWidget(_slider, row, 1, 1, 1);
   _grid->addWidget(_spinBox, row, 2, 1, 1);
   connectSliderSpinBox();
-
   connect(_spinBox, &CustomSpinBox::editingFinished, [this]() { notifyIfRelevant(); });
 
   return true;

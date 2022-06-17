@@ -469,7 +469,7 @@ reference : skip "${2=}"
 "  - Video files: `.mpeg`, `.avi`, `.mp4`, `.mov`, `.ogg`, `.flv`, ..."\n\
 "  - Generic text or binary data files: `.gmz`, `.cimg`, `.cimgz`, `flo`, `ggr`, `gpl`, `.dlm`, `.asc`, "\
 "`.pfm`, `.raw`, `.txt`, `.h`."\n\
-"  - 3D mesh files: `.off`, `.obj` (output only)"\n\
+"  - 3D mesh files: `.off`, `.obj`."\n\
 \n\
 "* When dealing with color images, G'MIC generally reads, writes and displays data using the usual "\
 "sRGB color space."\n\
@@ -530,7 +530,7 @@ reference : skip "${2=}"
 "'filename[,datatype]'. 'datatype' can be the same as for `.cimg[z]` files."\n\
 "  - `.gmic` __files:__ These filenames are assumed to be G'MIC custom commands files. Loading such a "\
 "file will add the commands it defines to the interpreter. Debug information can be "\
-"enabled/disabled by the input expression 'filename.gmic[,add_debug_info' where 'debug_info' can be "\
+"enabled/disabled by the input expression 'filename.gmic[,add_debug_info]' where 'debug_info' can be "\
 "{ 0=false | 1=true }. "\n\
 "  - Inserting 'ext:' on the beginning of a filename (e.g. 'jpg:filename') forces G'MIC to "\
 "read/write the file as it would have been done if it had the specified extension `.ext`."\n\
@@ -929,9 +929,9 @@ reference : skip "${2=}"
 "* '_(comment) expr' just returns expression 'expr' (useful for inserting inline comments in math expressions)."\n\
 "* 'run('pipeline')' executes the specified G'MIC pipeline as if it was called outside the currently evaluated "\
 "expression."\n\
-"* 'set(A,\\'variable_name\\')' set the G'MIC variable '$variable_name' with the value of expression 'A'. If 'A' is"\
+"* 'set(\\'variable_name\\',A)' set the G'MIC variable '$variable_name' with the value of expression 'A'. If 'A' is"\
 " a vector-valued variable, it is assumed to encode a string."\n\
-"* 'store(A,\\'variable_name\\',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
+"* 'store(\\'variable_name\\',A,_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
 "`w x h x d x s` image to the G'MIC variable '$variable_name'. Thus, the data becomes available outside the math "\
 "expression (that is equivalent to using the regular command ''store'', but directly in the math expression)."\n\
 "* 'get(\\'variable_name\\',_size,_return_as_string)' returns the value of the specified variable, as a vector of "\
@@ -2556,17 +2556,18 @@ display3d : skip "${1=},${2=0}"
 _display3d :
   is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
-
   foreach {
     l. {
       check3d 0
       onfail l[] { ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm } error[] "Command 'display3d': "$msg
     }
-    nm={n} nbv,nbp={f2ui([i[6],i[7]])}
-    e[0--5] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
+    nm={n}
+    bnm={b} if ['{x}']!=0 bnm.=.{x} fi
+    nbv,nbp={f2ui([i[6],i[7]])}
+    e[0--4] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
-    disp_title=$nm" ("$nbv" vertices, "$nbp" primitives)"
+    disp_title=$bnm" ("$nbv" vertices, "$nbp" primitives)"
     if !{*}
       if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1},0,$disp_title
       else w[] {0.7*[{*,u,v}]},0,$disp_title
@@ -2662,7 +2663,7 @@ _display3d :
             i[19]>0?copy(i[off + 3],col,3);
             i[25]>0?copy(i[off + 6],col,3);
           "
-          j3d[render] .,50,{-2,h-50},0,0.75,1,0,0,$focale rm.
+          j3d[render] .,50,{-2,h-50},0,0.75,1,0,0,150 rm.
         fi
         rmn view
 
@@ -2870,9 +2871,9 @@ _display3d :
           mx0,my0=$mx1,$my1
         elif $mb&4" || "($mb&1" && "$is_CTRL) # Pan
           posx,posy={"
-            const px = "$mx1-$mx0+$posx*{*,w}%";
-            const py = "$my1-$my0+$posy*{*,h}%";
-            cut([ px*100/"{*,w}", py*100/"{*,h}" ],0,100)"}
+            const px = $mx1 - $mx0 + $posx*"{*,w}"%;
+            const py = $my1 - $my0 + $posy*"{*,h}"%;
+            [px,py]*100/["{*,w,h}"]"}
           mx0,my0=$mx1,$my1
         elif $mb&2 # Zoom with mouse button
           fact={1+($my0-$my1)/100}
@@ -3576,6 +3577,18 @@ echo_file : skip "${2='\n'}"
     +sqr. +*[-2,-1] a[-4--1] c *[-2,-1] s. c +[-4--1] rm..
   }
 
+#@cli identity : _width>=0,_height>=0,_depth>=0
+#@cli : Insert an identity map of given size at the end of the image list.
+#@cli : Default values: 'height=width' and 'depth=1'.
+#@cli : $ identity 5,1 identity 8,8
++identity : check "isint($1) && $1>=0 && isint(${2=$1}) && $2>=0 && isint(${3=1}) && $3>=0"
+  e[^-1] "Input $1x$2x$3 identity map."
+  if $3>1 $1,$2,$3,3,[x,y,z] # 3D
+  elif $2>1 $1,$2,1,2,[x,y] # 2D
+  elif $1>0 $1,1,1,1,x # 1D
+  else 0
+  fi
+
 #@cli i : eq. to 'input'. : (+)
 
 #@cli input : \
@@ -3767,7 +3780,7 @@ _input_glob :
 #@cli input_gpl : filename
 #@cli : Input specified filename as a .gpl palette data file.
 +input_gpl :
-  e[^-1] "Input .gpl palette file '"{/"$*"}"'."
+  e[^-1] "Input palette from file '"{/"$*"}"'."
   l[] {
     it[] "$*" discard 13 replace 9,32 s -,10
     colors=0
@@ -3812,6 +3825,206 @@ _input_glob :
   fi
   if !$file_found
     error[0--3] "Command 'input_cached': Unknown filename '"{/"$1"}"'."
+  fi
+
+#@cli input_obj : filename
+#@cli : Input specified 3D mesh from a .obj Wavefront file.
++input_obj :
+  e[^-1] "Input 3D mesh from file '"{/"$*"}"'"
+  l[] {
+    it "$1" f "i<=_' ' && i!=_'\n'?_' ':i" # Normalize blank characters.
+    0 => "$1" folder={f} rm. # Retrieve file folder
+    1 # [1]: pts (unrolled)
+    1 # [2]: primitives (unrolled)
+    1 # [3]: colors (unrolled)
+    1 # [4]: opacity
+    1,1,1,2 # [5]: texture 2D pts
+    _input_obj_rgb,_input_obj_alpha=
+    eval "
+      next_item() = (
+        while (line[q] && line[q]!=_' ' && line[q]!=_'/',++q);
+        while (line[q] && line[q]==_' ', ++q);
+      );
+
+      push_texture() = (
+        s_ind_prim = string('ind_prim',p_img);
+        ind_prim = get(s_ind_prim);
+        isnan(ind_prim)?( # Texture never used before
+          da_push(#3,-128,p_whs[0],p_whs[1],p_whs[2]);
+          dsiz = da_size(#3); isiz = prod(p_whs);
+          resize(#3,1,h(#3) + isiz,1,1,0);
+          copy(i[#3,dsiz],i[#p_img,0],isiz);
+          i[#3,h(#3) - 1] = dsiz + isiz;
+          set(s_ind_prim,nbp);
+        ):( # Texture used before -> shared version
+          da_push(#3,-128,ind_prim,0,0);
+        );
+      );
+
+      id_v = 'v '; id_f = 'f '; id_l = 'l '; id_p = 'p '; id_vt = 'vt ';
+      id_mtllib = 'mtllib '; id_usemtl = 'usemtl ';
+      line = vector1024(0);
+      p_rgb = [ 200,200,200 ]; p_alpha = 1; p_img = -1; p_whs = [ 0,0,0 ];
+      line_number = 1;
+      nbv = nbp = p = 0;
+
+      while (p<h#0,
+        np = find(#0,_'\n',p);
+        np==p?(++p; continue()):np<0?(np = h#0);
+        q = min(np,p + size(line) - 1);
+        copy(line,i[#0,p],q - p); line[q - p] = 0;
+
+        line[0,2]==id_v?( # Coordinates: vertex
+          q = 0; next_item();
+          X = stov(line,q); next_item();
+          Y = stov(line,q); next_item();
+          Z = stov(line,q); next_item();
+          line[q]?(W = stov(line,q)):(W = 0);
+          da_push(#1,X,Y,Z);
+          ++nbv;
+
+        ):line[0,3]==id_vt?( # Coordinates: texture
+          q = 0; next_item();
+          X = stov(line,q); next_item();
+          line[q]?(Y = stov(line,q); next_item()):(Y = 0);
+          line[q]?(Z = stov(line,q)):(Z = 0);
+          da_push(#5,[X,1 - Y]);
+
+        ):line[0,2]==id_p?( # Primitive: point
+          q = 0; next_item();
+          v0 = stov(line,q) - 1;
+          da_push(#2,1,v0);
+          da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
+          da_push(#4,p_alpha);
+          ++nbp;
+
+        ):line[0,2]==id_l?( # Primitive: polyline
+          q = 0; next_item();
+          v0 = stov(line,q) - 1; next_item();
+          while (line[q],
+            v1 = stov(line,q) - 1; next_item();
+            da_push(#2,2,v0,v1);
+            da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
+            da_push(#4,p_alpha);
+            ++nbp;
+            v0 = v1;
+          );
+
+        ):line[0,2]==id_f?( # Primitive: colored or textured face
+          q = 0; next_item();
+          v0 = stov(line,q) - 1; next_item();
+          vt0 = -1; line[q]=='/'?(++q; vt0 = stov(line,q) - 1; isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
+          line[q]=='/'?(++q; next_item()); # Skip normal index
+          v1 = stov(line,q) - 1; next_item();
+          vt1 = -1; line[q]=='/'?(++q; vt1 = stov(line,q) - 1; isnan(vt1)?(vt1 = -1); next_item()); # Texture coords
+          line[q]=='/'?(++q; next_item()); # Skip normal index
+          v2 = stov(line,q) - 1; next_item();
+          vt2 = -1; line[q]=='/'?(++q; vt2 = stov(line,q) - 1; isnan(vt2)?(vt2 = -1); next_item()); # Texture coords
+          line[q]=='/'?(++q; next_item()); # Skip normal index
+          is_colored = min(vt0,vt1,vt2)<0 || p_img<0;
+          !is_colored?(xyt0 = I[#5,vt0]; xyt1 = I[#5,vt1]; xyt2 = I[#5,vt2]);
+          !line[q]?( # Triangle
+            is_colored?( # Colored triangle
+              da_push(#2,3,v0,v1,v2);
+              da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
+            ):( # Textured triangle
+              fact = p_whs[0,2] - 1;
+              xyt0*=fact; xyt1*=fact; xyt2*=fact;
+              da_push(#2,9,v0,v1,v2,xyt0[0],xyt0[1],xyt1[0],xyt1[1],xyt2[0],xyt2[1]);
+              push_texture();
+            );
+            da_push(#4,p_alpha);
+            ++nbp;
+          ):(
+            v3 = stov(line,q) - 1; next_item();
+            vt3 = -1; line[q]=='/'?(++q; vt3 = stov(line,q) - 1; isnan(vt3)?(vt3 = -1); next_item()); # Texture coords
+            line[q]=='/'?(++q; next_item()); # Skip normal index
+            is_colored|=vt3<0;
+            !line[q]?( # Quadrangle
+              is_colored?( # Colored quadrangle
+                da_push(#2,4,v0,v1,v2,v3);
+                da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
+              ):( # Textured quadrangle
+                xyt3 = I[#5,vt3];
+                fact = p_whs[0,2] - 1;
+                xyt0*=fact; xyt1*=fact; xyt2*=fact; xyt3*=fact;
+                da_push(#2,12,v0,v1,v2,v3,xyt0[0],xyt0[1],xyt1[0],xyt1[1],xyt2[0],xyt2[1],xyt3[0],xyt3[1]);
+                push_texture();
+              );
+              da_push(#4,p_alpha);
+              ++nbp;
+            );
+          );
+
+        ):line[0,7]==id_mtllib?( # Material: include library file
+          q = 0; next_item();
+          len = find(line,0,q);
+          len>0?(
+            copy(line,line[q],len + 1);
+            run('_input_obj_parse_mtl \""$folder"\",\"',line,'\"');
+          );
+
+        ):line[0,7]==id_usemtl?( # Material: change material
+          q = 0; next_item();
+          len = find(line,0,q);
+          len>0?(
+            copy(line,line[q],len + 1);
+            run('_input_obj_set_mtl ',line);
+            p_rgb = get('_input_obj_rgb',3);
+            p_alpha = get('_input_obj_alpha');
+            p_whs = get('_input_obj_whs',3);
+            p_img = get('_input_obj_img');
+         );
+        );
+        p = ++np;
+        ++line_number;
+      );
+      repeat(5,k,k1 = k + 1; resize(#k1,1,da_size(#k1),1,s#k1,0));
+      set('nbp',nbp);
+      set('nbv',nbv)"
+    rm[0,5--1] i[0] ({'CImg3d'},{ui2f([$nbv,$nbp])}:y) a y => "$1"
+  }
+
+_input_obj_parse_mtl : skip "${1=}"
+  img_ind=$! mtl_filename="$1$2"
+  if !isfile(['{/$mtl_filename}']) return fi
+  l[]
+    it $mtl_filename f "i<=_' ' && i!=_'\n'?_' ':i" # Normalize blank characters.
+    s -,{'\n'} autocrop {'" "'} N:=$!-1
+    m=default _input_obj_rgb_$m=200,200,200 _input_obj_alpha_$m=1 _input_obj_whs_$m=0,0,0
+
+    repeat $! { if {$>,i!=_'#'}
+      if "crop(#$>,0,0,1,7)=='newmtl '" # New material
+        rows[$>] 7,100% strcasevar {$>,t} m=${}
+        _input_obj_rgb_$m=200,200,200 _input_obj_alpha_$m=1 _input_obj_whs_$m=0,0,0
+      elif "crop(#$>,0,0,1,3)=='Kd '" # Diffuse color
+        l[$>] { rows 3,100% s -,{'" "'} _input_obj_rgb_$m:="255*["{0,t},{1,t},{2,t}"]" k[0] }
+      elif "crop(#$>,0,0,1,2)=='d '" # Opacity
+        rows[$>] 2,100% _input_obj_alpha_$m:={$>,t}
+      elif "crop(#$>,0,0,1,7)=='map_Kd '" # Diffuse texture
+        rows[$>] 7,100% img_filename={$>,t}
+        l[] {
+          "$1"$img_filename
+          _input_obj_img_$m:=$img_ind img_ind+=1
+          _input_obj_whs_$m:=w,h,s
+          y
+        onfail _input_obj_img_$m=-1 _input_obj_whs_$m=0,0,0
+        }
+      fi
+    fi }
+    rm[0-$N]
+  }
+
+_input_obj_set_mtl :
+  strcasevar "$1" m=${}
+  if ['${_input_obj_img_$m}']!=0 _input_obj_img=${_input_obj_img_$m} _input_obj_whs=${_input_obj_whs_$m}
+  else _input_obj_img=-1 _input_obj_whs=0,0,0
+  fi
+  if ['${_input_obj_rgb_$m}']!=0 _input_obj_rgb=${_input_obj_rgb_$m}
+  else _input_obj_rgb=200,200,200
+  fi
+  if ['${_input_obj_alpha_$m}']!=0 _input_obj_alpha=${_input_obj_alpha_$m}
+  else _input_obj_alpha=1
   fi
 
 #@cli it : eq. to 'input_text'.
@@ -3960,7 +4173,7 @@ output_gmz : skip ${2=auto}
   rm.
 
 #@cli output_obj : filename,_save_materials={ 0=no | 1=yes }
-#@cli : Output selected 3D objects as Wavefront 3D object files.
+#@cli : Output selected 3D meshes as Wavefront 3D object files.
 #@cli : Set 'save_materials' to '1' to produce a corresponding material file (`.mtl`) and eventually texture files.
 #@cli : Beware, the export to `.obj` files may be quite slow for large 3D objects.
 #@cli : Default value: 'save_materials=1'.
@@ -3973,8 +4186,13 @@ output_obj : check "isbool(${2=1})" check3d 0
     # Generate basename, file header and eval macros.
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
     0 => $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
-    fnobj="begin(out = 0);
+    fnobj="begin(out = 0; s_rgba = vector8());
            tos(x) = vtos(x,6);
+           strhex(v,str) = (
+             ref(v,_v);
+             hex(x) = (_x = int(x); _x + (_x<10?_'0':_'A' - 10));
+             fill(str,_k,hex(_k%2?_v[(_k-1)/2]%16:_v[_k/2]/16));
+           );
            write(ind,s) = (
              l_s = find(s,0);
              l_s<=0?(l_s = size(s));
@@ -3983,10 +4201,10 @@ output_obj : check "isbool(${2=1})" check3d 0
              out+=l_s)"
 
     # Decompose into vertices, primitives and colors.
-    s3d 0 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1,5]
+    s3d 0 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1]
     e[] "  > File '"$folder$basename$ext"' ("$nb_vertices" vertices, "$nbp" primitives)."
 
-    # Generate vertex output.
+    # Export vertices.
     l[0] {
       e[] "    - Export vertices."
       r 3,{h/3},1,1,-1 permute zycx
@@ -4000,50 +4218,58 @@ output_obj : check "isbool(${2=1})" check3d 0
       e[] "\r    - Export vertices: Done."
     }
 
-    # Generate material output.
-    if $2 l. {
+    # Export materials (colors/textures + opacities).
+    if $2 l[2,3] {
       e[] "    - Export materials."
-      256,256,256 => materials_rgb
       1,$nbp,1,3 => materials
       0 => out_mtl
       mv[0] $!
       eval $fnobj";
         const nbp = "$nbp";
-        off = nb_materials = nb_textures = 0;
+        off_p = off_o = nb_materials = nb_textures = 0;
+        rgba = vector4();
+        s_opac = vector32();
         repeat (nbp,p,
           !(p%10000)?run('e[] \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
-
-          i[off]!=-128?( # RGB color
-            ref(cut(round(crop(0,off,1,3)),0,255),rgb);
-            m = i(#"$materials_rgb",rgb);
+          s_opac[0] = 0;
+          opac = i[#0,off_o];
+          i[off_p]!=-128?( # RGB[A] color
+            ref(cut(round(crop(0,off_p,1,4)),0,255),rgba);
+            rgba[3] = opac!=-128?round(255*cut(opac,0,1)):255;
+            strhex(rgba,s_rgba);
+            vname = string('mat_',s_rgba);
+            m = get(vname);
             !m?(
               ++nb_materials;
+              opac!=-128 && opac<1?copy(s_opac,string('d ',tos(cut(opac,0,1)),'\n'));
               ref(string('newmtl m',nb_materials,'\n',
-                         'Kd ',tos(rgb[0]/255),' ',tos(rgb[1]/255),' ',tos(rgb[2]/255),'\n'),str);
+                         'Kd ',tos(rgba[0]/255),' ',tos(rgba[1]/255),' ',tos(rgba[2]/255),'\n',s_opac),str);
               write(#"$out_mtl",str);
-              m = i(#"$materials_rgb",rgb) = nb_materials;
+              set(vname,vtos(m = nb_materials));
             );
             i[#"$materials",p] = m;
-            off+=3;
+            off_p+=3;
 
-          ):i[off + 2]?( # Non-shared texture
+          ):i[off_p + 2]?( # Non-shared texture
             ++nb_materials; ++nb_textures;
-            wt = i[off + 1]; ht = i[off + 2]; st = i[off + 3];
-            run('+rows. ',off + 4,',',off + 3 + wt*ht*st,' r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',
+            wt = i[off_p + 1]; ht = i[off_p + 2]; st = i[off_p + 3];
+            opac!=-128 && opac<1?copy(s_opac,string('d ',tos(cut(opac,0,1)),'\n'));
+            run('+rows. ',off_p + 4,',',off_p + 3 + wt*ht*st,' r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',
                 nb_textures,'.png o. $tfn rm.');
             tfile = get('tfn',1024,1);
             ref(string('newmtl m',nb_materials,'\n',
-                       'map_Kd ',get('tfn',1024,1),'\n'),str);
+                       'map_Kd ',get('tfn',1024,1),'\n',s_opac),str);
             write(#"$out_mtl",str);
             I[#"$materials",p] = [ nb_materials,wt,ht ];
-            off+=4 + wt*ht*st;
+            off_p+=4 + wt*ht*st;
 
           ):( # Shared texture
-            tind = i[off + 1];
+            tind = i[off_p + 1];
             I[#"$materials",p] = I[#"$materials",tind];
-            off+=4;
-
+            off_p+=4;
           );
+
+          off_o+=(opac==-128?4 + prod(crop(#0,0,off_o + 1,1,3)):1);
         );
         resize(#"$out_mtl",1,out,1,1,0);
         run('nb_materials,nb_textures=',nb_materials,',',nb_textures)"
@@ -4051,7 +4277,7 @@ output_obj : check "isbool(${2=1})" check3d 0
       k[materials,out_mtl]
     } fi
 
-    # Generate primitive output.
+    # Export primitives.
     e[] "    - Export primitives."
     0 => out_prim
     mv[1] $!
@@ -4071,7 +4297,7 @@ output_obj : check "isbool(${2=1})" check3d 0
           write(#"$out_prim",str);
           ++nb_primitives;
 
-        ):type==2?( # Colored or textured segment
+        ):type==2 || type==6?( # Colored or textured segment
           ref(string('l ',f2ui(i[off + 1]) + 1,' ',f2ui(i[off + 2]) + 1,'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
@@ -4128,30 +4354,30 @@ output_obj : check "isbool(${2=1})" check3d 0
     l[out_obj,out_prim] { i[1] ('"\n# Primitives.\n"':y) a y }
     if $2 k[out_mtl,out_obj] else k[out_obj] fi
 
-    # Generate file header.
+    # File header.
     header="# Object name: "$nm\n\
            "# Vertices: "$nb_vertices\n\
            "# Primitives: "$nb_primitives\n\
            "# Materials: "$nb_materials\n\
            "# Textures: "$nb_textures\n\
            {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
-              string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
+              string('# Generated on ',date(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
                      ' by G\47MIC (https://gmic.eu).\n')"`}
 
     # Save object geometry (.obj file).
     l[out_obj] {
       i[0] ('"# File: "$folder$basename$ext\n$header':y)
       if $2 i[1] ('"\n# Materials.\n\
-                      mtllib "$folder$basename$ext".mtl\n"':y) fi
+                      mtllib "$folder$basename".mtl\n"':y) fi
       a y
       ot $folder$basename$ext
     }
 
     # Save object materials (.mtl file).
     if $2 l[out_mtl] {
-      i[0] ('"# File: "$folder$basename$ext.mtl\n$header\n':y)
+      i[0] ('"# File: "$folder$basename.mtl\n$header\n':y)
       a y
-      ot $folder$basename$ext.mtl
+      ot $folder$basename.mtl
     } fi
 
     rm
@@ -4272,7 +4498,7 @@ parse_cli : skip "${1=print},${2=*}"
     onfail error[0--2] "Command 'parse_cli': Invalid output mode '$1'."
   }
 
-  if !$! l[] it { ${_path_rc}update$_version.gmic onfail } fi
+  if !$! l[] { it ${_path_rc}update$_version.gmic onfail } fi
   if !$! return fi
   i[0] ('\n') y a y
   merge_multiline_comments
@@ -4698,7 +4924,7 @@ parse_cli_html :
   # Generate html page for each command.
   foreach {
     ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
-    e[] "\r  > "$_vt100_c[#{1+$>}]$_vt100_n" "{`copy(vector48(_'" "'),['$category" / "$name'])`}
+    e[] "\r  > "$_vt100_c[#{1+$>}]$_vt100_n" "{`s=vector48(_'" "');copy(s,['$category" / "$name']);s`}
 
     # Find previous and next commands.
     if !$> previous= else pass[{$>-1}] 1 ('{n}') discard. {'_c1'} previous={t} rm[-2,-1] fi
@@ -6620,7 +6846,7 @@ parse_gui : skip "${1=print},${2=*}"
       if $! _f${f}_input_mode={0,t} fi # Default input mode
       rm
     }
-    e[] "\r  > "$_vt100_c[#$f]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+    e[] "\r  > "$_vt100_c[#$f]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Parse filter parameters.
     parseparams=1
@@ -6642,7 +6868,7 @@ parse_gui : skip "${1=print},${2=*}"
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
-            store(name,'tmparg',q-p+1);
+            store('tmparg',name,q-p+1);
             p = r;
             q = min(find(source,_'(',p)%size(source),
                     find(source,_'{',p)%size(source),
@@ -6676,7 +6902,7 @@ parse_gui : skip "${1=print},${2=*}"
                 pe = r;
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a0={t} rm.');
+                store('tmparg',argument,1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a0={t} rm.');
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -6686,7 +6912,7 @@ parse_gui : skip "${1=print},${2=*}"
                 pe = q = min(r,find(source,_',',p)%size(source));
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a',nbargs,'={t} rm.');
+                store('tmparg',argument,1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a',nbargs,'={t} rm.');
                 ++nbargs;
                 p = q + 1;
               );
@@ -6885,7 +7111,7 @@ parse_gui_update :
   N:=$_nbfilters-1
   is_af:="date([1,2])==[4,1] && (date(4)%2)" # April fool mode ?
   repeat $_nbfilters f=$> {
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Insert directives to change folder if necessary.
     if ;['$path']!=['${_f${f}_path}']
@@ -7047,7 +7273,7 @@ parse_gui_json :
   current_category=
   N:=$_nbfilters-1
   repeat $_nbfilters { f=$>
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage categories.
     0 => {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_json[] {b} path=${} rm.
@@ -7232,7 +7458,7 @@ parse_gui_gmicol :
   current_category=
   N:=$_nbfilters-1
   repeat $_nbfilters { f=$>
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage categories.
     0 => {`s=['${_f${f}_path}'];s[0,size(s)-1]`} ('{b}') _gmd_ascii2html. path={t} rm[-2,-1]
@@ -7375,7 +7601,7 @@ parse_gui_strings :
   N:=$_nbfilters-1
   repeat $_nbfilters { f=$>
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
-      e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+      e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
       _parse_gui_strings ${_f${f}_name}
       repeat ${_f${f}_nb_params} { p=$>
         type=${_f${f}_p${p}_type}
@@ -8031,7 +8257,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.1.2').
+# $1 = version number (e.g. '3.1.3').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9492,7 +9718,7 @@ parse_gui_zart :
   current_group=
   N:=$_nbfilters-1
   repeat $_nbfilters { f=$>
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage groups.
     0 => {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
@@ -9654,7 +9880,7 @@ utf82html :
           write_seq();
         );
       );
-      store(res,'res',1,q)"
+      store('res',res,1,q)"
     rm. $res
   fi
 
@@ -9728,7 +9954,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (310,311,312,$_version) sort. discard. store. compat
+  (313,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -9814,25 +10040,15 @@ _upload : skip "${2=""}","${3=0}"
 upload_binaries : check "isbool(${2=1})"
   is_pre=${"strcontains $1,_pre"}
   N=0
-  file$N=gmic_$1_debian9-2_stretch_amd64.deb            N+=1
   file$N=gmic_$1_debian10_buster_amd64.deb              N+=1
   file$N=gmic_$1_debian11_bullseye_amd64.deb            N+=1
-  file$N=gmic_$1_ubuntu19-04_disco_amd64.deb            N+=1
-  file$N=gmic_$1_ubuntu19-10_eoan_amd64.deb             N+=1
   file$N=gmic_$1_ubuntu20-04_focal_amd64.deb            N+=1
-  file$N=gmic_$1_ubuntu20-10_groovy_amd64.deb           N+=1
-  file$N=gmic_$1_ubuntu21-04_hirsute_amd64.deb          N+=1
   file$N=gmic_$1_ubuntu21-10_impish_amd64.deb           N+=1
   file$N=gmic_$1_ubuntu22-04_jammy_amd64.deb            N+=1
 
-  file$N=gmic_$1_gimp2.8_debian9-2_stretch_amd64.zip    N+=1
   file$N=gmic_$1_gimp2.10_debian10_buster_amd64.zip     N+=1
   file$N=gmic_$1_gimp2.10_debian11_bullseye_amd64.zip   N+=1
-  file$N=gmic_$1_gimp2.10_ubuntu19-04_disco_amd64.zip   N+=1
-  file$N=gmic_$1_gimp2.10_ubuntu19-10_eoan_amd64.zip    N+=1
   file$N=gmic_$1_gimp2.10_ubuntu20-04_focal_amd64.zip   N+=1
-  file$N=gmic_$1_gimp2.10_ubuntu20-10_groovy_amd64.zip  N+=1
-  file$N=gmic_$1_gimp2.10_ubuntu21-04_hirsute_amd64.zip N+=1
   file$N=gmic_$1_gimp2.10_ubuntu21-10_impish_amd64.zip  N+=1
   file$N=gmic_$1_gimp2.10_ubuntu22-04_jammy_amd64.zip   N+=1
 
@@ -10011,7 +10227,7 @@ nm :
 #@cli : - If selection is empty or not explicitely specified, it represents the last 'N' images of the list, where\
 # 'N' is the number of specified arguments to the command `name`.
 #@cli : - If the selection contains a single image, then it is assumed the command has a single name \
-# argument (possibly containing multiple comas).
+# argument (possibly containing multiple commas).
 #@cli : - If the selection contains more than one image, each command argument defines a single image \
 # name for each image of the selection.
 #@cli : (eq. to '=>').
@@ -13499,7 +13715,7 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
         circle[$visu] {i[0]},{i[1]},5,1,0,0,0 circle[$visu] {i[0]},{i[1]},3,1,255,0,0
         circle[$visu] {i[3]},{i[4]},5,1,0,0,0 circle[$visu] {i[3]},{i[4]},3,1,0,255,0
         s. y,2 rows[-2,-1] 0,1 a[-2,-1] x permute. xczy
-        +warp[$both] .,0,0 rm..
+        +warp[$both] .,0,0,1 rm..
         *. {($5-1)/255} s. x,2
         -. .. *. -1 a[-2,-1] c
         N+=1
@@ -13968,43 +14184,43 @@ elevate : check "${1=64}>0" skip ${2=1},${3=1}
 
 #@cli expand_x : size_x>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the x-axis.
-#@cli : Default value: 'boundary_conditions=1'.
+#@cli : Default value: 'boundary_conditions=0'.
 #@cli : $ image.jpg expand_x 30,0
-expand_x : check "$1>=0 && ${2=1}>=0 && $2<=3"
+expand_x : check "$1>=0 && ${2=0}>=0 && $2<=3"
   e[^-1] "Expand image$? along the x-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
           boundary conditions."
   repeat $! { r[$>] {$>,w+2*$1},100%,100%,100%,0,$2,0.5,0.5,0.5 }
 
 #@cli expand_xy : size>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the xy-axes.
-#@cli : Default value: 'boundary_conditions=1'.
+#@cli : Default value: 'boundary_conditions=0'.
 #@cli : $ image.jpg expand_xy 30,0
-expand_xy : check "$1>=0 && ${2=1}>=0 && $2<=3"
+expand_xy : check "$1>=0 && ${2=0}>=0 && $2<=3"
   e[^-1] "Expand image$? along the xy-axes with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
           boundary conditions."
   repeat $! { r[$>] {$>,w+2*$1},{$>,h+2*$1},100%,100%,0,$2,0.5,0.5,0.5 }
 
 #@cli expand_xyz : size>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the xyz-axes.
-#@cli : Default value: 'boundary_conditions=1'.
-expand_xyz : check "$1>=0 && ${2=1}>=0 && $2<=3"
+#@cli : Default value: 'boundary_conditions=0'.
+expand_xyz : check "$1>=0 && ${2=0}>=0 && $2<=3"
   e[^-1] "Expand image$? along the xyz-axes with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
           boundary conditions."
   repeat $! { r[$>] {$>,w+2*$1},{$>,h+2*$1},{$>,d+2*$1},100%,0,$2,0.5,0.5,0.5 }
 
 #@cli expand_y : size_y>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the y-axis.
-#@cli : Default value: 'boundary_conditions=1'.
+#@cli : Default value: 'boundary_conditions=0'.
 #@cli : $ image.jpg expand_y 30,0
-expand_y : check "$1>=0 && ${2=1}>=0 && $2<=3"
+expand_y : check "$1>=0 && ${2=0}>=0 && $2<=3"
   e[^-1] "Expand image$? along the y-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
           boundary conditions."
   repeat $! { r[$>] 100%,{$>,h+2*$1},100%,100%,0,$2,0.5,0.5,0.5 }
 
 #@cli expand_z : size_z>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the z-axis.
-#@cli : Default value: 'boundary_conditions=1'.
-expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
+#@cli : Default value: 'boundary_conditions=0'.
+expand_z : check "$1>=0 && ${2=0}>=0 && $2<=3"
   e[^-1] "Expand image$? along the z-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
           boundary conditions."
   repeat $! { r[$>] 100%,100%,{$>,d+2*$1},100%,0,$2,0.5,0.5,0.5 }
@@ -14901,7 +15117,7 @@ split_tiles : skip ${2=$1},${3=0}
   if $3 e[^-1] "Split image$? as a $1x$2 array of homogeneous tiles."
   else e[^-1] "Split image$? as a $1x$2 array of tiles."
   fi
-  foreach { s y,$2 s x,$1 if $3 r [0],[0],100%,100%,0 fi }
+  foreach { nm={n} s y,$2 s x,$1 if $3 r [0],[0],100%,100%,0 fi =>[^] $nm }
 
 #@cli undistort : -1<=_amplitude<=1,_aspect_ratio,_zoom,_center_x[%],_center_y[%],_boundary_conditions
 #@cli : Correct barrel/pincushion distortions occurring with wide-angle lens.
@@ -14971,7 +15187,7 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
 #@cli : 'mode' can be { 0=backward-absolute | 1=backward-relative | 2=forward-absolute | 3=forward-relative }.
 #@cli : 'interpolation' can be { 0=nearest-neighbor | 1=linear | 2=cubic }.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
-#@cli : Default values: 'mode=0', 'interpolation=1', 'boundary_conditions=1' and 'nb_frames=1'.
+#@cli : Default values: 'mode=0', 'interpolation=1', 'boundary_conditions=0' and 'nb_frames=1'.
 #@cli : $ image.jpg 100%,100%,1,2,'X=x/w-0.5;Y=y/h-0.5;R=(X*X+Y*Y)^0.5;A=atan2(Y,X);130*R*if(c==0,cos(4*A),sin(8*A))' \
 # warp[-2] [-1],1,1,0 quiver[-1] [-1],10,1,1,1,100
 #@cli : $$ https://gmic.eu/oldtutorial/_warp
@@ -16946,9 +17162,10 @@ phase_correlation : check ${"is_image_arg $1"}
     normalized_cross_correlation[$>] .
     l[$>] {
       eval "
-        store([xM>=w/2?xM - w:xM,
+        store('res',
+              [xM>=w/2?xM - w:xM,
                yM>=h/2?yM - h:yM,
-               zM>=d/2?zM - d:zM]*=-1,'res',1,1,1,3)"
+               zM>=d/2?zM - d:zM]*=-1,1,1,1,3)"
     }
     $res => "[phase correlation]" rv[$>,-1] rm.
   } rm.
@@ -17264,7 +17481,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
 #@cli : Default values: 'sharpness=0.7', 'anisotropy=0.3', 'alpha=0.6', 'sigma=1.1', 'dl=0.8', 'da=30', \
 # 'precision=2', 'interpolation=0' and 'fast_approx=1'.
 #@cli : $ image.jpg repeat 3 smooth 40,0,1,1,2 done
-#@cli : $ image.jpg 100%,100%,1,2 rand[-1] -100,100 repeat 2 smooth[-1] 100,0.2,1,4,4 done warp[0] [-1],1,1
+#@cli : $ image.jpg 100%,100%,1,2 rand[-1] -100,100 repeat 2 smooth[-1] 100,0.2,1,4,4 done warp[0] [-1],1,1,1
 #@cli : $$ https://gmic.eu/oldtutorial/_smooth
 
 #@cli split_freq : smoothness>0[%]
@@ -17796,7 +18013,7 @@ detect_skin : check "${1=0.5}>=0 && $1<=1" skip ${2=-1},${3=-1},${4=-1}
     to_rgb srgb2rgb rgb2ycbcr channels 1,2
     foreach {
       100%,100% circle[1] $2,$3,$4,1,1 +f[1] 'if(i,y,-1)' f[1] 'if(i,x,-1)' discard[1,2] -1 a[1,2] c
-      +warp[0] [1],0,0 rm[1]
+      +warp[0] [1],0,0,1 rm[1]
       s[1] c
       m0={1,ia} -[1] $m0
       m1={2,ia} -[2] $m1
@@ -19990,7 +20207,7 @@ _sierpinski :
 #@cli : Input a 2D rectangular spiral image with specified size.
 #@cli : Default values: 'height=width' and 'is_2dcoords=0'.
 #@cli : $ spiralbw 16
-#@cli : $ image.jpg spiralbw {[w,h]},1 +warp[0] [1],0 +warp[2] [1],2
+#@cli : $ image.jpg spiralbw {[w,h]},1 +warp[0] [1],0,1,1 +warp[2] [1],2,1,1
 +spiralbw : check "$1>=1 && ${2=$1}>=1 && isbool(${3=0})"
   e[^-1] "Input 2D rectangular spiral image of size $1x$2."
   main="alpha = min(x,y,w - 1 - x,h - 1 - y);
@@ -20237,6 +20454,13 @@ yinyang :
 #@cli : $ image.jpg structuretensors blur 2 eigen split[0] c
 #@cli : $$ https://gmic.eu/oldtutorial/_eigen
 
+#@cli eye : _size>0
+#@cli : Insert an identity matrix of given size at the end of the image list.
+#@cli : $ eye 3 eye 7 eye 10
++eye : check "isint($1) && $1>=0"
+  e[^-1] "Input $1x$1 identity matrix."
+  if $1 $1,$1,1,1,x==y else 0 fi
+
 #@cli invert : solver={ 0=SVD | 1=LU } : (+)
 #@cli : Compute the inverse of the selected matrices.
 #@cli : SVD solver is slower but less numerically instable than LU.
@@ -20282,7 +20506,7 @@ meigen : check "isint($1) && $1>0"
   foreach {
     nm={n}
     if w!=h" || "d!=1" || "s!=1 v 1 error[0--5] "Command 'meigen': Image '"$nm"' is not a square matrix." fi
-    eval ${-math_lib}" store(meig(crop(),$1,h),'val',1,min($1,h))" $val k. => $nm
+    eval ${-math_lib}" store('val',meig(crop(),$1,h),1,min($1,h))" $val k. => $nm
   }
 
 #@cli mproj : [dictionary],_method,_max_iter={ 0=auto | >0 },_max_residual>=0 : (+)
@@ -20756,7 +20980,7 @@ distribution3d :
 #@cli : Scale selected 3D objects isotropically or anisotropically, with the inverse of specified
 #@cli : factors.
 #@cli : (eq. to '/3d').
-#@cli : Default value: 'factor_z=0'.
+#@cli : Default value: 'factor_z=1'.
 #@cli : $ torus3d 5,2 repeat 5 { +add3d[-1] 12,0,0 div3d[-1] 1.2 color3d[-1] ${-rgb} } add3d
 
 #@cli db3d : eq. to 'double3d'. : (+)
@@ -20897,7 +21121,7 @@ gaussians3d : check "${1=32}>0" skip ${2=0.3}
   sphere3d 8 +3d. 102,-3,20 col3d. 192,128,255
   +3d[-6--1] c3d.
   repeat 30 {
-    box3d {min(3+$</2,10)} col3d. {30*$>},{20+80*$>},{10*$>},0.5
+    box3d {min(3+$</2,10)} col3d. {cut([30*$>,20+80*$>,10*$>],0,255)},0.5
     r3d. 1,1,1,{$>*12}
     +3d. {80*cos(0.5+1.02*$>*12*pi/180)},{30*sin(0.8+$>*12*pi/180)},{2*$>-60}
   }
@@ -21267,7 +21491,7 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli mul3d : factor : factor_x,factor_y,_factor_z : (+)
 #@cli : Scale selected 3D objects isotropically or anisotropically, with specified factors.
 #@cli : (eq. to '*3d').
-#@cli : Default value: 'factor_z=0'.
+#@cli : Default value: 'factor_z=1'.
 #@cli : $ torus3d 5,2 repeat 5 { +add3d[-1] 10,0,0 mul3d[-1] 1.2 color3d[-1] ${-rgb} } add3d
 
 #@cli n3d : eq. to 'normalize3d'.
@@ -21413,7 +21637,7 @@ pointcloud3d :
       i.. (1,{w};1,{w}^1,1;{h},{h}) r.. .,.,1,2,3 *[-2,-1] round. permute. cxyz
       l. { s -,0 a y is_points=$! }
       if $is_points
-        -. 1 r. 2,{h/2},1,1,-1 permute. cyzx +warp.. .,0,0 rm...
+        -. 1 r. 2,{h/2},1,1,-1 permute. cyzx +warp.. .,0,0,1 rm...
         permute.. cyzx i.. 1,{h},1,1,$> a[-3,-2] x   # Coordinates.
         i... ('CImg3d') i... ({h},{h})               # Header and size.
         i.. 1,{h},1,1,1 i.. 1,{h},1,1,y a[-3,-2] x   # Primitives.
@@ -21438,9 +21662,11 @@ pose3d :
   e[^-1] "Apply 3D pose matrix [ $1,$2,$3,$4; $5,$6,$7,$8; $9,$10,$11,$12 ] to 3D object$?."
   foreach {
     if ${-_is_3d}
-      s3d r[2] 3,{2,h/3},1,1,-1 i[3] 1,{2,h},1,1,1 a[2,3] x
-      i[3] ($1,$5,$9;$2,$6,$10;$3,$7,$11;$4,$8,$12) m*[2,3]
-      r[2] 1,{2,3*h},1,1,-1 a y
+      if "i[6] && i[7]"
+        s3d r[2] 3,{2,h/3},1,1,-1 i[3] 1,{2,h},1,1,1 a[2,3] x
+        i[3] ($1,$5,$9;$2,$6,$10;$3,$7,$11;$4,$8,$12) m*[2,3]
+        r[2] 1,{2,3*h},1,1,-1 a y
+      fi
     else error "Command '$0': Image ["{$!-$>-1}"] does not represent a 3D object."
     fi
   }
@@ -21569,7 +21795,7 @@ _primitives3d :
         ++nq;
       );
 
-      pcol = popa = pref = vector"{i[#1,1]}"();
+      pcol = popa = pref = vector"{f2ui(i[#1,1])}"();
       for (pp = pc = po = qp = qc = qo = np = nq = 0, pp<h#3, ++np,
         qp + 28>=h(#-3)?resize(#-3,1,int(1.5*qp + 28),1,1,0,0);
         qc + 16>=h(#-2)?resize(#-2,1,int(1.5*qc + 16),1,1,0,0);
@@ -22140,6 +22366,131 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
   # Define object primitives, colors and opacities.
   1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
   1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y => [3D\ superformula]
+
+#@cli surfels3d : 0<=_left_right_attenuation<=1,0<=_top_bottom_attenuation<=1,0<=_closer_further_attenuation<=1
+#@cli : Convert selected images to 3d objects composed of 3D surfels (or 2D edgels for 2D images).
+#@cli : Selected images must contain binary shapes, where each value 0 is an exterior voxel, \
+# and each value !=0 is an interior voxel.
+#@cli : The resulting 3D object is colored according to the color of non zero voxels.
+#@cli : Default values: 'left_right_attenuation=1', 'top_bottom_attenuation=1' and 'closer_further_attenuation=1'.
+#@cli : $ 100,100,100 = 1,40%,40%,40% = 1,60%,60%,60% distance 1 lt 30% blur 3 gt 50% surfels3d 0.5,0.75,1
+surfels3d :
+  e[^-1] "Generate 3D surfel object from binary shape$? with color attenuations (${1-3})."
+  foreach {
+    nm={n}
+
+    if d==1 # 2D
+      {[w,h]+1},1,1,-1 1,1,1,2x2 1,1,1,{0,s} => ind,pts,prims,cols
+      eval[0] ">val = I; norm(val)?(
+        const ind = $ind; const pts = $pts; const prims = $prims; const cols = $cols;
+        nx = x + 1; ny = y + 1;
+        !j(-1)?( # Left
+          i0 = i(#ind,x,y); i0<0?(i0 = i(#ind,x,y) = da_size(#pts); da_push(#pts,[x - 0.5, y - 0.5]));
+          i1 = i(#ind,x,ny); i1<0?(i1 = i(#ind,x,ny) = da_size(#pts); da_push(#pts,[x - 0.5, y + 0.5]));
+          da_push(#prims,[i1,i0]);
+          da_push(#cols,val*$1);
+        );
+        !j(1)?( # Right
+          i0 = i(#ind,nx,y); i0<0?(i0 = i(#ind,nx,y) = da_size(#pts); da_push(#pts,[x + 0.5, y - 0.5]));
+          i1 = i(#ind,nx,ny); i1<0?(i1 = i(#ind,nx,ny) = da_size(#pts); da_push(#pts,[x + 0.5, y + 0.5]));
+          da_push(#prims,[i0,i1]);
+          da_push(#cols,val*$1);
+        );
+        !j(0,-1)?( # Top
+          i0 = i(#ind,x,y); i0<0?(i0 = i(#ind,x,y) = da_size(#pts); da_push(#pts,[x - 0.5, y - 0.5]));
+          i1 = i(#ind,nx,y); i1<0?(i1 = i(#ind,nx,y) = da_size(#pts); da_push(#pts,[x + 0.5, y - 0.5]));
+          da_push(#prims,[i0,i1]);
+          da_push(#cols,val*$2);
+        );
+        !j(0,1)?( # Bottom
+          i0 = i(#ind,x,ny); i0<0?(i0 = i(#ind,x,ny) = da_size(#pts); da_push(#pts,[x - 0.5, y + 0.5]));
+          i1 = i(#ind,nx,ny); i1<0?(i1 = i(#ind,nx,ny) = da_size(#pts); da_push(#pts,[x + 0.5, y + 0.5]));
+          da_push(#prims,[i1,i0]);
+          da_push(#cols,val*$2);
+        );
+      ); I;
+      end(
+        resize(#pts,1,da_size(#pts),1,s#pts,0);
+        resize(#prims,1,da_size(#prims),1,s#prims,0);
+        resize(#cols,1,da_size(#cols),1,s#cols,0);
+      )"
+
+      if !w rm # Empty object
+      else
+        to_rgb[cols]
+        k[pts,prims,cols] permute cyzx i[1] 1,{0,h},1,1,0 a[0,1] x i[1] 1,{1,h},1,1,2 a[1,2] x =>.. prims
+      fi
+
+    else # 3D
+      {[w,h,d]+1},1,-1 1,1,1,3 1,1,1,4 1,1,1,{0,s} => ind,pts,prims,cols
+      eval[0] ">val = I; norm(val)?(
+        const ind = $ind; const pts = $pts; const prims = $prims; const cols = $cols;
+        nx = x + 1; ny = y + 1; nz = z + 1;
+        !j(-1)?( # Left
+          i0 = i(#ind,x,y,z); i0<0?(i0 = i(#ind,x,y,z) = da_size(#pts); da_push(#pts,[x-0.5, y-0.5, z-0.5]));
+          i1 = i(#ind,x,ny,z); i1<0?(i1 = i(#ind,x,ny,z) = da_size(#pts); da_push(#pts,[x-0.5, y+0.5, z-0.5]));
+          i2 = i(#ind,x,ny,nz); i2<0?(i2 = i(#ind,x,ny,nz) = da_size(#pts); da_push(#pts,[x-0.5, y+0.5, z+0.5]));
+          i3 = i(#ind,x,y,nz); i3<0?(i3 = i(#ind,x,y,nz) = da_size(#pts); da_push(#pts,[x-0.5, y-0.5, z+0.5]));
+          da_push(#prims,[i0,i3,i2,i1]);
+          da_push(#cols,val*$1);
+        );
+        !j(1)?( # Right
+          i0 = i(#ind,nx,y,z); i0<0?(i0 = i(#ind,nx,y,z) = da_size(#pts); da_push(#pts,[x+0.5, y-0.5, z-0.5]));
+          i1 = i(#ind,nx,ny,z); i1<0?(i1 = i(#ind,nx,ny,z) = da_size(#pts); da_push(#pts,[x+0.5, y+0.5, z-0.5]));
+          i2 = i(#ind,nx,ny,nz); i2<0?(i2 = i(#ind,nx,ny,nz) = da_size(#pts); da_push(#pts,[x+0.5, y+0.5, z+0.5]));
+          i3 = i(#ind,nx,y,nz); i3<0?(i3 = i(#ind,nx,y,nz) = da_size(#pts); da_push(#pts,[x+0.5, y-0.5, z+0.5]));
+          da_push(#prims,[i0,i1,i2,i3]);
+          da_push(#cols,val*$1);
+        );
+        !j(0,-1)?( # Top
+          i0 = i(#ind,x,y,z); i0<0?(i0 = i(#ind,x,y,z) = da_size(#pts); da_push(#pts,[x-0.5, y-0.5, z-0.5]));
+          i1 = i(#ind,nx,y,z); i1<0?(i1 = i(#ind,nx,y,z) = da_size(#pts); da_push(#pts,[x+0.5, y-0.5, z-0.5]));
+          i2 = i(#ind,nx,y,nz); i2<0?(i2 = i(#ind,nx,y,nz) = da_size(#pts); da_push(#pts,[x+0.5, y-0.5, z+0.5]));
+          i3 = i(#ind,x,y,nz); i3<0?(i3 = i(#ind,x,y,nz) = da_size(#pts); da_push(#pts,[x-0.5, y-0.5, z+0.5]));
+          da_push(#prims,[i0,i1,i2,i3]);
+          da_push(#cols,val*$2);
+        );
+        !j(0,1)?( # Bottom
+          i0 = i(#ind,x,ny,z); i0<0?(i0 = i(#ind,x,ny,z) = da_size(#pts); da_push(#pts,[x-0.5, y+0.5, z-0.5]));
+          i1 = i(#ind,nx,ny,z); i1<0?(i1 = i(#ind,nx,ny,z) = da_size(#pts); da_push(#pts,[x+0.5, y+0.5, z-0.5]));
+          i2 = i(#ind,nx,ny,nz); i2<0?(i2 = i(#ind,nx,ny,nz) = da_size(#pts); da_push(#pts,[x+0.5, y+0.5, z+0.5]));
+          i3 = i(#ind,x,ny,nz); i3<0?(i3 = i(#ind,x,ny,nz) = da_size(#pts); da_push(#pts,[x-0.5, y+0.5, z+0.5]));
+          da_push(#prims,[i0,i3,i2,i1]);
+          da_push(#cols,val*$2);
+        );
+        !j(0,0,-1)?( # Closer
+          i0 = i(#ind,x,y,z); i0<0?(i0 = i(#ind,x,y,z) = da_size(#pts); da_push(#pts,[x-0.5, y-0.5, z-0.5]));
+          i1 = i(#ind,nx,y,z); i1<0?(i1 = i(#ind,nx,y,z) = da_size(#pts); da_push(#pts,[x+0.5, y-0.5, z-0.5]));
+          i2 = i(#ind,nx,ny,z); i2<0?(i2 = i(#ind,nx,ny,z) = da_size(#pts); da_push(#pts,[x+0.5, y+0.5, z-0.5]));
+          i3 = i(#ind,x,ny,z); i3<0?(i3 = i(#ind,x,ny,z) = da_size(#pts); da_push(#pts,[x-0.5, y+0.5, z-0.5]));
+          da_push(#prims,[i0,i3,i2,i1]);
+          da_push(#cols,val*$3);
+        );
+        !j(0,0,1)?( # Further
+          i0 = i(#ind,x,y,nz); i0<0?(i0 = i(#ind,x,y,nz) = da_size(#pts); da_push(#pts,[x-0.5, y-0.5, z+0.5]));
+          i1 = i(#ind,nx,y,nz); i1<0?(i1 = i(#ind,nx,y,nz) = da_size(#pts); da_push(#pts,[x+0.5, y-0.5, z+0.5]));
+          i2 = i(#ind,nx,ny,nz); i2<0?(i2 = i(#ind,nx,ny,nz) = da_size(#pts); da_push(#pts,[x+0.5, y+0.5, z+0.5]));
+          i3 = i(#ind,x,ny,nz); i3<0?(i3 = i(#ind,x,ny,nz) = da_size(#pts); da_push(#pts,[x-0.5, y+0.5, z+0.5]));
+          da_push(#prims,[i0,i1,i2,i3]);
+          da_push(#cols,val*$3);
+        );
+      ); I;
+      end(
+        resize(#pts,1,da_size(#pts),1,s#pts,0);
+        resize(#prims,1,da_size(#prims),1,s#prims,0);
+        resize(#cols,1,da_size(#cols),1,s#cols,0);
+      )"
+
+      if !w rm # Empty object
+      else
+        to_rgb[cols]
+        k[pts,prims,cols] permute cyzx i[1] 1,{1,h},1,1,4 a[1,2] x =>.. prims
+      fi
+    fi
+
+    if !$! empty3d else i[0] ({'CImg3d'},{pts,h},{prims,h}:y) 1,100%,1,1,1 y a y fi
+    => $nm
+  }
 
 #@cli tensors3d : _radius_factor>=0,_shape={ 0=box | >=N=ellipsoid },_radius_min>=0
 #@cli : Generate 3D tensor fields from selected images.
@@ -23043,7 +23394,7 @@ nn_lib :
         dL_params#_g2 = get(dL_params#_name_g2,size(dL_params));
       );
       dL_params#_g2 = lerp(dL_params^2,dL_params#_g2,nn_optimizer_rmsprop_beta);
-      store(dL_params#_g2,dL_params#_name_g2,size(dL_params));
+      store(dL_params#_name_g2,dL_params#_g2,size(dL_params));
       L_params#-=nn_learning_rate*dL_params/sqrt(1e-8 + dL_params#_g2);
     );
 
@@ -23070,8 +23421,8 @@ nn_lib :
       );
       dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adam_beta1);
       dL_params#_v = lerp(dL_params^2,dL_params#_v,nn_optimizer_adam_beta2);
-      store(dL_params#_m,dL_params#_name_m,size(dL_params));
-      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+      store(dL_params#_name_m,dL_params#_m,size(dL_params));
+      store(dL_params#_name_v,dL_params#_v,size(dL_params));
       L_params#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
@@ -23096,8 +23447,8 @@ nn_lib :
       );
       dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adamax_beta1);
       dL_params#_v = vmax(abs(dL_params),nn_optimizer_adamax_beta2*dL_params#_v);
-      store(dL_params#_m,dL_params#_name_m,size(dL_params));
-      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+      store(dL_params#_name_m,dL_params#_m,size(dL_params));
+      store(dL_params#_name_v,dL_params#_v,size(dL_params));
 
       L_params#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
@@ -23611,7 +23962,7 @@ nn_lib :
 
     nn_layer_run_forward(L,IN) = (
       critical(
-        store(IN#_out,'nn_#IN#_out',IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum);
+        store('nn_#IN#_out',IN#_out,IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum);
         run(L#_pipeline);
         L#_out = get(L#_varname,L#_out_width*L#_out_height*L#_out_depth*L#_out_spectrum);
       );
@@ -24562,7 +24913,7 @@ map_sprites : check "isint($1) && $1>0 && isint(${2=0}) && $2>=0 && $2<=2"
   r[-$N--1] 100%,100%,1,${max_s[-$N--1]} w={w} h={h} a[-$N--1] x
   r[^-1] ${w}00%,${h}00%,1,1 *[^-1] $w
   (0,{$w-1};0,{$w-1}^0,0;{$h-1},{$h-1}) r. $w,$h,1,2,3 round.
-  repeat $!-2 { +r. [$>],[$>],1,2,0,2 r[$>] 100%,100%,1,2,0 +[$>,-1] +warp.. [$>],0,0 rv[$>,-1] rm. } rm[-2,-1]
+  repeat $!-2 { +r. [$>],[$>],1,2,0,2 r[$>] 100%,100%,1,2,0 +[$>,-1] +warp.. [$>],0,0,1 rv[$>,-1] rm. } rm[-2,-1]
 
 #@cli pack : is_ratio_constraint={ 0 | 1 },_sort_criterion
 #@cli : Pack selected images into a single image.
@@ -25219,7 +25570,7 @@ hardsketchbw : skip ${1=300},${2=50},${3=0.1},${4=20},${5=0}
 
       # Retrieve points coordinates and corresponding tangents.
       pointcloud3d. s3d. rm[-6--5,-3--1] r. 3,{h/3},1,1,-1 s. x rm. a[-2,-1] c
-      warp.. .,0,0 +-. .. +[-3,-2] s[-2,-1] c
+      warp.. .,0,0,1 +-. .. +[-3,-2] s[-2,-1] c
 
       # Convert as a 3d object and render on white background.
       i... 1,{h} 1,{h} a[-6--1] x
@@ -25489,7 +25840,7 @@ polygonize : check "${1=300}>=0 && ${2=2%}>=0 && ${3=0.1%}>=0 && ${4=10%}>0 && $
      plane3d 1,1,$resx,$resy *3d. {0,w-1},{0,h-1},1
      s3d. rm.. i.. (0;{h-1}) r.. 3,{h},1,1,3 round.. y..
      [-4] a[-7--2] y r. 3,{h/3},1,1,-1 z. 0,1 permute. yzcx
-     repeat $1 { +warp[1] .,0,0 +[-2,-1] }
+     repeat $1 { +warp[1] .,0,0,1 +[-2,-1] }
      permute. cxyz z. 0,2 y. j[2] .,0,8 rm[-3,-1]
      [0],[0] j3d. [1],0,0,0,1,2 rm[1]
      if $3>0
@@ -25958,9 +26309,9 @@ deform : skip ${1=10},${2=1}
 #@cli euclidean2polar : _center_x[%],_center_y[%],_stretch_factor>0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply euclidean to polar transform on selected images.
-#@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=1'.
+#@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=3'.
 #@cli : $ image.jpg +euclidean2polar ,
-euclidean2polar : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>=0 && $4<=3"
+euclidean2polar : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=3}) && $4>=0 && $4<=3"
   e[^-1] "Apply euclidean to polar transform on image$?, with center point ($1,$2), stretch factor $3 and "\
          ${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   foreach {
@@ -26088,9 +26439,9 @@ nadirzenith2equirectangular :
 #@cli polar2euclidean : _center_x[%],_center_y[%],_stretch_factor>0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply euclidean to polar transform on selected images.
-#@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=1'.
+#@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=3'.
 #@cli : $ image.jpg +euclidean2polar ,
-polar2euclidean : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>=0 && $4<=3"
+polar2euclidean : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=3}) && $4>=0 && $4<=3"
   e[^-1] "Apply polar to euclidean transform on image$?, with center point ($1,$2), stretch factor $3 and "\
          ${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   foreach {
@@ -26116,7 +26467,7 @@ raindrops : check "${2=0.1}>=0 && ${3=1}>=0 && isint(${4=0}) && $4>=0" skip ${1=
       repeat $4 { +convolve. ...,1 -. ... rm... } rm[-3,-2]
     fi
     g. a[-2,-1] c *. {$1/(1e-5+max(abs(im),abs(iM)))}
-    warp.. .,1 rm.
+    warp.. .,1,1,1 rm.
   }
 
 #@cli ripple : _amplitude,_bandwidth,_shape={ 0=bloc | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
@@ -26131,7 +26482,7 @@ ripple : skip ${1=10},${2=20},${3=2},${4=0},${5=0}
     -. {h/2-$5} *.. $S *. $C +[-2,-1]      # Generate rotated Y.
     _ripple$3. $1,$2                       # Generate warp field.
     +*. {-$S} *.. $C a[-2,-1] c            # Rotate warp field.
-    warp.. .,1 rm.
+    warp.. .,1,1,1 rm.
   }
 
 _ripple0 : f {$1/2}*"(1-2*(i%"{2*$2}"<$2))"
@@ -26210,9 +26561,9 @@ symmetrize : skip ${1=50%},${2=50%},${3=90},${4=3},${5=0},${6=0}
 #@cli transform_polar : "expr_radius",_"expr_angle",_center_x[%],_center_y[%],\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply user-defined transform on polar representation of selected images.
-#@cli : Default values: 'expr_radius=R-r', 'expr_rangle=a', 'center_x=center_y=50%' and 'boundary_conditions=1'.
+#@cli : Default values: 'expr_radius=R-r', 'expr_rangle=a', 'center_x=center_y=50%' and 'boundary_conditions=3'.
 #@cli : $ image.jpg +transform_polar[0] R*(r/R)^2,a +transform_polar[0] r,2*a
-transform_polar : skip "${1=R-r}","${2=a}",${3=50%},${4=50%},${5=1}
+transform_polar : skip "${1=R-r}","${2=a}",${3=50%},${4=50%},${5=3}
   e[^-1] "Apply custom polar transform with 'new_r = $1', 'new_a = $2', center point ($3%,$4%)."
   foreach {
     cx={if(${is_percent\ $3},$3*(w-1),$3)}
@@ -26260,7 +26611,7 @@ water : check ${2=1.5}>=0 skip ${1=30},${3=1},${4=45}
   e[^-1] "Apply water deformation on image$?, with amplitude $1, smoothness $2 and angle $3."
   foreach {
     25%,25%,25%,1 noise. $1 g. xy *.. {-sin($3*pi/180)} *. {cos($3*pi/180)} +[-2,-1] b. $2 *. 2
-    r. ..,..,1,2,3 warp.. .,1 rm.
+    r. ..,..,1,2,3 warp.. .,1,1,1 rm.
   }
 
 #@cli wave : _amplitude>=0,_frequency>=0,_center_x,_center_y
@@ -26272,7 +26623,7 @@ wave : skip ${1=4},${2=0.4},${3=50},${4=50}
   foreach {
     100%,100% =. 1,$3%,$4% distance. 1
     *. $2 +sin. cos.. a[-2,-1] c *. $1
-    warp.. .,1 rm.
+    warp.. .,1,1,1 rm.
   }
 
 #@cli wind : _amplitude>=0,_angle,0<=_attenuation<=1,_threshold
@@ -26391,7 +26742,7 @@ scanlines : skip ${1=60},${2=2},${3=0},${4=0},${5=0}
   foreach {
     100%,100%,1,1,"x" -. {w/2} 100%,100%,1,1,'y'
     -. {h/2-$5} *.. $S *. $C +[-2,-1]      # Generate rotated Y.
-    _ripple$3. $1,$2                            # Generate warp field.
+    _ripple$3. $1,$2                       # Generate warp field.
     n. {-$1},$1
     + cut 0,255
   }
@@ -26428,7 +26779,7 @@ spread : skip ${1=3},${2=$1},${3=0}
     sh. 0 rand. {-$1},$1 rm.
     sh. 1 rand. {-$2},$2 rm.
     sh. 2 rand. {-$3},$3 rm.
-    warp.. .,1 rm.
+    warp.. .,1,1,1 rm.
   }
 
 #@cli stripes_y : _frequency>=0
@@ -26999,18 +27350,39 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
 #@cli : Default values: 'command=""', 'camera_index=0' (default camera), 'skip_frames=0' and 'output_filename=""'.
 apply_camera : check_opencv $0 skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   e[^-1] "Apply command '$1' on camera stream ""#$2, with $3 frames skip and output filename '$4'."
+  m "_apply_camera_com : $1"
   is_ext "$4",avi is_outavi=${}
   is_ext "$4",mp4 is_outmp4=${}
+  is_fs=0
   l[] {
     i=0
     do
-      camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
-      if narg("$4") if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
+      camera $2,1,$3
+      _apply_camera_com.
+      if !$! 640,480,1,3 else k. fi
+      if {*}" && "[w,h]!=[{*,d,e}]
+        +r2din. {*,d,e},1,0,0.5,0.5 r. {*,d,e},1,100%,0,0,0.5,0.5
+      else .
+      fi
+      w. -1,-1,"[G'MIC] Camera ""#$2 ("{0,w}x{0,h}")"
+      k[0]
+
+      if narg("$4")
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1
+        else o. ${filename\ "$4",$i} i+=1
+        fi
+      fi
       if {*,S} o. gmic_camera.png fi
-      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
-      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
-      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
-      rm.
+      is_ctrl:={*,CTRLLEFT}" || "{*,CTRLRIGHT}
+      if !$is_fs" && "$is_ctrl" && "{*,-D} w[] {{*,w}*1.5},{{*,h}*1.5} fi # Increase window size
+      if !$is_fs" && "$is_ctrl" && "{*,-C} w[] {{*,w}/1.5},{{*,h}/1.5} fi # Decrease window size
+      if $is_ctrl" && "{*,-F} # Switch fullscreen mode
+        if !$is_fs fs_wh={*,w,h} w[] {*,u,v},1,1 is_fs=1
+        else w[] $fs_wh,1,0 is_fs=0
+        fi
+      fi
+      if $is_ctrl" && "{*,-R} w[] {0,w},{0,h},1,0 is_fs=0 fi # Reset window size
+      rm
     while {*}" && "!{*,ESC}" && "!{*,Q}
     camera $2,0
   }
@@ -28974,7 +29346,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
       to_keep = vectorl();
       p = 0;
       repeat (l,k, find(#k,str)>=0?(to_keep[p++] = k));
-      store(to_keep,'to_keep',p);
+      store('to_keep',to_keep,p);
       run('$to_keep k[{^}]')"
     if $!>1 i[1--2] ('\n') fi
     a y => $nm
@@ -29017,7 +29389,7 @@ _ovh2stats :
       );
       tab = sort(tab,1,N,2);
       for (i = 0, i<size(tab) - 1, ++i, tab[2*i]==tab[2*i + 2]?tab[2*i] = tab[2*i + 1] = -1);
-      store(tab,'tab')"
+      store('tab',tab)"
     $tab discard. -1 r. 2,{h/2},1,1,-1 z. 1,1 k[{^}]
 
     # Analyze G'MIC version, host software and OS.
@@ -29050,9 +29422,9 @@ _ovh2stats :
 
         ++ips;
       );
-      store([ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases],
-            'features');
-      store(versions,'versions')"
+      store('features',
+            [ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases]);
+      store('versions',versions)"
     rm $features
     ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^}
     $versions
@@ -29316,10 +29688,10 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
     all_avg={avg($all_eur,[$all_usd]/$eur2usd)}
     all_med={med($all_eur,[$all_usd]/$eur2usd)}
 
-    0 t. "Avg: "{_round($all_avg,0.1)}"\37 / "\
-         "Med: "{_round($all_med,0.1)}"\37 / "\
-         "Min: "{_round($all_min,0.1)}"\37 / "\
-         "Max: "{_round($all_max,0.1)}"\37",0,0,24,1,1
+    0 t. "Avg: "{_max(0.1,round($all_avg,0.1))}"\37 / "\
+         "Med: "{_max(0.1,round($all_med,0.1))}"\37 / "\
+         "Min: "{_max(0.1,round($all_min,0.1))}"\37 / "\
+         "Max: "{_max(0.1,round($all_max,0.1))}"\37",0,0,24,1,1
     *. 200 i[-2] 100%,100%,1,3 a[-2,-1] c
 
     rows -5,100% a y,0.5 r2dx 480
@@ -29435,16 +29807,17 @@ str2hex :
 #@cli : Capitalize specified string.
 strcapitalize :
   l[] {
-    ('{/"$1"}')
+    ('{/"$*"}')
     f "(i<=_' ' || i==_'_') && i!=_'\n'?_' ':i" # Replace blank characters and underscores
     f ">
-       t(s) = ( unref(ss); const ss = size(s); lowercase(crop(x,ss))!=s || j[ss]!=_' ');
-       !x || (p=j[-1])==_'.' || p==_':' || p==_';' || p==_'\"' || (find(#0,_' ',x)<0 && p==_' ') ||
-       (p==_' ' || p==_'-') &&
-        t('a') && t('an') && t('and') && t('as') && t('at') && t('but') && t('by') && t('for') && t('from') &&
-        t('in') && t('into') && t('like') && t('near') && t('nor') && t('of') && t('off') && t('on') &&
-        t('onto') && t('or') && t('over') && t('past') && t('per') && t('than') && t('the') && t('to') &&
-        t('up') && t('upon') && t('via') && t('with')?uppercase(i):i"
+       t(s) = ( unref(ss); const ss = size(s); lowercase(crop(x,ss))!=s || j[ss]!=_' ' );
+       !x || (
+         ((p=j[-1])==_':' || p==_';' || p==_'\"' || (find(#0,_' ',x)<0 && p==_' ') || (p==_' ' || p==_'-')) &&
+         t('a') && t('an') && t('and') && t('as') && t('at') && t('but') && t('by') && t('for') && t('from') &&
+         t('in') && t('into') && t('like') && t('near') && t('nor') && t('of') && t('off') && t('on') &&
+         t('onto') && t('or') && t('over') && t('past') && t('per') && t('than') && t('the') && t('to') &&
+         t('up') && t('upon') && t('via') && t('with')
+       )?uppercase(i):i"
     u {t} rm
   }
 
@@ -32218,7 +32591,7 @@ x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_displ
   do
 
     # Render board.
-    +*[board] 24 r. [offsets],[offsets] channels. 0,1 +. [offsets] +warp[sprites] .,0,0 rm..
+    +*[board] 24 r. [offsets],[offsets] channels. 0,1 +. [offsets] +warp[sprites] .,0,0,1 rm..
     j[canvas] .,24,24 rm.
 
     # Wait for user's selection.
@@ -32588,7 +32961,7 @@ x_pacman : check_display $0
     16,16,1,1,'x' +-[map] 1 max. 0 *. 16 r. 1600%,1600%
     16,16,1,1,'y' ri[-3,-1] ..,0,2 +[-2,-1] a[-2,-1] c
     16,16,1,3 _pacman_pacdots_gfx _pacman_pacgum_gfx a[-3--1] y
-    warp. ..,0,0 rm.. -|[-2,-1] r. 100%,{h+24},1,3,0,0,0,1
+    warp. ..,0,0,1 rm.. -|[-2,-1] r. 100%,{h+24},1,3,0,0,0,1
     t. "Lives :",10,0,24,1,255 t. "Score :",{w-140},0,24,1,255
     if $lives +r[pacman_2] 12,12,1,4,2 r. {100*$lives}%,100%,1,4,0,2 j.. .,90,7 rm. fi => visu
     w[visu] {visu,f=h<0.5*{*,v}?1.5:1;[w,h]*=f},0,"[G"{`39`}"MIC] Pacman" cursor[0] 0
@@ -33258,7 +33631,7 @@ x_rubber3d : check_display $0
     fps=${-fps}
     {w},{h},1,3 fc. 16,32,32 j3d. [0],50%,50%,0,1,3,0,0 j[1] .,0,0,$frame rm.
     r3d[0] 0.1,1,0.6,{3*cos($|*1.25)} r3d[0] 1,0.2,0.6,-1
-    +warp[1] [2],0,0 *[3] 0.8 *. 0.2 +[3] . rm.
+    +warp[1] [2],0,0,1 *[3] 0.8 *. 0.2 +[3] . rm.
     if $fps>0 to. $fps" fps",5,{h-29},24,2,0.2 fi
     w.
     if {*,CTRLLEFT}" && "{*,D} w[] {2*w},{2*h} elif {*,CTRLLEFT}" && "{*,C} w[] {w},{h} fi
@@ -35984,7 +36357,7 @@ fx_gmicky_preview :
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
-#@gui : - <span foreground="purple"><b>2022/05/10</b> : version <i>3.1.1</i> (Current stable).</span>\n
+#@gui : - <span foreground="purple"><b>2022/06/16</b> : version <i>3.1.3</i> (Current stable).</span>\n
 ##@gui : - <b>2022/xx/xx</b> : version <i>3.1.2</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
@@ -36252,7 +36625,7 @@ fx_dices :
 
       # Convert input image to dices pattern.
       *.. $2 channels.. 0,1 r.. {$2*100}%,{$2*100}%
-      $2,$2,1,2,'if(c,y,x)' r. ...,...,1,2,0,2 +[-3,-1] +warp. ..,0,0 rm...
+      $2,$2,1,2,'if(c,y,x)' r. ...,...,1,2,0,2 +[-3,-1] +warp. ..,0,0,1 rm...
 
       if $3<2 rm[0] mv. 0
       else r[0] [2],[2],1,100% rv[0,-1] blend[0,-1] multiply
@@ -38466,15 +38839,18 @@ _fx_stylize : # Download pre-defined style image
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.\nLatest Update: <i>2015/25/08</i>.</small>")
 fx_vector_painting :
   foreach {
-    +luminance b. {10-$1}%,1,1
-    f. "dmax = -1; nmax = 0;
-        for (n = 0, ++n<=8,
-          p = arg(n,-1,0,1,-1,1,-1,0,1);
-          q = arg(n,-1,-1,-1,0,0,1,1,1);
-          d = (j(p,q,0,0,0,1) - i)^2;
-          d>dmax?(dmax = d; nmax = n):nmax;
-        )"
-    blend shapeaverage
+    split_opacity l[0] {
+      +luminance b. {10-$1}%,1,1
+      f. "dmax = -1; nmax = 0;
+          for (n = 0, ++n<=8,
+            p = arg(n,-1,0,1,-1,1,-1,0,1);
+            q = arg(n,-1,-1,-1,0,0,1,1,1);
+            d = (j(p,q,0,0,0,1) - i)^2;
+            d>dmax?(dmax = d; nmax = n):nmax;
+          )"
+      blend shapeaverage
+    }
+    a c
   }
 
 fx_vector_painting_preview :
@@ -39414,7 +39790,7 @@ fx_stamp_preview :
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/19/10</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/10/19</i>.</small>")
 fx_color_abstraction :
   foreach {
     split_opacity l[0] { to_rgb b $1 s c quantize $2,1,0 area 0 ^ $3 n 0,255 }
@@ -42868,6 +43244,7 @@ fx_extract_foreground :
   resolution={arg(1+$3,512,1024,2048,0)}
   foreach {
     nm=${-gui_layer_name}
+    initial_pos=${-gui_layer_pos}
     => "[G"{`39`}"MIC] Interactive Foreground Extraction"
     if [$6][0]==-1" || "[$5]!=[w,h] _gui_control_points= else _gui_control_points=$6 fi
     status=${x_segment\ $resolution}
@@ -42882,8 +43259,8 @@ fx_extract_foreground :
       sh. 3 *. -1 +. 255 rm.
       gui_autocrop_layers[0]
       pos0=${gui_layer_pos[0]} pos1=${gui_layer_pos[1]}
-      =>[0] "name("$nm" [foreground]),pos("$pos0")"
-      =>[1] "name("$nm" [background]),pos("$pos1")"
+      =>[0] "name("$nm" [foreground]),pos("{[$pos0]+[$initial_pos]}")"
+      =>[1] "name("$nm" [background]),pos("{[$pos1]+[$initial_pos]}")"
     fi
   }
   if narg($status)>=4 u \{$1\}\{$2\}\{$3\}\{$4\}\{{w},{h}\}\{$status\} else u "" fi
@@ -44016,7 +44393,7 @@ fx_textured_glass :
     *.. {-2,$1/max(abs(im),abs(iM))}
     *. {$2/max(abs(im),abs(iM))}
     a[-2,-1] c
-    warp.. .,1,1 rm.
+    warp.. .,1,1,1 rm.
   }
 
 fx_textured_glass_preview :
@@ -46846,9 +47223,10 @@ fx_split_colors : skip ${2=0}
   to_rgb
   foreach {
     nm=${-gui_layer_name}
+    pos=${-gui_layer_pos}
     min_area={max(1,w*h*$3%)}
     split_colors $1,$2,$min_area
-    => "name("$nm")"
+    =>[^] "name("$nm"),pos("$pos")"
     if $4 gui_autocrop_layers fi
   }
 
@@ -47052,22 +47430,25 @@ fx_stroke :
       if $1>1 ($13^$14^$15^$16) a[-2,-1] x r. $1,1,1,4,3 c. 0,255 fi
       i.. ($21^$22^$23^$24) ($17^$18^$19^$20) if $5 rv[-3,-1] fi
       a[-3--1] x map.. .,1 rm.
-      => $nm
     }
     a[0,1] c
     if $is_frame1 shrink_xy 1 fi
     if $25 rv fi
+    =>[^] $nm
   }
 
 fx_stroke_preview :
   foreach { fx_stroke $* => foo gui_merge_layers }
 
-#@gui Tiles to Layers : split_tiles, fx_tiles2layers_preview(1)
+#@gui Tiles to Layers : fx_tiles2layers, fx_tiles2layers_preview(1)
 #@gui : X-Tiles = int(3,1,100)
 #@gui : Y-Tiles = int(3,1,100)
 #@gui : Force Tiles to Have Same Size = _bool(false)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
+fx_tiles2layers :
+  split_tiles $1,$2,$3
+
 fx_tiles2layers_preview :
   split_tiles $1,$2,$3 to_rgba frame 1,1,0,0,0,255 frame 3,3,0,0,0,0 append_tiles ,
 
@@ -47083,6 +47464,7 @@ fx_tones2layers :
   sval=$2 eval={max($2,$3)}
   remove_opacity
   foreach {
+    nm={n}
     +luminance rv
     repeat $1-1 {
       [1]
@@ -47094,7 +47476,7 @@ fx_tones2layers :
       fi
       a[-2,-1] c
     }
-    rm[0] rv
+    rm[0] rv =>[^] $nm
   }
 
 fx_tones2layers_preview :
@@ -50053,6 +50435,129 @@ fx_lathing3d_preview :
   fx_lathing3d ${1-3},{w},{h},${6--1}
   if $18 rm[0] fi
 
+#@gui 3D Mesh : fx_mesh3d, fx_mesh3d_preview(1) : *
+#@gui : 3D Mesh Filename = file("")
+#@gui : note = note{"(supported file formats are: <b>.obj</b>, <b>.off</b> and <b>.gmz</b>)."}
+#@gui : sep = separator()
+#@gui : Old File = value("[default]")
+#@gui : X-Axis = point(80,50,0,1,255,0,128,164,1%)_0
+#@gui : Y-Axis = point(50,70,0,1,128,255,0,164,1%)_0
+#@gui : Scale = point(60,60,0,1,255,200,128,164,0.75%)_0
+#@gui : Center = point(50,50,0,1,255,255,255,-100,2%)_0
+#@gui : Old Center X = value(-1)
+#@gui : Old Center Y = value(-1)
+#@gui : Pre-Rotate / X = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
+#@gui : Pre-Rotate / Y = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
+#@gui : Pre-Rotate / Z = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
+#@gui : Rendering Mode = choice(4,"Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
+#@gui : Face Orientation = choice("Normal","Reverted","Double-Sided")
+#@gui : Materials = choice(2,"Discard Colors","Discard Textures","Keep Textures")
+#@gui : Recovery Color = color(200,200,200)
+#@gui : Focale (%) = float(100,0,500)
+#@gui : Anti-aliasing = _choice(1,"None","x1.5","x2","x3","x4")
+#@gui : Custom Light = point(50,50,-1,1,255,255,0,-100,3%)
+#@gui : Reset 3D Position = button()
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>
+#@gui :       Latest Update: <i>2022/06/13</i>.</small>")
+fx_mesh3d : skip "${1=},${2=}"
+
+  # Parse filter parameters.
+  filename,old_filename,xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy,\
+  rotx,roty,rotz,rendering_mode,face_orientation,materials,\
+  recR,recG,recB,focale,antialias,lx,ly,reset_pos="$1","$2",${3-26}
+  R=30 # Radii (in %) of the virtual ellipse
+  if $reset_pos xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy:=50+$R,50,50,50+$R,60,60,50,50,-1,-1 fi
+  if $! W,H=${-max_wh} else W,H=1024,1024 fi # Size of output layer
+  0 => $filename ext={x} rm.
+  if e=['$ext'];['$filename']!=0" && "e!='obj'" && "e!='off'" && "e!='gmz'
+    gui_error_preview "Specified filename '"$filename"' is invalid\n(extension '"$ext"' is not supported)."
+    return
+  fi
+
+  # Get 2D vectors.
+  if $ocx>0" && "[$cx,$cy]!=[$ocx,$ocy] ncx,ncy=$ocx,$ocy else ncx,ncy=$cx,$cy fi
+  ux,uy,vx,vy,sx,sy:="C = [$ncx,$ncy]; [ [$xx,$xy] - C,[$yx,$yy] - C,[$sx,$sy] - C ]"
+
+  # Compute 3D orientation.
+  Ux,Uy,Uz,Vx,Vy,Vz,Wx,Wy,Wz:="
+    const R = $R;
+    const R2 = 2*R;
+    coords3d(x,y) = (
+      _t = atan2(y,x); _n = norm(x,y);
+      _s = int(_n/R)%2?1:-1; _mn = _n%R2; _n = _mn<R?_mn:R2 - _mn;
+      _X = _n*[ cos(_t),sin(_t) ];
+      _U = [ _X[0],_X[1],_s*sqrt(max(0,R^2 - _X[0]^2 - _X[1]^2)) ];
+      _nU = norm(_U); _U = _nU>0?_U/_nU:[ 0,0,-1 ];
+    );
+    U = coords3d($ux,$uy);
+    V = coords3d($vx,$vy);
+    W = cross(U,V); W/=norm(W);
+    nV = cross(W,U); nV/=norm(nV);
+    dot(nV,V)<0?(nV*=1);
+    [ U,nV,W ]"
+
+  # Update 2D vector [vx,vy].
+  vx,vy:="($Vz<0?1:2/norm($Vx,$Vy) - 1)*$R*[$Vx,$Vy]"
+
+  # Load 3D mesh.
+  l[] {
+    if ['$filename']==['$old_filename']" && "narg($_persistent) $_persistent
+    elif ['$filename']!=0 $filename +store. _persistent
+    else # Default object
+      torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y
+      => "Default Torus" +store. _persistent
+    fi
+  }
+  nbv,nbp:=i[6],i[7]
+  obj_name={b}
+
+  # Normalize and display.
+  fact:=min($W,$H)*norm($sx,$sy)/$R
+  n3d. c3d. *3d. $fact
+  if $rotx r3d. 1,0,0,{45*$rotx} fi
+  if $roty r3d. 0,1,0,{45*$roty} fi
+  if $rotz r3d. 0,0,1,{45*$rotz} fi
+  pose3d. $Ux,$Vx,$Wx,0,$Uy,$Vy,$Wy,0,$Uz,$Vz,$Wz,0
+  is_double:=$face_orientation==2
+  if $face_orientation==1 rv3d. fi
+  foc:=$fact*$focale%
+  if $materials<2 p3d. 2 if !$materials col3d. $recR,$recG,$recB fi fi
+  nlx,nly,nlz:=isnan($lx)?[$W*$cx%,$H*$cy%,-5e8]:[$W*($cx+4*($lx-$cx))%,$H*($cy+4*($ly-$cy))%,-10*$foc]
+  if 0$_is_preview
+     j3d[0] .,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm.
+  else
+    afact:=arg0($antialias,1,1.5,2,3,4)
+    {[$W,$H]*$afact},1,3,-0.1
+    if $afact>1 foc*=$afact *3d.. $afact fi
+    j3d. ..,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm..
+    to_rgba. replace_color. 0,0,-0.1,-0.1,-0.1,255,0,0,0,0 r. $W,$H,1,4,2
+    mv. 0
+  fi
+
+  # Show user guides in preview.
+  if 0$_is_preview
+    line[0] $cx%,$cy%,{$cx+$ux}%,{$cy+$uy}%,1,255,0,0
+    line[0] $cx%,$cy%,{$cx+$vx}%,{$cy+$vy}%,1,0,255,0
+    line[0] $cx%,$cy%,{$cx+$sx}%,{$cy+$sy}%,1,0xF0F0F0F0,255,128,64
+    line[0] $cx%,$cy%,{$cx+$sx}%,{$cy+$sy}%,1,0x0F0F0F0F,128,64,255
+    to[0] "[ "$obj_name" ]\nVertices: "$nbv"\nPrimitives: "$nbp,0,0,4%
+  fi
+  =>[0] "name("$obj_name"),pos(0,0)"
+
+  # Return update filter parameters.
+  u "{"$filename"}{"$filename"}"\
+    "{"{[$cx+$ux,$cy+$uy]}"}{"{[$cx+$vx,$cy+$vy]}"}{"{[$cx+$sx,$cy+$sy]}"}{"$cx,$cy"}{"$cx"}{"$cy"}"\
+    "{"$rotx"}{"$roty"}{"$rotz"}{"$rendering_mode"}{"$face_orientation"}{"$materials"}"\
+    "{"$recR,$recG,$recB"}{"$focale"}{"$antialias"}{"$lx,$ly"}{"$reset_pos"}"
+
+fx_mesh3d_preview : skip "${1=},${2=}"
+  if !$! $_preview_area_width,$_preview_area_height,1,4
+  else gui_merge_layers fi
+  drgba
+  _is_preview=1
+  fx_mesh3d $"*"
+
 #@gui 3D Random Objects : fx_random3d, fx_random3d(1)
 #@gui : Type = choice("Cube","Cone","Cylinder","Sphere","Torus")
 #@gui : Density = int(50,1,300)
@@ -52191,7 +52696,7 @@ fx_animate_glow_preview : skip "${4=}"
   fx_animate_preview glow,"$5",\
                           "$6"
 
-#@gui Spatial Transition : fx_spatial_transition, fx_spatial_transition_preview(1)
+#@gui Spatial Transition : fx_spatial_transition, fx_spatial_transition_preview(1) : *
 #@gui : Number of Added Frames = _int(10,1,256)
 #@gui : Shading (%) = float(0,0,100)
 #@gui : Transition Shape = choice(7,"Bottom Layer","Top Layer","Custom Formula","Horizontal","Vertical",

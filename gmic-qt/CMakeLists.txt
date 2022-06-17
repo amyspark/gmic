@@ -2,7 +2,7 @@ project(gmic-qt)
 
 message(STATUS "Using CMake version: ${CMAKE_VERSION}")
 
-cmake_minimum_required(VERSION 3.6.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10.0 FATAL_ERROR)
 LIST (APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 include(FeatureSummary)
 include(FindPkgConfig)
@@ -44,16 +44,17 @@ set (GMIC_LIB_PATH "${GMIC_PATH}" CACHE STRING "Define the path to the GMIC shar
 option(ENABLE_ASAN "Enable -fsanitize=address (if debug build)" ON)
 option(ENABLE_FFTW3 "Enable FFTW3 library support" ON)
 
+include(CheckIPOSupported)
+
+check_ipo_supported(RESULT HAVE_LTO LANGUAGES CXX)
+
+if (HAVE_LTO)
 option(ENABLE_LTO "Enable Link Time Optimizer" OFF)
+endif()
 
 if (MSVC)
   option(ENABLE_CFG "Enable Control Flow Guard (MSVC)" ON)
   add_definitions(-D__PRETTY_FUNCTION__=__FUNCSIG__)
-endif()
-
-if (WIN32 AND NOT MSVC)
-    message("LTO is disabled (windows platform, not MSVC)")
-    set(ENABLE_LTO OFF)
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -210,18 +211,17 @@ endif()
 #
 # Test for OpenMP
 #
-find_package(OpenMP)
+find_package(OpenMP 2.0)
 set_package_properties(OpenMP PROPERTIES
     DESCRIPTION "A low-level parallel execution library"
     URL "http://openmp.org/wp/"
     TYPE OPTIONAL
     PURPOSE "Optionally used by gmic-qt")
 
-if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8.3 AND OPENMP_FOUND)
-    message("G'Mic: using OpenMP")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+if (OpenMP_FOUND)
+    message(STATUS "G'Mic: using OpenMP ${OpenMP_CXX_VERSION}")
+    link_libraries(OpenMP::OpenMP_CXX)
     add_definitions(-Dcimg_use_openmp)
-    add_definitions(-fopenmp)
 endif()
 
 #
@@ -229,32 +229,25 @@ endif()
 #
 
 if (ENABLE_LTO)
-    message("Link Time Optimizer enabled")
-    if (MSVC)
-      string(REPLACE "INCREMENTAL" "INCREMENTAL:NO" CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO}")
-      string(REPLACE "INCREMENTAL" "INCREMENTAL:NO" CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO}")
-      string(REPLACE "INCREMENTAL" "INCREMENTAL:NO" CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GL")
-      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
-      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LTCG")
-      set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LTCG")
-    else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
-    endif()
+    message(STATUS "Link Time Optimizer enabled")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 #
 # Enable CFG
 #
 if (MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:4194304")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /STACK:4194304")
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /STACK:4194304")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:16777216")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /STACK:16777216")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /STACK:16777216")
     if (ENABLE_CFG)
         add_compile_options(/guard:CF)
         add_link_options(/GUARD:CF)
     endif()
+elseif(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--stack,16777216")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--stack,16777216")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--stack,16777216")
 endif()
 
 #
@@ -422,6 +415,8 @@ set (gmic_qt_SRCS
   src/Logger.h
   src/MainWindow.h
   src/ParametersCache.h
+  src/PersistentMemory.h
+  src/Settings.h
   src/TimeLogger.h
   src/Tags.h
   src/Updater.h
@@ -498,6 +493,8 @@ set (gmic_qt_SRCS
   src/Logger.cpp
   src/MainWindow.cpp
   src/ParametersCache.cpp
+  src/PersistentMemory.cpp
+  src/Settings.cpp
   src/TimeLogger.cpp
   src/Tags.cpp
   src/Updater.cpp
@@ -548,46 +545,15 @@ else(ENABLE_DYNAMIC_LINKING)
     )
 endif(ENABLE_DYNAMIC_LINKING)
 
-set(gmic_translation_files
-    translations/cs.ts
-    translations/de.ts
-    translations/es.ts
-    translations/fr.ts
-    translations/id.ts
-    translations/it.ts
-    translations/nl.ts
-    translations/pl.ts
-    translations/pt.ts
-    translations/ru.ts
-    translations/ua.ts
-    translations/ja.ts
-    translations/zh.ts
-)
-
-set_source_files_properties(${gmic_translation_files} PROPERTIES OUTPUT_LOCATION translations)
-
-set(gmic_filters_translation_files
-    translations/filters/fr.ts
-)
-
-set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION translations/filters)
-
-# qt5_create_translation(
-#     qmic_qt_QM
-#     ${CMAKE_SOURCE_DIR}/translations
-#     ${gmic_qt_SRCS}
-#     ${gmic_translation_files}
-# )
-
-qt5_add_translation(gmic_qt_QM
-    ${gmic_translation_files}
-)
-
-# install(FILES ${gmic_qt_QM} DESTINATION ${CMAKE_SOURCE_DIR}/translations)
+message("Producing translation .qm files")
+execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations OUTPUT_QUIET)
+message("Producing filter translation .qm files")
+execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters OUTPUT_QUIET)
 
 set(gmic_qt_QRC
     gmic_qt.qrc
     translations.qrc
+    wip_translations.qrc
 )
 
 if (${GMIC_QT_HOST} STREQUAL "gimp" OR ${GMIC_QT_HOST} STREQUAL "gimp3")
@@ -605,7 +571,7 @@ if (${GMIC_QT_HOST} STREQUAL "gimp" OR ${GMIC_QT_HOST} STREQUAL "gimp3")
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/Gimp/host_gimp.cpp)
     qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
     add_definitions(-DGMIC_HOST=gimp -DGIMP_DISABLE_DEPRECATED)
-    add_executable(gmic_gimp_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
+    add_executable(gmic_gimp_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
     target_link_libraries(
       gmic_gimp_qt
       PRIVATE
@@ -619,7 +585,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita")
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/Krita/host_krita.cpp)
     qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
     add_definitions(-DGMIC_HOST=krita)
-    add_executable(gmic_krita_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
+    add_executable(gmic_krita_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
     target_link_libraries(
       gmic_krita_qt
       PRIVATE
@@ -641,7 +607,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "none")
     )
   qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
   add_definitions(-DGMIC_HOST=standalone)
-  add_executable(gmic_qt ${gmic_qt_SRCS} ${gmic_qt_QRC}  ${qmic_qt_QM})
+  add_executable(gmic_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
   target_link_libraries(gmic_qt PRIVATE ${gmic_qt_LIBRARIES})
   install(TARGETS gmic_qt RUNTIME DESTINATION bin)
 
@@ -650,7 +616,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "paintdotnet")
   set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/PaintDotNet/host_paintdotnet.cpp)
   qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
   add_definitions(-DGMIC_HOST=paintdotnet)
-  add_executable(gmic_paintdotnet_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
+  add_executable(gmic_paintdotnet_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
   target_link_libraries(
     gmic_paintdotnet_qt
     PRIVATE ${gmic_qt_LIBRARIES}
@@ -661,7 +627,7 @@ elseif (${GMIC_QT_HOST} STREQUAL "8bf")
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/8bf/host_8bf.cpp)
     qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
     add_definitions(-DGMIC_HOST=plugin8bf)
-    add_executable(gmic_8bf_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${qmic_qt_QM})
+    add_executable(gmic_8bf_qt ${gmic_qt_SRCS} ${gmic_qt_QRC})
     target_link_libraries(
       gmic_8bf_qt
       PRIVATE

@@ -21,9 +21,6 @@
 # Possible values are "on" or "off"
 !defined(LTO,var) { LTO=off }
 
-# Possible values are "on" or "off"
-!defined(TEST_FILTERS_QM,var) { TEST_FILTERS_QM=off }
-
 #
 #
 #
@@ -310,6 +307,8 @@ HEADERS +=  \
   src/MainWindow.h \
   src/Misc.h \
   src/ParametersCache.h \
+  src/PersistentMemory.h \
+  src/Settings.h \
   src/Tags.h \
   src/TimeLogger.h \
   src/Updater.h \
@@ -387,6 +386,8 @@ SOURCES += \
   src/Logger.cpp \
   src/MainWindow.cpp \
   src/ParametersCache.cpp \
+  src/PersistentMemory.cpp \
+  src/Settings.cpp \
   src/Tags.cpp \
   src/TimeLogger.cpp \
   src/Updater.cpp \
@@ -407,7 +408,6 @@ SOURCES += \
   src/Widgets/SearchFieldWidget.cpp \
   src/Widgets/LanguageSelectionWidget.cpp \
   src/Widgets/ProgressInfoWindow.cpp
-
 
 equals(GMIC_DYNAMIC_LINKING, "on" ) {
   message(Dynamic linking with libgmic)
@@ -443,17 +443,31 @@ translations/es.ts \
 translations/fr.ts \
 translations/id.ts \
 translations/it.ts \
+translations/ja.ts \
 translations/nl.ts \
 translations/pl.ts \
 translations/pt.ts \
 translations/ru.ts \
 translations/sv.ts \
-translations/ua.ts \
-translations/ja.ts \
+translations/uk.ts \
 translations/zh.ts \
 translations/zh_tw.ts
 
 RESOURCES += wip_translations.qrc
+
+# message(Build QM translation files)
+# system(make -C translations)
+# system(make -C translations/filters)
+
+qm_files.commands += make -C translations
+qm_filter_files.commands += make -C translations/filters
+QMAKE_EXTRA_TARGETS += qm_files qm_filter_files
+PRE_TARGETDEPS += qm_files qm_filter_files
+
+QMAKE_DISTCLEAN = \
+  translations/*.qm \
+  translations/filters/*.ts \
+  translations/filters/*.qm
 
 # Prevent overwriting of these files by lupdate
 # TRANSLATIONS += translations/filters/fr.ts

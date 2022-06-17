@@ -37,6 +37,7 @@
 #include "HtmlTranslator.h"
 #include "Logger.h"
 #include "ParametersCache.h"
+#include "PersistentMemory.h"
 #include "Utils.h"
 #include "Widgets/InOutPanel.h"
 #include "Widgets/SearchFieldWidget.h"
@@ -581,6 +582,7 @@ bool FiltersPresenter::danglingFaveIsSelected() const
 void FiltersPresenter::setCurrentFilter(const QString & hash)
 {
   _errorMessage.clear();
+  PersistentMemory::clear();
   if (hash.isEmpty()) {
     _currentFilter.setInvalid();
   } else if (_favesModel.contains(hash)) {

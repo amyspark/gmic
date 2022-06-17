@@ -33,7 +33,6 @@
 #include <QTextEdit>
 #include <QWidget>
 #include "Common.h"
-#include "DialogSettings.h"
 #include "FilterParameters/MultilineTextParameterWidget.h"
 #include "FilterTextTranslator.h"
 #include "HtmlTranslator.h"
@@ -75,6 +74,7 @@ bool TextParameter::addTo(QWidget * widget, int row)
     _grid->addWidget(_textEdit, row, 0, 1, 3);
   } else {
     _grid->addWidget(_label = new QLabel(_name, widget), row, 0, 1, 1);
+    setTextSelectable(_label);
     _lineEdit = new QLineEdit(_value, widget);
     _textEdit = nullptr;
     _grid->addWidget(_lineEdit, row, 1, 1, 2);

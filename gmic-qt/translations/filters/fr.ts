@@ -7,13 +7,13 @@
 
     <message>
       <source>Light</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Légère</translation>
     </message>
 
     <message>
       <source>None</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Aucune</translation>
     </message>
 
@@ -24,7 +24,7 @@
 
     <message>
       <source>Line Strength</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Dose de lignes</translation>
     </message>
 
@@ -35,7 +35,7 @@
 
     <message>
       <source>Colors to Black or White</source>
-      <comment>Comic Book</comment>
+      <comment>Comicbook</comment>
       <translation>Transformer en noir et blanc</translation>
     </message>
 
@@ -5022,66 +5022,6 @@
     <message>
       <source>Preview Shape</source>
       <translation>Prévisualise la forme</translation>
-    </message>
-
-    <message>
-      <source>Strong Antialias</source>
-      <translation>Anticrénelage fort</translation>
-    </message>
-
-    <message>
-      <source>Saturation Increase</source>
-      <translation>Augmentation de la saturation</translation>
-    </message>
-
-    <message>
-      <source>Add Colors</source>
-      <translation>Ajouter les couleurs</translation>
-    </message>
-
-    <message>
-      <source>Luminosity Increase</source>
-      <translation>Augmentation de la luminosité</translation>
-    </message>
-
-    <message>
-      <source>Lines Antialias</source>
-      <translation>Anticrénelage pour les lignes</translation>
-    </message>
-
-    <message>
-      <source>MaxRGB</source>
-      <translation>MaxRVB</translation>
-    </message>
-
-    <message>
-      <source>Light Antialias</source>
-      <translation>Anticrénelage léger</translation>
-    </message>
-
-    <message>
-      <source>Line Thickness</source>
-      <translation>Épaisseur de ligne</translation>
-    </message>
-
-    <message>
-      <source>Final Flattening (bilateral)</source>
-      <translation>Aplatissement final (bilateral)</translation>
-    </message>
-
-    <message>
-      <source>Edge Method</source>
-      <translation>Détection de bords</translation>
-    </message>
-
-    <message>
-      <source>Edge Desaturation Method</source>
-      <translation>Désaturation des bords</translation>
-    </message>
-
-    <message>
-      <source>Flattening for Edge (bilateral)</source>
-      <translation>Aplatissement pour bords (bilateral)</translation>
     </message>
 
 </context>

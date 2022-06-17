@@ -29,9 +29,9 @@
 #include <QLabel>
 #include <QUrl>
 #include "Common.h"
-#include "DialogSettings.h"
 #include "FilterTextTranslator.h"
 #include "HtmlTranslator.h"
+#include "Settings.h"
 
 namespace GmicQt
 {
@@ -58,6 +58,7 @@ bool NoteParameter::addTo(QWidget * widget, int row)
   _label->setTextFormat(Qt::RichText);
   _label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   _label->setWordWrap(true);
+  setTextSelectable(_label);
   connect(_label, SIGNAL(linkActivated(QString)), this, SLOT(onLinkActivated(QString)));
   _grid->addWidget(_label, row, 0, 1, 3);
   return true;
@@ -88,7 +89,7 @@ bool NoteParameter::initFromText(const QString & /* filterName */, const char * 
   _text.remove(QRegExp("^\"")).remove(QRegExp("\"$")).replace(QString("\\\""), "\"");
   _text.replace(QString("\\n"), "<br/>");
 
-  if (DialogSettings::darkThemeEnabled()) {
+  if (Settings::darkThemeEnabled()) {
     _text.replace(QRegExp("color\\s*=\\s*\"purple\""), QString("color=\"#ff00ff\""));
     _text.replace(QRegExp("foreground\\s*=\\s*\"purple\""), QString("foreground=\"#ff00ff\""));
     _text.replace(QRegExp("color\\s*=\\s*\"blue\""), QString("color=\"#9b9bff\""));
