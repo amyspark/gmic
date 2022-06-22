@@ -30,17 +30,17 @@
 #include "Logger.h"
 #include "Misc.h"
 #include "PersistentMemory.h"
+#include "Settings.h"
 #include "gmic.h"
 
 namespace GmicQt
 {
 
-FilterThread::FilterThread(QObject * parent, const QString & command, const QString & arguments, const QString & environment, OutputMessageMode mode)
+FilterThread::FilterThread(QObject * parent, const QString & command, const QString & arguments, const QString & environment)
     : QThread(parent), _command(command), _arguments(arguments), _environment(environment), //
       _images(new cimg_library::CImgList<float>),                                           //
       _imageNames(new cimg_library::CImgList<char>),                                        //
-      _persistentMemoryOuptut(new cimg_library::CImg<char>),                                //
-      _messageMode(mode)
+      _persistentMemoryOuptut(new cimg_library::CImg<char>)
 {
   _gmicAbort = false;
   _failed = false;
@@ -106,7 +106,7 @@ QStringList FilterThread::status2StringList(const QString & status)
     while (it != list.end()) {
       QByteArray array = it->toLocal8Bit();
       gmic::strreplace_fw(array.data());
-      *it++ = array;
+      *it++ = QString::fromLocal8Bit(array);
     }
   }
   return list;
@@ -207,29 +207,25 @@ void FilterThread::run()
   _failed = false;
   QString fullCommandLine;
   try {
-    fullCommandLine = commandFromOutputMessageMode(_messageMode);
+    fullCommandLine = commandFromOutputMessageMode(Settings::outputMessageMode());
     appendWithSpace(fullCommandLine, _command);
     appendWithSpace(fullCommandLine, _arguments);
     _gmicAbort = false;
     _gmicProgress = -1;
-    if (_messageMode > OutputMessageMode::Quiet) {
-      Logger::log(fullCommandLine, _logSuffix, true);
-    }
+    Logger::log(fullCommandLine, _logSuffix, true);
     gmic gmicInstance(_environment.isEmpty() ? nullptr : QString("%1").arg(_environment).toLocal8Bit().constData(), GmicStdLib::Array.constData(), true, nullptr, nullptr, 0.0f);
     gmicInstance.set_variable("_persistent", PersistentMemory::image());
     gmicInstance.set_variable("_host", '=', GmicQtHost::ApplicationShortname);
     gmicInstance.set_variable("_tk", '=', "qt");
     gmicInstance.run(fullCommandLine.toLocal8Bit().constData(), *_images, *_imageNames, &_gmicProgress, &_gmicAbort);
-    _gmicStatus = gmicInstance.status;
+    _gmicStatus = QString::fromLocal8Bit(gmicInstance.status);
     gmicInstance.get_variable("_persistent").move_to(*_persistentMemoryOuptut);
   } catch (gmic_exception & e) {
     _images->assign();
     _imageNames->assign();
     const char * message = e.what();
     _errorMessage = message;
-    if (_messageMode > OutputMessageMode::Quiet) {
-      Logger::error(QString("When running command '%1', this error occurred:\n%2").arg(fullCommandLine).arg(message), true);
-    }
+    Logger::error(QString("When running command '%1', this error occurred:\n%2").arg(fullCommandLine).arg(message), true);
     _failed = true;
   }
 }

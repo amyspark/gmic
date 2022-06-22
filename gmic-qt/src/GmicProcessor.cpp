@@ -43,6 +43,7 @@
 #include "Misc.h"
 #include "OverrideCursor.h"
 #include "PersistentMemory.h"
+#include "Settings.h"
 #include "gmic.h"
 
 namespace GmicQt
@@ -54,7 +55,7 @@ GmicProcessor::GmicProcessor(QObject * parent) : QObject(parent)
   _gmicImages = new cimg_library::CImgList<gmic_pixel_type>;
   _previewImage = new cimg_library::CImg<float>;
   _waitingCursorTimer.setSingleShot(true);
-  connect(&_waitingCursorTimer, SIGNAL(timeout()), this, SLOT(showWaitingCursor()));
+  connect(&_waitingCursorTimer, &QTimer::timeout, this, &GmicProcessor::showWaitingCursor);
   cimg_library::cimg::srand();
   _previewRandomSeed = cimg_library::cimg::_rand();
   _lastAppliedCommandInOutState = InputOutputState::Unspecified;
@@ -94,7 +95,7 @@ void GmicProcessor::execute()
   const InputOutputState & io = _filterContext.inputOutputState;
   QString env = QString("_input_layers=%1").arg(static_cast<int>(io.inputMode));
   env += QString(" _output_mode=%1").arg(static_cast<int>(io.outputMode));
-  env += QString(" _output_messages=%1").arg(static_cast<int>(_filterContext.outputMessageMode));
+  env += QString(" _output_messages=%1").arg(static_cast<int>(Settings::outputMessageMode()));
   if ((_filterContext.requestType == FilterContext::RequestType::Preview) || //
       (_filterContext.requestType == FilterContext::RequestType::SynchronousPreview)) {
     env += QString(" _preview_area_width=%1").arg(_filterContext.previewWindowWidth);
@@ -137,7 +138,7 @@ void GmicProcessor::execute()
   env += QString(" _preview_width=%1").arg(previewSize.width());
   env += QString(" _preview_height=%1").arg(previewSize.height());
   if (_filterContext.requestType == FilterContext::RequestType::SynchronousPreview) {
-    FilterSyncRunner runner(this, _filterContext.filterCommand, _filterContext.filterArguments, env, _filterContext.outputMessageMode);
+    FilterSyncRunner runner(this, _filterContext.filterCommand, _filterContext.filterArguments, env);
     runner.swapImages(*_gmicImages);
     runner.setImageNames(imageNames);
     runner.setLogSuffix("preview");
@@ -148,11 +149,11 @@ void GmicProcessor::execute()
     manageSynchonousRunner(runner);
     recordPreviewFilterExecutionDurationMS((int)_filterExecutionTime.elapsed());
   } else if (_filterContext.requestType == FilterContext::RequestType::Preview) {
-    _filterThread = new FilterThread(this, _filterContext.filterCommand, _filterContext.filterArguments, env, _filterContext.outputMessageMode);
+    _filterThread = new FilterThread(this, _filterContext.filterCommand, _filterContext.filterArguments, env);
     _filterThread->swapImages(*_gmicImages);
     _filterThread->setImageNames(imageNames);
     _filterThread->setLogSuffix("preview");
-    connect(_filterThread, SIGNAL(finished()), this, SLOT(onPreviewThreadFinished()), Qt::QueuedConnection);
+    connect(_filterThread, &FilterThread::finished, this, &GmicProcessor::onPreviewThreadFinished, Qt::QueuedConnection);
     cimg_library::cimg::srand();
     _previewRandomSeed = cimg_library::cimg::_rand();
     _filterExecutionTime.restart();
@@ -163,11 +164,11 @@ void GmicProcessor::execute()
     _lastAppliedCommand = _filterContext.filterCommand;
     _lastAppliedCommandArguments = _filterContext.filterArguments;
     _lastAppliedCommandInOutState = _filterContext.inputOutputState;
-    _filterThread = new FilterThread(this, _filterContext.filterCommand, _filterContext.filterArguments, env, _filterContext.outputMessageMode);
+    _filterThread = new FilterThread(this, _filterContext.filterCommand, _filterContext.filterArguments, env);
     _filterThread->swapImages(*_gmicImages);
     _filterThread->setImageNames(imageNames);
     _filterThread->setLogSuffix("apply");
-    connect(_filterThread, SIGNAL(finished()), this, SLOT(onApplyThreadFinished()), Qt::QueuedConnection);
+    connect(_filterThread, &FilterThread::finished, this, &GmicProcessor::onApplyThreadFinished, Qt::QueuedConnection);
     cimg_library::cimg::srand(_previewRandomSeed);
     _filterThread->start();
   }
@@ -446,7 +447,7 @@ void GmicProcessor::abortCurrentFilterThread()
     return;
   }
   _filterThread->disconnect(this);
-  connect(_filterThread, SIGNAL(finished()), this, SLOT(onAbortedThreadFinished()));
+  connect(_filterThread, &FilterThread::finished, this, &GmicProcessor::onAbortedThreadFinished);
   _unfinishedAbortedThreads.push_back(_filterThread);
   _filterThread->abortGmic();
   _filterThread = nullptr;

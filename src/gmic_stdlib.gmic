@@ -2012,7 +2012,7 @@ display2d :
 _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
   e[0--3] "Start interactive display of 2d image"$_gmic_s"."
   m "_d2d_format :
-       if $""#>=8 u {_([$""*])[0,4]:\\ }\\ ...\\ {_([$""*])[$""#-4,4]:\\ }
+       if $""#>8 u {_([$""*])[0,4]:\\ }\\ ...\\ {_([$""*])[$""#-4,4]:\\ }
        else ('\"$""*\"') replace. {','},32 u {t} rm.
        fi"
   p
@@ -3961,7 +3961,7 @@ _input_glob :
           len = find(line,0,q);
           len>0?(
             copy(line,line[q],len + 1);
-            run('_input_obj_parse_mtl \""$folder"\",\"',line,'\"');
+            run('_input_obj_parse_mtl \""{/$folder}"\",\"',line,'\"');
           );
 
         ):line[0,7]==id_usemtl?( # Material: change material
@@ -4016,7 +4016,7 @@ _input_obj_parse_mtl : skip "${1=}"
   }
 
 _input_obj_set_mtl :
-  strcasevar "$1" m=${}
+  strcasevar "{/$1}" m=${}
   if ['${_input_obj_img_$m}']!=0 _input_obj_img=${_input_obj_img_$m} _input_obj_whs=${_input_obj_whs_$m}
   else _input_obj_img=-1 _input_obj_whs=0,0,0
   fi
@@ -6803,8 +6803,9 @@ parse_gui : skip "${1=print},${2=*}"
       is_first = 1;
       p = 0;
       while (p<size(source),
-        p = find(source,'#@gui',p)%size(source);
-        !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+        q = find(source,'#@gui',p);
+        p = q%size(source);
+        !q || (q>0 && source[q - 1]==_'\n')?( # Found line starting with '#@gui'
           p0 = p; # Remember starting position of line
           p+=5;
           source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
@@ -8257,7 +8258,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.1.3').
+# $1 = version number (e.g. '3.1.4').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9954,7 +9955,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (313,$_version) sort. discard. store. compat
+  (313,314,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -36357,8 +36358,8 @@ fx_gmicky_preview :
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
-#@gui : - <span foreground="purple"><b>2022/06/16</b> : version <i>3.1.3</i> (Current stable).</span>\n
-##@gui : - <b>2022/xx/xx</b> : version <i>3.1.2</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2022/06/22</b> : version <i>3.1.4</i> (Current stable).</span>\n
+##@gui : - <b>2022/06/20</b> : version <i>3.1.4</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.2)","https://discuss.pixls.us/t/on-the-road-to-3-2"}
@@ -37090,7 +37091,6 @@ fx_puzzle :
     puzzle $w,$h,$1,$2,$3,$4,$5
     +b. $6%,0 g. xy +[-2,-1] n. -$7,$7 +[0,-1]  # Relief.
     +b. $8%,0 n. 0,1 *. -1 +. 1 n. {(255-$9)/255},1 *[0,-1] c 0,255  # Outline.
-
     if $10!=100||$11||$12||$13||$14||$15||$16
 
       # Decompose puzzle into set of pieces.
@@ -37116,7 +37116,7 @@ fx_puzzle :
           cx={round(w/2)} cy={round(h/2)}
           sh 100% if $15 dilate. 3 fi
           i[0] $w,$h,1,4
-          j[0] ..,{${x$<}-$cx},{${y$<}-$cy},0,0,1,.,255 rm[-2,-1]
+          j[0] ..,{${x$>}-$cx},{${y$>}-$cy},0,0,1,.,255 rm[-2,-1]
         }
 
       else # All pieces on the same layer.
@@ -50438,8 +50438,8 @@ fx_lathing3d_preview :
 #@gui 3D Mesh : fx_mesh3d, fx_mesh3d_preview(1) : *
 #@gui : 3D Mesh Filename = file("")
 #@gui : note = note{"(supported file formats are: <b>.obj</b>, <b>.off</b> and <b>.gmz</b>)."}
+#@gui : Old File = value("0")
 #@gui : sep = separator()
-#@gui : Old File = value("[default]")
 #@gui : X-Axis = point(80,50,0,1,255,0,128,164,1%)_0
 #@gui : Y-Axis = point(50,70,0,1,128,255,0,164,1%)_0
 #@gui : Scale = point(60,60,0,1,255,200,128,164,0.75%)_0
@@ -50449,7 +50449,8 @@ fx_lathing3d_preview :
 #@gui : Pre-Rotate / X = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Y = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Z = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
-#@gui : Rendering Mode = choice(4,"Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
+#@gui : Rendering Mode = choice(5,"Bounding Box","Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded",\
+# "Phong Shaded")
 #@gui : Face Orientation = choice("Normal","Reverted","Double-Sided")
 #@gui : Materials = choice(2,"Discard Colors","Discard Textures","Keep Textures")
 #@gui : Recovery Color = color(200,200,200)
@@ -50459,14 +50460,18 @@ fx_lathing3d_preview :
 #@gui : Reset 3D Position = button()
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>
-#@gui :       Latest Update: <i>2022/06/13</i>.</small>")
+#@gui :       Latest Update: <i>2022/06/21</i>.</small>")
 fx_mesh3d : skip "${1=},${2=}"
 
   # Parse filter parameters.
-  filename,old_filename,xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy,\
+  filename="$1"
+  old_filename="$2"
+  xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy,\
   rotx,roty,rotz,rendering_mode,face_orientation,materials,\
-  recR,recG,recB,focale,antialias,lx,ly,reset_pos="$1","$2",${3-26}
+  recR,recG,recB,focale,antialias,lx,ly,reset_pos=${3-26}
+
   R=30 # Radii (in %) of the virtual ellipse
+  show_bb:=!$rendering_mode
   if $reset_pos xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy:=50+$R,50,50,50+$R,60,60,50,50,-1,-1 fi
   if $! W,H=${-max_wh} else W,H=1024,1024 fi # Size of output layer
   0 => $filename ext={x} rm.
@@ -50503,11 +50508,12 @@ fx_mesh3d : skip "${1=},${2=}"
   # Load 3D mesh.
   l[] {
     if ['$filename']==['$old_filename']" && "narg($_persistent) $_persistent
-    elif ['$filename']!=0 $filename +store. _persistent
+    elif ['$filename']!=0 $filename +boundingbox3d. +store _persistent
     else # Default object
       torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y
-      => "Default Torus" +store. _persistent
+      => "Default Torus" +boundingbox3d. +store _persistent
     fi
+    if $show_bb k. else rm. fi
   }
   nbv,nbp:=i[6],i[7]
   obj_name={b}
@@ -50525,14 +50531,14 @@ fx_mesh3d : skip "${1=},${2=}"
   if $materials<2 p3d. 2 if !$materials col3d. $recR,$recG,$recB fi fi
   nlx,nly,nlz:=isnan($lx)?[$W*$cx%,$H*$cy%,-5e8]:[$W*($cx+4*($lx-$cx))%,$H*($cy+4*($ly-$cy))%,-10*$foc]
   if 0$_is_preview
-     j3d[0] .,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm.
+     j3d[0] .,$cx%,$cy%,0,1,{$rendering_mode>0?$rendering_mode-1:1},$is_double,1,$foc,$nlx,$nly,$nlz rm.
   else
     afact:=arg0($antialias,1,1.5,2,3,4)
+    if $afact>1 foc*=$afact *3d. $afact fi
     {[$W,$H]*$afact},1,3,-0.1
-    if $afact>1 foc*=$afact *3d.. $afact fi
-    j3d. ..,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm..
+    j3d. ..,$cx%,$cy%,0,1,{$rendering_mode>0?$rendering_mode-1:1},$is_double,1,$foc,$nlx,$nly,$nlz rm..
     to_rgba. replace_color. 0,0,-0.1,-0.1,-0.1,255,0,0,0,0 r. $W,$H,1,4,2
-    mv. 0
+    if 0$_output_mode>0 k. else blend alpha fi
   fi
 
   # Show user guides in preview.
