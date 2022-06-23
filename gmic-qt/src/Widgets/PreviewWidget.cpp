@@ -384,6 +384,15 @@ void PreviewWidget::paintOriginalImage(QPainter & painter)
 {
   gmic_image<float> image;
   getOriginalImageCrop(image);
+
+  if (image.is_empty()) {
+      /**
+       * If original image is empty, most probably, the image is busy,
+       * so we should retry later.
+       */
+      QTimer::singleShot(1000, this, SLOT(sendUpdateRequest()));
+  }
+
   updateOriginalImagePosition();
   if (!image.width() && !image.height()) {
     painter.fillRect(rect(), QBrush(_transparency));
