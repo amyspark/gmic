@@ -80,7 +80,7 @@
 #
 # or
 #
-#    '#@gui Command name : command, preview_command (zoom_factor)[+] [: default_input_mode]
+#    '#@gui Command name : command, preview_command (zoom_factor)[*|+] [: default_input_mode]
 #    '#@gui : parameter1 = typedef(arguments1...), parameter2 = typedef(arguments2...)'
 #    '#@gui : parameter3 = typedef(arguments3...),
 #
@@ -93,8 +93,10 @@
 #           Note that you can optionally specify a float-valued factor>=0 between parentheses at the end of
 #           the 'preview_command' to force the default zoom factor used by the preview for this filter.
 #           Use (0) for a 1:1 preview, (1) for previewing the whole image, (2) for 1/2 image and so on...
-#           You can also put an additional '+' sign after the parenthesis to specify the rendered preview
-#           is still accurate for different zoom factors.
+#           You can put an additional '+' sign after the parenthesis to specify the rendered preview
+#           is still accurate for different zoom factors. Use '*' instead to tell the plug-in that the preview filter
+#           must get the entire image rather than a thumbnail.
+#
 #
 #      'default_input_mode' set the default input mode for that filter. It can be
 #        { x=none | .=active (default) | *=all | +=active & below | -=active & above | v=all visible | i=all invisible }
@@ -170,6 +172,20 @@
 #     - Opacity is a float number in [0,100].
 #     - X and Y positions are integers.
 #     - 'name' is the layer name.
+#
+#   Pre-defined plug-in variables:
+#
+#   - _preview_width: Width of the preview image.
+#   - _preview_height: Height of the preview image.
+#   - _preview_area_width: Width of the preview widget area.
+#   - _preview_area_height: Height of the preview widget area.
+#   - _preview_x0: X-coordinate of the upper-left corner of the preview (expressed in the image space).
+#   - _preview_y0: Y-coordinate of the upper-left corner of the preview (exressed in the image space).
+#   - _preview_x1: X-coordinate of the lower-right corner of the preview (expressed in the image space).
+#   - _preview_y1: Y-coordinate of the lower-right corner of the preview (expressed in the image space).
+#   - _persistent : Variable that is shared between successive calls to the G'MIC interpreter, for a single filter.
+#
+#   Values of variables $_preview[x/y][0/1] vary only when preview mode is set to * (full preview).
 #
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -5143,7 +5159,7 @@ parse_cli_html :
     => $name ot $url_name
   }
   rm
-  e[] "\r  > "${_vt100_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_vt100_n
+  e[] "\r  > "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_vt100_n
 
 parse_cli_trigger_html :
   parse_cli_trigger_print $*
@@ -6947,7 +6963,7 @@ parse_gui : skip "${1=print},${2=*}"
   store. _nongui
 
   # Done!
-  e[] "\r  > "${_vt100_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_vt100_n
+  e[] "\r  > "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_vt100_n
   v + parse_gui_$1 # Output result of the parsing.
 
 #
@@ -7043,7 +7059,7 @@ parse_gui_thumbnails :
     if {*} w. ${"fitscreen ."} fi
     o. $file_out rm.
   }
-  e[] "  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'whatsnew' mode for command 'parse_gui'.
@@ -7059,7 +7075,7 @@ parse_gui_whatsnew :
     rm[0]
   fi }
   y a y
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'list' mode for command 'parse_gui'.
@@ -7100,7 +7116,7 @@ parse_gui_list :
 
   ('"\n*** End of list ***\n"')
   y a y
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'update' mode for command 'parse_gui'.
@@ -7236,7 +7252,7 @@ parse_gui_update :
     "#"\n\
     "# (End of G\47MIC update file)"')
   y a y
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 # April Fool version!
 straprilfool : skip "${1=}"
@@ -7401,7 +7417,7 @@ parse_gui_json :
   if ['$current_category']!=0 ('"    ]\n  }\n"') fi
   ('"  ]\n}\n"')
   y a y html2utf8
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 _parse_gui_json :
   l[] {
@@ -7591,7 +7607,7 @@ parse_gui_gmicol :
   if ['$current_category']!=0 ('"\n</category>\n"') fi
   ('"\n</categories>"')
   y a y html2utf8
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'strings' mode for command 'parse_gui'.
@@ -8258,7 +8274,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.1.4').
+# $1 = version number (e.g. '3.1.5').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9802,7 +9818,7 @@ parse_gui_zart :
   }
   if narg($current_group) +e[] "</preset_group>" fi
   +e[] "</document>"
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 _parse_gui_zart :
   l[] {
@@ -9928,6 +9944,7 @@ _upload_filters_move :
   move_filter "Testing/Reptorian/Popcorn Fractal","Rendering"
   move_filter "Testing/Reptorian/Pseudorandom Noise","Rendering"
   move_filter "Testing/Reptorian/Sinusoidal Water Distortion","Deformations"
+  move_filter "Testing/Reptorian/YCH Vibrance","Colors"
   move_filter "Testing/Samj/Arrays & Tiles/Annular Steiner Chain Round Tile","Arrays & Tiles"
   move_filter "Testing/Samj/Arrays & Tiles/Reptile","Patterns"
   move_filter "Testing/Samj/Artistic/Angoisse Anguish","Artistic"
@@ -9955,7 +9972,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (313,314,$_version) sort. discard. store. compat
+  (313,314,315,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -25795,30 +25812,41 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
   fi
   repeat $! {
     if '$3'!=0 pass$3 0 else +compose_channels[$>] + fi
+    if [w#1,h#1,d#1,s#1]!=[w#0,h#0,d#0,1]
+      error[0--4] "Command 'pixelsort': Invalid specified sorting criterion (size=("{1,[w,h,d,s]}")) for image ["$>"] "\
+                  "(size=("{0,[w,h,d,s]}"))."
+    fi
     if '$4'!=0 pass$4 0 else [$>],[$>],[$>],1,1 fi
+    if [w#2,h#2,d#2,s#2]!=[w#0,h#0,d#0,1]
+      error[0--4] "Command 'pixelsort': Invalid specified mask (size=("{1,[w,h,d,s]}")) for image ["$>"] "\
+                  "(size=("{0,[w,h,d,s]}"))."
+    fi
     l[$>,-2,-1] {
       nm={0,n} >=. 50% mv.. 0 a c
       if '$2'=='x';
-        _pixelsort $1 channels 1,{s-2}
+        _pixelsort $1
       elif '$2'=='y';
-        permute yxzc _pixelsort $1 channels 1,{s-2} permute yxzc
+        permute yxzc _pixelsort $1 permute yxzc
       elif '$2'=='z';
-        permute zxyc _pixelsort $1 channels 1,{s-2} permute yzxc
+        permute zxyc _pixelsort $1 permute yzxc
       elif '$2'=='xy';
-        _pixelsort $1 permute yxzc _pixelsort $1 channels 1,{s-2} permute yxzc
+        _pixelsort $1 permute yxzc _pixelsort $1 permute yxzc
       elif '$2'=='yx';
-        permute yxzc _pixelsort $1 permute yxzc _pixelsort $1 channels 1,{s-2}
+        permute yxzc _pixelsort $1 permute yxzc _pixelsort $1
       fi
-      => $nm
+      channels 1,{s-2} => $nm
     }
   }
 
 _pixelsort :
-  eval. ">begin(ret = [ 0 ]; const m = s - 1);
-          i(x,y,z,m) && !i(#-1,x - 1,y,z,m)?(
-            for (x1 = x + 1, x1<w && i(x1,y,z,m), ++x1);
-            --x1>x?run('+z[0] ',x,',',y,',',z,',',0,',',x1,',',y,',',z,',',m - 1,' sort. $1,x j.. .,',x,',',y,' rm.');
-          ); ret"
+  s. c,-{s-1} N={-2,s} permute.. cxyz r.. {-2,[w*h,d,s,1]},-1 # Merge image + criterion into a single image
+  sort:=;_'$1'==_'+';
+  eval. "*begin(ret = 0; V = vector(#w#0); const N = $N);
+    i && !j(-1)?( # Start of a segment
+      for (xe = x + 1, i(xe,y,z) && xe<w, ++xe);
+      --xe>x?(dx = xe - x + 1; Ndx = N*dx; Nx = N*x; copy(V,i(#0,Nx),Ndx); copy(i(#0,Nx),sort(V,$sort,dx,N),Ndx));
+    );"
+  r.. {-2,[$N,w/$N,h,d]},-1 permute.. yzcx a c
 
 #@cli polaroid : _size1>=0,_size2>=0
 #@cli : Create polaroid effect in selected images.
@@ -32770,7 +32798,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 
       # Generate warp fields.
       if (!narg($warp0)" || "!narg($warp1))
-        subsamp={arg(1+$2,8,6,4,2,1)}
+        subsamp:=arg(1+$2,8,6,4,2,1)
         +_x_warp_rbf[keypoints] {imgb0,round([w,h]/$subsamp)}
         +l[keypoints] { s c,-2 rv[0,1] a c } +_x_warp_rbf. {imgb0,round([w,h]/$subsamp)} rm..
         *[-2,-1] $subsamp
@@ -34953,7 +34981,8 @@ _x_warp_rbf :
       W = solve(A,B,2);
     );
     res = [ 0,0 ];
-    repeat (N,p,res += W[2*p,2]*(norm([x,y] - xy(p))));"
+    repeat (N,p,res += W[2*p,2]*(norm([x,y] - xy(p))));
+    res"
   k.
 
 #@cli x_waves
@@ -36358,8 +36387,8 @@ fx_gmicky_preview :
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
-#@gui : - <span foreground="purple"><b>2022/06/22</b> : version <i>3.1.4</i> (Current stable).</span>\n
-##@gui : - <b>2022/06/20</b> : version <i>3.1.4</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2022/06/30</b> : version <i>3.1.5</i> (Current stable).</span>\n
+##@gui : - <b>2022/06/28</b> : version <i>3.1.5</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.2)","https://discuss.pixls.us/t/on-the-road-to-3-2"}
@@ -38314,7 +38343,7 @@ fx_posterize :
     split_opacity l[0] {
       . amp=$1 do smooth. {min(50,$amp)},{$2%},1,$3,{2*$3} amp-=50 while $amp>0
       bilateral.. .,5,10 rm.
-      srgb2rgb +colormap $4 rgb2srgb
+      srgb2rgb +colormap $4,0 rgb2srgb
       index.. .,0,0
       if $5 +area.. 0,0 <. $5 inpaint... .,0,3 rm. fi
       map.. . rm.
@@ -43017,6 +43046,36 @@ fx_custom_transform :
     fi
   mv. 0 }
 
+#@gui Vibrance : fx_vibrance, fx_vibrance_preview(1)+
+#@gui : Strength = float(0.5,-1,3)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>Age / Pixls.us</i>.      Latest Update: <i>2022/06/28</i>.</small>")
+fx_vibrance :
+  foreach {
+    split_opacity l[0] {
+      to_rgb
+      f "const vibrance = 1 + $1;
+         vib(val) = (
+           v = val/255;
+           vv = (v - lum)*vibrance + lum;
+           (vv*(1 - sat) + v*sat)*255
+         );
+         min = min(R,G,B)/255;
+         lum = (R*0.2 + G*0.7 + B*0.1)/255;
+         sat = cut(1 - min/lum,0,1);
+         [ vib(R),vib(G),vib(B) ]"
+      }
+      a c
+    }
+
+fx_vibrance_preview :
+  gui_split_preview "fx_vibrance $*",${-3--1}
+
 #@gui ____<b>Contours</b>
 #------------------------
 
@@ -43945,7 +44004,7 @@ fx_symmetrizoscope :
     symmetrize 50%,50%,$ang,$3,0,{if($4!=2,$4,$>%2)}
   }
 
-#@gui Morph [Interactive] : fx_morph_interactive, fx_morph_interactive_preview
+#@gui Morph [Interactive] : fx_morph_interactive, fx_morph_interactive_preview : +
 #@gui : Number of Frames = int(16,3,1024)
 #@gui : Preview Precision = choice{2,"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
 #@gui : Keypoints = value(-1)

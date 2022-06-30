@@ -613,6 +613,14 @@ gmic_qt_shared: gmic_qt_files CImg.h gmic_stdlib_community.h
 
 # ZArt.
 #------
+zart_shared: zart_files CImg.h gmic_stdlib.h
+ifeq ($(OS),Darwin)
+	cd ../zart && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) GMIC_DYNAMIC_LINKING=on zart.pro && $(MAKE) && $(STRIP) zart.app/Contents/MacOS/zart
+else
+	cd ../zart && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) GMIC_DYNAMIC_LINKING=on zart.pro && $(MAKE) && $(STRIP) zart
+endif
+	@echo "Executable 'zart' has been successfully compiled in '../zart/'."
+
 zart: zart_files CImg.h gmic_stdlib.h
 ifeq ($(OS),Darwin)
 	cd ../zart && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) zart.pro && $(MAKE) && $(STRIP) zart.app/Contents/MacOS/zart

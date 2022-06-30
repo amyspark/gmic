@@ -2308,25 +2308,46 @@ double gmic_round(const double x) {
 }
 
 // Manage list of all gmic runs.
-inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
-
-const CImg<void*> get_current_run(const char *const func_name, void *const p_list) {
-  cimg::mutex(24);
-  CImgList<void*> &grl = gmic_runs();
-  int p;
-  for (p = grl.width() - 1; p>=0; --p) {
-    CImg<void*> &gr = grl[p];
-    if (gr[1]==(void*)p_list) break;
-  }
-  const CImg<void*> gr = grl[p].get_shared(); // Return shared image
-  cimg::mutex(24,0);
-  if (p<0) // Instance not found!
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function '%s': "
-                                "Cannot determine instance of the G'MIC interpreter.",
-                                func_name);
-  return gr;
+inline CImgList<void*>& gmic_runs() {
+  static CImgList<void*> val;
+  return val;
 }
 
+inline void* get_tid() {
+#if defined(__MACOSX__) || defined(__APPLE__)
+  void* tid = (void*)(cimg_ulong)getpid();
+#elif cimg_OS==1
+  void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
+#elif cimg_OS==2
+  void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
+#else
+  void* tid = (void*)0;
+#endif // #if defined(__MACOSX__) || defined(__APPLE__)
+  return tid;
+}
+
+// Search G'MIC by image list and thread_id. If 'p_list==0', search only by thread_id.
+const CImg<void*> gmic::current_run(const char *const func_name, void *const p_list) {
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  void *const tid = p_list?(void*)0:get_tid();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    const CImg<void*> &gr = grl[p];
+    if ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid)) break;
+  }
+  cimg::mutex(24,0);
+  if (p<0) { // Instance not found!
+    if (p_list)
+      throw CImgArgumentException("[" cimg_appname "] Function '%s': "
+                                  "Cannot determine instance of the G'MIC interpreter.",
+                                  func_name);
+    else return CImg<void*>::empty(); // Happens only when called from 'gmic_current_is_abort()'
+  }
+  return grl[p].get_shared(); // Return shared image
+}
+
+// G'MIC-related functions for the mathematical expression evaluator.
 double gmic::mp_dollar(const char *const str, void *const p_list) {
   if (!(CImg<>::_cimg_math_parser::is_varname(str) ||
         ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
@@ -2334,7 +2355,7 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
                                 "Invalid variable name '%s'.",
                                 str);
 
-  const CImg<void*> gr = get_current_run("Operator '$'",p_list);
+  const CImg<void*> gr = current_run("Operator '$'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2397,7 +2418,7 @@ template<typename T>
 double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  const CImg<void*> gr = get_current_run("Function 'get()'",p_list);
+  const CImg<void*> gr = current_run("Function 'get()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char>& images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2452,7 +2473,7 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
 
 double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char *const str,
                     void *const p_list) {
-  const CImg<void*> gr = get_current_run("Function 'set()'",p_list);
+  const CImg<void*> gr = current_run("Function 'set()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
   CImg<char> _varname(256);
@@ -2478,7 +2499,7 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
 
 double gmic::mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                      void *const p_list) {
-  const CImg<void*> gr = get_current_run("Function 'name()'",p_list);
+  const CImg<void*> gr = current_run("Function 'name()'",p_list);
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
 
   std::memset(out_str,0,siz*sizeof(double));
@@ -2496,7 +2517,7 @@ template<typename T>
 double gmic::mp_run(char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  const CImg<void*> gr = get_current_run("Function 'run()'",p_list);
+  const CImg<void*> gr = current_run("Function 'run()'",p_list);
   double res = cimg::type<double>::nan();
 
   gmic &gmic_instance = *(gmic*)gr[0];
@@ -2537,7 +2558,7 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  const CImg<void*> gr = get_current_run("Function 'store()'",p_list);
+  const CImg<void*> gr = current_run("Function 'store()'",p_list);
   cimg_pragma_openmp(critical(mp_store))
   {
     gmic &gmic_instance = *(gmic*)gr[0];
@@ -2567,34 +2588,6 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
                                   cimg::type<T>::string(),str);
   }
   return cimg::type<double>::nan();
-}
-
-// Manage correspondence between abort pointers and thread ids.
-CImgList<void*> gmic::list_p_is_abort = CImgList<void*>();
-bool *gmic::abort_ptr(bool *const p_is_abort) {
-#if defined(__MACOSX__) || defined(__APPLE__)
-  void* tid = (void*)(cimg_ulong)getpid();
-#elif cimg_OS==1
-  void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
-#elif cimg_OS==2
-  void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
-#else
-  void* tid = (void*)0;
-#endif // #if defined(__MACOSX__) || defined(__APPLE__)
-  cimg::mutex(21);
-  bool *res = p_is_abort;
-  int ind = -1;
-  cimglist_for(list_p_is_abort,l)
-    if (list_p_is_abort(l,0)==tid) { ind = l; break; }
-  if (p_is_abort) { // Set pointer
-    if (ind>=0) list_p_is_abort(ind,1) = (void*)p_is_abort;
-    else CImg<void*>::vector(tid,(void*)p_is_abort).move_to(list_p_is_abort);
-  } else { // Get pointer
-    static bool _is_abort;
-    res = ind<0?&_is_abort:(bool*)list_p_is_abort(ind,1);
-  }
-  cimg::mutex(21,0);
-  return res;
 }
 
 // Manage mutexes.
@@ -2647,7 +2640,6 @@ static void *gmic_parallel(void *arg) {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
   try {
     unsigned int pos = 0;
-    st.gmic_instance.abort_ptr(st.gmic_instance.is_abort);
     st.gmic_instance.is_debug_info = false;
     st.gmic_instance._run(st.commands_line,pos,*st.images,*st.images_names,
                           *st.parent_images,*st.parent_images_names,
@@ -2748,9 +2740,9 @@ int gmic::levenshtein(const char *const s, const char *const t) {
 // Wait for threads to finish.
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
-  cimg::unused(pixel_type);
-  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
+  cimg::unused(p_gmic_threads,try_abort,pixel_type);
 #ifdef gmic_is_parallel
+  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
   cimg_forY(gmic_threads,l) {
     if (try_abort && gmic_threads[l].is_thread_running)
       gmic_threads[l].gmic_instance.is_abort_thread = true;
@@ -2876,22 +2868,6 @@ gmic& gmic::assign(const char *const commands_line, CImgList<T>& images, CImgLis
 
 gmic::~gmic() {
   cimg_forX(display_windows,l) delete &display_window(l);
-  cimg::mutex(21);
-#if defined(__MACOSX__) || defined(__APPLE__)
-  void* tid = (void*)(cimg_ulong)getpid();
-#elif cimg_OS==1
-  void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
-#elif cimg_OS==2
-  void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
-#else
-  void* tid = (void*)0;
-#endif
-  int ind = -1;
-  cimglist_for(list_p_is_abort,l)
-    if (list_p_is_abort(l,0)==tid) { ind = l; break; }
-  if (ind>=0) list_p_is_abort.remove(ind);
-  cimg::mutex(21,0);
-
   delete[] commands;
   delete[] commands_names;
   delete[] commands_has_arguments;
@@ -4190,8 +4166,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   delete[] commands_has_arguments;
   delete[] _variables;
   delete[] _variables_names;
-  delete[] variables;
-  delete[] _variables_names;
   commands = new CImgList<char>[gmic_comslots];
   commands_names = new CImgList<char>[gmic_comslots];
   commands_has_arguments = new CImgList<char>[gmic_comslots];
@@ -5251,15 +5225,15 @@ gmic& gmic::run(const char *const commands_line,
                 float *const p_progress, bool *const p_is_abort,
                 const T& pixel_type) {
   cimg::unused(pixel_type);
-  gmic_list<T> images;
-  gmic_list<char> images_names;
+  CImgList<T> images;
+  CImgList<char> images_names;
   return run(commands_line,images,images_names,
              p_progress,p_is_abort);
 }
 
 template<typename T>
 gmic& gmic::run(const char *const commands_line,
-                gmic_list<T> &images, gmic_list<char> &images_names,
+                CImgList<T> &images, CImgList<char> &images_names,
                 float *const p_progress, bool *const p_is_abort) {
   cimg::mutex(26);
   if (is_running)
@@ -5276,8 +5250,8 @@ gmic& gmic::run(const char *const commands_line,
 }
 
 template<typename T>
-gmic& gmic::_run(const gmic_list<char>& commands_line,
-                 gmic_list<T> &images, gmic_list<char> &images_names,
+gmic& gmic::_run(const CImgList<char>& commands_line,
+                 CImgList<T> &images, CImgList<char> &images_names,
                  float *const p_progress, bool *const p_is_abort) {
   CImg<unsigned int> variables_sizes(gmic_varslots,1,1,1,0);
   unsigned int position = 0;
@@ -5299,7 +5273,6 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
   if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
-  abort_ptr(is_abort);
   *progress = -1;
   cimglist_for(commands_line,l) {
     const char *it = commands_line[l].data();
@@ -5332,7 +5305,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   const CImg<void*> &grb = grl.back();
   const bool push_run = !grl || grb[0]!=this || grb[1]!=&images;
   if (push_run) {
-    CImg<void*> gr(7);
+    CImg<void*> gr(8);
     gr[0] = (void*)this;
     gr[1] = (void*)&images;
     gr[2] = (void*)&images_names;
@@ -5340,6 +5313,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     gr[4] = (void*)&parent_images_names;
     gr[5] = (void*)variables_sizes;
     gr[6] = (void*)command_selection;
+    gr[7] = get_tid();
     gr.move_to(grl);
   }
   cimg::mutex(24,0);
@@ -15427,6 +15401,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Remove current run from managed list of gmic runs.
   if (push_run) {
     cimg::mutex(24);
+    void *const tid = get_tid();
     for (int k = grl.width() - 1; k>=0; --k) {
       CImg<void*> &_gr = grl[k];
       if (_gr[0]==(void*)this &&
@@ -15435,7 +15410,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           _gr[3]==(void*)&parent_images &&
           _gr[4]==(void*)&parent_images_names &&
           _gr[5]==(void*)variables_sizes &&
-          _gr[6]==(void*)command_selection) {
+          _gr[6]==(void*)command_selection &&
+          _gr[7]==tid) {
         grl.remove(k); break;
       }
     }
@@ -15451,21 +15427,21 @@ template gmic::gmic(const char *const commands_line, const char *const custom_co
                     const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
                     const pt& pixel_type); \
 template gmic::gmic(const char *const commands_line, \
-                    gmic_list<pt>& images, gmic_list<char>& images_names, \
+                    CImgList<pt>& images, CImgList<char>& images_names, \
                     const char *const custom_commands, const bool include_stdlib, \
                     float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::assign(const char *const commands_line, const char *const custom_commands, \
                             const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
                             const pt& pixel_type); \
 template gmic& gmic::assign(const char *const commands_line, \
-                            gmic_list<pt>& images, gmic_list<char>& images_names, \
+                            CImgList<pt>& images, CImgList<char>& images_names, \
                             const char *const custom_commands, const bool include_stdlib, \
                             float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::run(const char *const commands_line, \
                          float *const p_progress, bool *const p_is_abort,\
                          const pt& pixel_type); \
 template gmic& gmic::run(const char *const commands_line, \
-                         gmic_list<pt> &images, gmic_list<char> &images_names, \
+                         CImgList<pt> &images, CImgList<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
 template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y, \
                                     const unsigned int size_z, const unsigned int size_c); \
@@ -15479,7 +15455,7 @@ export_gmic(gmic_pixel_type2);
 #endif
 template CImgList<char>::~CImgList();
 template CImgList<char>& CImgList<char>::assign(const unsigned int n);
-template bool gmic::search_sorted(const char *const str, const gmic_list<char>& list,
+template bool gmic::search_sorted(const char *const str, const CImgList<char>& list,
                                   const unsigned int length, unsigned int &out_ind);
 
 #endif // #ifdef cimg_plugin
