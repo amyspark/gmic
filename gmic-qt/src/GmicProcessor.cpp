@@ -189,6 +189,11 @@ bool GmicProcessor::isIdle() const
   return !_filterThread;
 }
 
+bool GmicProcessor::isInputImagesEmpty() const
+{
+  return _gmicImages->is_empty();
+}
+
 int GmicProcessor::duration() const
 {
   if (_filterThread) {
