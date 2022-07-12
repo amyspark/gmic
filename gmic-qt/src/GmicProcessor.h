@@ -92,6 +92,7 @@ public:
 
   bool isProcessing() const;
   bool isIdle() const;
+  bool isInputImagesEmpty() const;
   bool hasUnfinishedAbortedThreads() const;
 
   const cimg_library::CImg<float> & previewImage() const;
