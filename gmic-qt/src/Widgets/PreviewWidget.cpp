@@ -382,6 +382,7 @@ void PreviewWidget::paintOriginalImage(QPainter & painter)
   gmic_image<float> image;
   getOriginalImageCrop(image);
 
+#ifdef _GMIC_ASYNC_IMAGE_UPDATE_
   if (image.is_empty()) {
       /**
        * If original image is empty, most probably, the image is busy,
@@ -389,6 +390,7 @@ void PreviewWidget::paintOriginalImage(QPainter & painter)
        */
       QTimer::singleShot(1000, this, SLOT(sendUpdateRequest()));
   }
+#endif
 
   updateOriginalImagePosition();
   if (!image.width() && !image.height()) {
