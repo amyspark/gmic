@@ -91,6 +91,7 @@ public:
   bool isProcessingFullImage() const;
   bool isProcessing() const;
   bool isIdle() const;
+  bool isInputImagesEmpty() const;
   bool hasUnfinishedAbortedThreads() const;
 
   const gmic_library::gmic_image<float> & previewImage() const;
