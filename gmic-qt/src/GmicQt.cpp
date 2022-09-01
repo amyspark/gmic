@@ -552,6 +552,9 @@ void configureApplication()
   QCoreApplication::setOrganizationDomain(GMIC_QT_ORGANISATION_DOMAIN);
   QCoreApplication::setApplicationName(GMIC_QT_APPLICATION_NAME);
   QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
+  if (QSettings().value(HIGHDPI_KEY, false).toBool()) {
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  }
 }
 
 void disableModes(const std::list<GmicQt::InputMode> & disabledInputModes, //

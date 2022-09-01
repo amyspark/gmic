@@ -61,7 +61,7 @@ void gmic_segfault_sigaction(int signal, siginfo_t *si, void *arg) {
   cimg::mutex(29);
   std::fprintf(cimg::output(),
                "\n\n%s[gmic] G'MIC encountered a %sfatal error%s%s. "
-               "Please submit a bug report, at: %shttps://github.com/dtschump/gmic/issues%s\n\n",
+               "Please submit a bug report, at: %shttps://github.com/GreycLab/gmic/issues%s\n\n",
                cimg::t_red,cimg::t_bold,cimg::t_normal,cimg::t_red,
                cimg::t_bold,cimg::t_normal);
   std::fflush(cimg::output());

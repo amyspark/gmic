@@ -469,9 +469,9 @@ libcgmic_files:
 	    ln -fs ../../gmic-community/libcgmic/gmic_libc.h .; \
 	    ln -fs ../../gmic-community/libcgmic/use_libcgmic.c .; \
 	  else \
-            $(WGET) gmic_libc.cpp https://raw.githubusercontent.com/dtschump/gmic-community/master/libcgmic/gmic_libc.cpp; \
-            $(WGET) gmic_libc.h https://raw.githubusercontent.com/dtschump/gmic-community/master/libcgmic/gmic_libc.h; \
-            $(WGET) use_libcgmic.c https://raw.githubusercontent.com/dtschump/gmic-community/master/libcgmic/use_libcgmic.c; \
+            $(WGET) gmic_libc.cpp https://raw.githubusercontent.com/GreycLab/gmic-community/master/libcgmic/gmic_libc.cpp; \
+            $(WGET) gmic_libc.h https://raw.githubusercontent.com/GreycLab/gmic-community/master/libcgmic/gmic_libc.h; \
+            $(WGET) use_libcgmic.c https://raw.githubusercontent.com/GreycLab/gmic-community/master/libcgmic/use_libcgmic.c; \
             touch gmic_libc.cpp gmic_libc.h use_libcgmic.c; \
 	  fi; \
 	fi
@@ -659,7 +659,7 @@ CImg.h:
 	@if [ -f ../../CImg/CImg.h ]; then \
           if [ ! -f ./CImg.h ]; then ln -s ../../CImg/CImg.h .; fi; \
         elif [ ! -e ./CImg.h ]; then \
-          $(WGET) CImg.h https://github.com/dtschump/CImg/raw/master/CImg.h; \
+          $(WGET) CImg.h https://github.com/GreycLab/CImg/raw/master/CImg.h; \
           touch CImg.h; \
         fi
 	@echo " done!"

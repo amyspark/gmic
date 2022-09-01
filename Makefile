@@ -76,4 +76,4 @@
 all: all
 
 %:
-	cd src && make $*
+	cd src && $(MAKE) $*
