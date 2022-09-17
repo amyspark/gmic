@@ -397,17 +397,22 @@ enum {FALSE_WIN = 0};
 // Define 'cimg_display' to: '0' to disable display capabilities.
 //                           '1' to use the X-Window framework (X11).
 //                           '2' to use the Microsoft GDI32 framework.
+//                           '3' to use the Cocoa framework.
 #ifndef cimg_display
 #if cimg_OS==0
 #define cimg_display 0
 #elif cimg_OS==1
+#ifdef __APPLE__
+#define cimg_display 3
+#else
 #define cimg_display 1
+#endif
 #elif cimg_OS==2
 #define cimg_display 2
 #endif
-#elif !(cimg_display==0 || cimg_display==1 || cimg_display==2)
+#elif !(cimg_display==0 || cimg_display==1 || cimg_display==2 || cimg_display==3)
 #error CImg Library: Configuration variable 'cimg_display' is badly defined.
-#error (should be { 0=none | 1=X-Window (X11) | 2=Microsoft GDI32 }).
+#error (should be { 0=none | 1=X-Window (X11) | 2=Microsoft GDI32 | 3=Cocoa }).
 #endif
 
 // Include display-specific headers.
@@ -424,6 +429,9 @@ enum {FALSE_WIN = 0};
 #ifdef cimg_use_xrandr
 #include <X11/extensions/Xrandr.h>
 #endif
+#elif cimg_display==3
+#import <ApplicationServices/ApplicationServices.h>
+#import <Cocoa/Cocoa.h>
 #endif
 #ifndef cimg_appname
 #define cimg_appname "CImg"
@@ -3246,12 +3254,29 @@ namespace cimg_library_suffixed {
 #else
     inline Win32_static& Win32_attr() { static Win32_static val; return val; }
 #endif
+#elif cimg_display==3
+    struct macOS_static {
+        pthread_cond_t wait_event;
+        pthread_mutex_t wait_event_mutex;
+
+        macOS_static() {
+            pthread_mutex_init(&wait_event_mutex, 0);
+            pthread_cond_init(&wait_event, 0);
+        }
+    };
+#if defined(cimg_module)
+    macOS_static& macOS_attr();
+#elif defined(cimg_main)
+    macOS_static& macOS_attr() { static macOS_static val; return val; }
+#else
+    inline macOS_static& macOS_attr() { static macOS_static val; return val; }
+#endif
 #endif
 #define cimg_lock_display() cimg::mutex(15)
 #define cimg_unlock_display() cimg::mutex(15,0)
 
     struct Mutex_static {
-#if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
+#if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1 || cimg_display==3)
       pthread_mutex_t mutex[32];
       Mutex_static() { for (unsigned int i = 0; i<32; ++i) pthread_mutex_init(&mutex[i],0); }
       void lock(const unsigned int n) { pthread_mutex_lock(&mutex[n]); }
@@ -3477,7 +3502,96 @@ namespace cimg_library_suffixed {
     const unsigned int keyPADSUB     = VK_SUBTRACT;
     const unsigned int keyPADMUL     = VK_MULTIPLY;
     const unsigned int keyPADDIV     = VK_DIVIDE;
-
+#elif cimg_display==3
+    // Define keycodes for macOS.
+    const unsigned int keyESC        = kVK_Escape;
+    const unsigned int keyF1         = kVK_F1;
+    const unsigned int keyF2         = kVK_F2;
+    const unsigned int keyF3         = kVK_F3;
+    const unsigned int keyF4         = kVK_F4;
+    const unsigned int keyF5         = kVK_F5;
+    const unsigned int keyF6         = kVK_F6;
+    const unsigned int keyF7         = kVK_F7;
+    const unsigned int keyF8         = kVK_F8;
+    const unsigned int keyF9         = kVK_F9;
+    const unsigned int keyF10        = kVK_F10;
+    const unsigned int keyF11        = kVK_F11;
+    const unsigned int keyF12        = kVK_F12;
+    const unsigned int keyPAUSE      = kVK_F14; /* is this correct? */
+    const unsigned int key1          = '1';
+    const unsigned int key2          = '2';
+    const unsigned int key3          = '3';
+    const unsigned int key4          = '4';
+    const unsigned int key5          = '5';
+    const unsigned int key6          = '6';
+    const unsigned int key7          = '7';
+    const unsigned int key8          = '8';
+    const unsigned int key9          = '9';
+    const unsigned int key0          = '0';
+    const unsigned int keyBACKSPACE  = kVK_Delete;
+    const unsigned int keyINSERT     = kVK_Help; /* is this correct? */
+    const unsigned int keyHOME       = kVK_Home;
+    const unsigned int keyPAGEUP     = kVK_PageUp;
+    const unsigned int keyTAB        = kVK_Tab;
+    const unsigned int keyQ          = 'Q';
+    const unsigned int keyW          = 'W';
+    const unsigned int keyE          = 'E';
+    const unsigned int keyR          = 'R';
+    const unsigned int keyT          = 'T';
+    const unsigned int keyY          = 'Y';
+    const unsigned int keyU          = 'U';
+    const unsigned int keyI          = 'I';
+    const unsigned int keyO          = 'O';
+    const unsigned int keyP          = 'P';
+    const unsigned int keyDELETE     = kVK_ForwardDelete;
+    const unsigned int keyEND        = kVK_End;
+    const unsigned int keyPAGEDOWN   = kVK_PageDown;
+    const unsigned int keyCAPSLOCK   = kVK_CapsLock;
+    const unsigned int keyA          = 'A';
+    const unsigned int keyS          = 'S';
+    const unsigned int keyD          = 'D';
+    const unsigned int keyF          = 'F';
+    const unsigned int keyG          = 'G';
+    const unsigned int keyH          = 'H';
+    const unsigned int keyJ          = 'J';
+    const unsigned int keyK          = 'K';
+    const unsigned int keyL          = 'L';
+    const unsigned int keyENTER      = kVK_Return;
+    const unsigned int keySHIFTLEFT  = kVK_Shift;
+    const unsigned int keyZ          = 'Z';
+    const unsigned int keyX          = 'X';
+    const unsigned int keyC          = 'C';
+    const unsigned int keyV          = 'V';
+    const unsigned int keyB          = 'B';
+    const unsigned int keyN          = 'N';
+    const unsigned int keyM          = 'M';
+    const unsigned int keySHIFTRIGHT = kVK_RightShift;
+    const unsigned int keyARROWUP    = kVK_UpArrow;
+    const unsigned int keyCTRLLEFT   = kVK_Control;
+    const unsigned int keyAPPLEFT    = kVK_Command;
+    const unsigned int keyALT        = kVK_Option;
+    const unsigned int keySPACE      = kVK_Space;
+    const unsigned int keyALTGR      = kVK_RightOption;
+    const unsigned int keyAPPRIGHT   = kVK_RightCommand;
+    const unsigned int keyMENU       = 0x6e; /* https://www.winehq.org/pipermail/wine-devel/2018-March/124953.html */
+    const unsigned int keyCTRLRIGHT  = kVK_RightControl;
+    const unsigned int keyARROWLEFT  = kVK_LeftArrow;
+    const unsigned int keyARROWDOWN  = kVK_DownArrow;
+    const unsigned int keyARROWRIGHT = kVK_RightArrow;
+    const unsigned int keyPAD0       = kVK_ANSI_Keypad0;
+    const unsigned int keyPAD1       = kVK_ANSI_Keypad1;
+    const unsigned int keyPAD2       = kVK_ANSI_Keypad2;
+    const unsigned int keyPAD3       = kVK_ANSI_Keypad3;
+    const unsigned int keyPAD4       = kVK_ANSI_Keypad4;
+    const unsigned int keyPAD5       = kVK_ANSI_Keypad5;
+    const unsigned int keyPAD6       = kVK_ANSI_Keypad6;
+    const unsigned int keyPAD7       = kVK_ANSI_Keypad7;
+    const unsigned int keyPAD8       = kVK_ANSI_Keypad8;
+    const unsigned int keyPAD9       = kVK_ANSI_Keypad9;
+    const unsigned int keyPADADD     = kVK_ANSI_KeypadPlus;
+    const unsigned int keyPADSUB     = kVK_ANSI_KeypadMinus;
+    const unsigned int keyPADMUL     = kVK_ANSI_KeypadMultiply;
+    const unsigned int keyPADDIV     = kVK_ANSI_KeypadDivide;
 #else
     // Define random keycodes when no display is available.
     // (should rarely be used then!).
@@ -7739,7 +7853,7 @@ namespace cimg_library_suffixed {
 
       std::fprintf(cimg::output(),"  > Display type:             %s%-13s%s %s('cimg_display'=%d)%s\n",
                    cimg::t_bold,
-                   cimg_display==0?"No display":cimg_display==1?"X11":cimg_display==2?"Windows GDI":"Unknown",
+                   cimg_display==0?"No display":cimg_display==1?"X11":cimg_display==2?"Windows GDI":cimg_display==3?"Cocoa":"Unknown",
                    cimg::t_normal,cimg::t_green,
                    (int)cimg_display,
                    cimg::t_normal);
@@ -9312,6 +9426,8 @@ namespace cimg_library_suffixed {
       pthread_cond_broadcast(&cimg::X11_attr().wait_event);
 #elif cimg_display==2
       SetEvent(cimg::Win32_attr().wait_event);
+#elif cimg_display==3
+      pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       return *this;
     }
@@ -9330,6 +9446,8 @@ namespace cimg_library_suffixed {
         pthread_cond_broadcast(&cimg::X11_attr().wait_event);
 #elif cimg_display==2
         SetEvent(cimg::Win32_attr().wait_event);
+#elif cimg_display==3
+          pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       }
       return *this;
@@ -9346,6 +9464,8 @@ namespace cimg_library_suffixed {
       pthread_cond_broadcast(&cimg::X11_attr().wait_event);
 #elif cimg_display==2
       SetEvent(cimg::Win32_attr().wait_event);
+#elif cimg_display==3
+      pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       return *this;
     }
@@ -9363,6 +9483,8 @@ namespace cimg_library_suffixed {
         pthread_cond_broadcast(&cimg::X11_attr().wait_event);
 #elif cimg_display==2
         SetEvent(cimg::Win32_attr().wait_event);
+#elif cimg_display==3
+        pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       }
       return *this;
@@ -9392,6 +9514,8 @@ namespace cimg_library_suffixed {
       pthread_cond_broadcast(&cimg::X11_attr().wait_event);
 #elif cimg_display==2
       SetEvent(cimg::Win32_attr().wait_event);
+#elif cimg_display==3
+      pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       return *this;
     }
@@ -9453,6 +9577,8 @@ namespace cimg_library_suffixed {
         pthread_cond_broadcast(&cimg::X11_attr().wait_event);
 #elif cimg_display==2
         SetEvent(cimg::Win32_attr().wait_event);
+#elif cimg_display==3
+        pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       }
       return *this;
@@ -11628,6 +11754,448 @@ namespace cimg_library_suffixed {
       }
       return *this;
     }
+
+
+    // Cocoa-based implementation.
+    //-------------------------------
+#elif cimg_display==3
+    bool _is_mouse_tracked, _is_cursor_visible;
+	pthread_mutex_t _mutex;
+	pthread_cond_t _is_created;
+    NSWindow* _window, _backgroundWindow;
+	NSView *view;
+    CGImageRef _image;
+    NSGraphicsContext* _context;
+
+    static int screen_width() {
+        const NSRect frame = [[NSScreen mainScreen] frame];
+        return (int)frame.size.width;
+    }
+
+    static int screen_height() {
+        const NSRect frame = [[NSScreen mainScreen] frame];
+        return (int)frame.size.height;
+    }
+
+    static void wait_all() {
+        if (!cimg::macOS_attr().display) return;
+        pthread_mutex_lock(&cimg::macOS_attr().wait_event_mutex);
+        pthread_cond_wait(&cimg::macOS_attr().wait_event, &cimg::macOS_attr().wait_event_mutex);
+        pthread_mutex_unlock(&cimg::macOS_attr().wait_event_mutex);
+    }
+
+    void _init_fullscreen() {
+        _background_window = nullptr;
+        if (!_is_fullscreen || _is_closed) return;
+        else {
+            const int 
+                sx = (int)screen_width(),
+                sy = (int)screen_height();
+            if (sx != _width || sy != _height) {
+                NSRect rect = NSMakeRect(0, 0, sx, sy);
+                _background_window = [[NSScreen alloc] initWithContentRect:rect styleMask: NSWindowStyleMaskFullScreen backing: NSBackingStoreBuffered defer:YES];
+				[_background_window setBackgroundColor:[NSColor blackColor]];
+				[_background_window setAlphaValue:0];
+				[_background_window setLevel:NSScreenSaverWindowLevel];
+                [_background_window makeKeyAndOrderFront:nil];
+            }
+        }
+    }
+
+    void _desinit_fullscreen() {
+        if (!_is_fullscreen) return;
+        if (_background_window) [_background_window close];
+        _background_window = nullptr;
+        _is_fullscreen = false;
+    }
+
+    CImgDisplay& _update_window_pos() {
+        if (_is_closed) _window_x = _window_y = cimg::type<int>::min();
+        else {
+            NSRect contentRect = NSMakeRect(0, 0, width, _height);
+            contentRect = [window frameRectForContentRect: contentRect];
+            _window_x = contentRect.left;
+            _window_y = contentRect.top;
+        }
+        return *this;
+    }
+
+    CImgDisplay& _assign(const unsigned int dimw, const unsigned int dimh, const char *const ptitle=0,
+                         const unsigned int normalization_type=3,
+                         const bool fullscreen_flag=false, const bool closed_flag=false) {
+
+      // Allocate space for window title
+      const char *const nptitle = ptitle?ptitle:"";
+      const unsigned int s = (unsigned int)std::strlen(nptitle) + 1;
+      char *const tmp_title = s?new char[s]:0;
+      if (s) std::memcpy(tmp_title,nptitle,s*sizeof(char));
+
+      // Destroy previous window if existing
+      if (!is_empty()) assign();
+
+      // Set display variables
+      _width = std::min(dimw,(unsigned int)screen_width());
+      _height = std::min(dimh,(unsigned int)screen_height());
+      _normalization = normalization_type<4?normalization_type:3;
+      _is_fullscreen = fullscreen_flag;
+      _window_x = _window_y = cimg::type<int>::min();
+      _is_closed = closed_flag;
+      _is_cursor_visible = true;
+      _is_mouse_tracked = false;
+      _title = tmp_title;
+      flush();
+      if (_is_fullscreen) _init_fullscreen();
+
+      // todo: Create event thread
+      return *this;
+    }
+	
+	CImgDisplay& assign() {
+      if (is_empty()) return flush();
+      [_window close]; // todo figure out if this is correct
+	  // todo terminate thread
+      _image = nullptr;
+      delete[] _title;
+      _image = nullptr; // todo figure out if this is correct
+      _title = 0;
+      if (_is_fullscreen) _desinit_fullscreen();
+      _width = _height = _normalization = _window_width = _window_height = 0;
+      _window_x = _window_y = cimg::type<int>::min();
+      _is_fullscreen = false;
+      _is_closed = true;
+      _min = _max = 0;
+      _title = 0;
+      flush();
+      return *this;
+    }
+	
+	CImgDisplay& assign(const unsigned int dimw, const unsigned int dimh, const char *const title=0,
+                        const unsigned int normalization_type=3,
+                        const bool fullscreen_flag=false, const bool closed_flag=false) {
+      if (!dimw || !dimh) return assign();
+      _assign(dimw,dimh,title,normalization_type,fullscreen_flag,closed_flag);
+      _min = _max = 0;
+	  // todo create image data of size width * height * pixel size and memset it
+      return paint();
+    }
+	
+	template<typename T>
+    CImgDisplay& assign(const CImg<T>& img, const char *const title=0,
+                        const unsigned int normalization_type=3,
+                        const bool fullscreen_flag=false, const bool closed_flag=false) {
+      if (!img) return assign();
+      CImg<T> tmp;
+      const CImg<T>& nimg = (img._depth==1)?img:(tmp=img.get_projections2d((img._width - 1)/2,
+                                                                           (img._height - 1)/2,
+                                                                           (img._depth - 1)/2));
+      _assign(nimg._width,nimg._height,title,normalization_type,fullscreen_flag,closed_flag);
+      if (_normalization==2) _min = (float)nimg.min_max(_max);
+      return display(nimg);
+    }
+	
+    template<typename T>
+    CImgDisplay& assign(const CImgList<T>& list, const char *const title=0,
+                        const unsigned int normalization_type=3,
+                        const bool fullscreen_flag=false, const bool closed_flag=false) {
+      if (!list) return assign();
+      CImg<T> tmp;
+      const CImg<T> img = list>'x', &nimg = (img._depth==1)?img:(tmp=img.get_projections2d((img._width - 1)/2,
+                                                                                           (img._height - 1)/2,
+                                                                                           (img._depth - 1)/2));
+      _assign(nimg._width,nimg._height,title,normalization_type,fullscreen_flag,closed_flag);
+      if (_normalization==2) _min = (float)nimg.min_max(_max);
+      return display(nimg);
+    }
+	
+	CImgDisplay& assign(const CImgDisplay& disp) {
+      if (!disp) return assign();
+      _assign(disp._width,disp._height,disp._title,disp._normalization,disp._is_fullscreen,disp._is_closed);
+      // todo copy cgimage _data
+      return paint();
+    }
+	
+	CImgDisplay& resize(const int nwidth, const int nheight, const bool force_redraw=true) {
+      if (!nwidth || !nheight || (is_empty() && (nwidth<0 || nheight<0))) return assign();
+      if (is_empty()) return assign((unsigned int)nwidth,(unsigned int)nheight);
+      const unsigned int
+        tmpdimx = (nwidth>0)?nwidth:(-nwidth*_width/100),
+        tmpdimy = (nheight>0)?nheight:(-nheight*_height/100),
+        dimx = tmpdimx?tmpdimx:1,
+        dimy = tmpdimy?tmpdimy:1;
+      if (_width!=dimx || _height!=dimy || _window_width!=dimx || _window_height!=dimy) {
+        if (_window_width!=dimx || _window_height!=dimy) {
+		  NSRect rect = NSMakeRect(0, 0, dimx, dimy);
+		  rect = [_window frameRectForContentRect: rect];
+		  [_window setFrame: rect display: YES];
+        }
+        if (_width!=dimx || _height!=dimy) {
+		  // todo: recreate cgimage here
+          _width = dimx;
+          _height = dimy;
+        }
+        _window_width = dimx; _window_height = dimy;
+        show();
+      }
+      _is_resized = false;
+      if (_is_fullscreen) move((screen_width() - width())/2,(screen_height() - height())/2);
+      if (force_redraw) return paint();
+      return *this;
+    }
+
+    CImgDisplay& toggle_fullscreen(const bool force_redraw=true) {
+      if (is_empty()) return *this;
+      if (force_redraw) {
+        // todo: copy cgimage from old instance to new, release the old (because resizing)
+        if (odata) {
+          assign(_width,_height,_title,_normalization,!_is_fullscreen,false);
+        }
+        return paint();
+      }
+      return assign(_width,_height,_title,_normalization,!_is_fullscreen,false);
+    }
+
+    CImgDisplay& show() {
+        if (is_empty() || !_is_closed) return *this;
+        _is_closed = false;
+        if (_is_fullscreen) _init_fullscreen();
+        [_window makeKeyAndOrderFront:self];
+        _update_window_pos();
+        return paint();
+    }
+
+    CImgDisplay& close() {
+        if (is_empty() || _is_closed) return *this;
+        _is_closed = true;
+        if (_is_fullscreen) _desinit_fullscreen();
+        [_window orderOut:self];
+        _window_x = _window_y = cimg::type<int>::min();
+        return *this;
+    }
+
+    CImgDisplay& move(const int posx, const int posy) {
+        if (is_empty()) return *this;
+        if (_window_x != posx || _window_y != posy) {
+            NSPoint pos = NSMakePoint(posx, posy);
+            [_window setFrameTopLeftPoint : pos] ;
+            _window_x = posx;
+            _window_y = posy;
+        }
+        show();
+        _is_moved = false;
+        return *this;
+    }
+
+    CImgDisplay& show_mouse() {
+        if (is_empty()) return *this;
+        _is_cursor_visible = true;
+        return *this;
+    }
+
+    CImgDisplay& hide_mouse() {
+        if (is_empty()) return *this;
+        _is_cursor_visible = false;
+        return *this;
+    }
+
+    CImgDisplay& set_mouse(const int posx, const int posy) {
+        if (is_empty() || _is_closed || posx < 0 || posy < 0) return *this;
+        if (!_is_closed) {
+            _update_window_pos();
+            const CGPoint pos{ .x = _window_x + posx, .y = _window_y + posy };
+            const CGError res = CGWarpMouseCursorPosition(pos);
+            if (res == kCGErrorSuccess) { _mouse_x = posx; _mouse_y = posy; }
+        }
+        return *this;
+    }
+
+    CImgDisplay& set_title(const char* const format, ...) {
+        if (is_empty()) return *this;
+        char* const tmp = new char[1024];
+        va_list ap;
+        va_start(ap, format);
+        cimg_vsnprintf(tmp, 1024, format, ap);
+        va_end(ap);
+        if (!std::strcmp(_title, tmp)) { delete[] tmp; return *this; }
+        delete[] _title;
+        const unsigned int s = (unsigned int)std::strlen(tmp) + 1;
+        _title = new char[s];
+        std::memcpy(_title, tmp, s * sizeof(char));
+        _window.title = [NSString initWithUTF8String:tmp];
+        delete[] tmp;
+        return *this;
+    }
+
+    template<typename T>
+    CImgDisplay& display(const CImg<T>& img) {
+      if (!img)
+        throw CImgArgumentException(_cimgdisplay_instance
+                                    "display(): Empty specified image.",
+                                    cimgdisplay_instance);
+      if (is_empty()) return assign(img);
+      return render(img).paint();
+    }
+
+    CImgDisplay& paint() {
+        if (_is_closed) return *this;
+		pthread_mutex_lock(&mutex);
+		NSGraphicsContext *ctxt = [NSGraphicsContext graphicsContextWithWindow:window];
+		// todo determine the bounds of the CGContext
+        CGContextDrawImage(_context, [_window bounds], _image);
+		pthread_mutex_unlock(&mutex);
+        return *this;
+    }
+	
+	template<typename T>
+    CImgDisplay& render(const CImg<T>& img) {
+      if (!img)
+        throw CImgArgumentException(_cimgdisplay_instance
+                                    "render(): Empty specified image.",
+                                    cimgdisplay_instance);
+
+      if (is_empty()) return *this;
+      if (img._depth!=1) return render(img.get_projections2d((img._width - 1)/2,(img._height - 1)/2,
+                                                             (img._depth - 1)/2));
+
+      const T
+        *data1 = img._data,
+        *data2 = (img._spectrum>=2)?img.data(0,0,0,1):data1,
+        *data3 = (img._spectrum>=3)?img.data(0,0,0,2):data1;
+
+		// todo: render the image changing the bit depth etc.
+
+      WaitForSingleObject(_mutex,INFINITE);
+      unsigned int
+        *const ndata = (img._width==_width && img._height==_height)?_data:
+        new unsigned int[(size_t)img._width*img._height],
+        *ptrd = ndata;
+
+      if (!_normalization || (_normalization==3 && cimg::type<T>::string()==cimg::type<unsigned char>::string())) {
+        _min = _max = 0;
+        switch (img._spectrum) {
+        case 1 : {
+          for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+            const unsigned char val = (unsigned char)*(data1++);
+            *(ptrd++) = (unsigned int)((val<<16) | (val<<8) | val);
+          }
+        } break;
+        case 2 : {
+          for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+            const unsigned char
+              R = (unsigned char)*(data1++),
+              G = (unsigned char)*(data2++);
+            *(ptrd++) = (unsigned int)((R<<16) | (G<<8));
+          }
+        } break;
+        default : {
+          for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+            const unsigned char
+              R = (unsigned char)*(data1++),
+              G = (unsigned char)*(data2++),
+              B = (unsigned char)*(data3++);
+            *(ptrd++) = (unsigned int)((R<<16) | (G<<8) | B);
+          }
+        }
+        }
+      } else {
+        if (_normalization==3) {
+          if (cimg::type<T>::is_float()) _min = (float)img.min_max(_max);
+          else {
+            _min = (float)cimg::type<T>::min();
+            _max = (float)cimg::type<T>::max();
+          }
+        } else if ((_min>_max) || _normalization==1) _min = (float)img.min_max(_max);
+        const float delta = _max - _min, mm = 255/(delta?delta:1.f);
+        switch (img._spectrum) {
+        case 1 : {
+          for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+            const unsigned char val = (unsigned char)((*(data1++) - _min)*mm);
+            *(ptrd++) = (unsigned int)((val<<16) | (val<<8) | val);
+          }
+        } break;
+        case 2 : {
+          for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+            const unsigned char
+              R = (unsigned char)((*(data1++) - _min)*mm),
+              G = (unsigned char)((*(data2++) - _min)*mm);
+            *(ptrd++) = (unsigned int)((R<<16) | (G<<8));
+          }
+        } break;
+        default : {
+          for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+            const unsigned char
+              R = (unsigned char)((*(data1++) - _min)*mm),
+              G = (unsigned char)((*(data2++) - _min)*mm),
+              B = (unsigned char)((*(data3++) - _min)*mm);
+            *(ptrd++) = (unsigned int)((R<<16) | (G<<8) | B);
+          }
+        }
+        }
+      }
+      if (ndata!=_data) { _render_resize(ndata,img._width,img._height,_data,_width,_height); delete[] ndata; }
+      ReleaseMutex(_mutex);
+      return *this;
+    }
+	
+	template<typename T>
+    static void screenshot(const int x0, const int y0, const int x1, const int y1, CImg<T>& img) {
+		img.assign();
+		if (window) {
+			const NSRect rect = [_window bounds];
+			int _x0 = x0, _y0 = y0, _x1 = x1, _y1 = y1;
+			if (_x0>_x1) cimg::swap(_x0,_x1);
+			if (_y0>_y1) cimg::swap(_y0,_y1);
+			if (_x1>=0 && _x0<width && _y1>=0 && _y0<height) {
+				_x0 = std::max(_x0,0);
+				_y0 = std::max(_y0,0);
+				_x1 = std::min(_x1,width - 1);
+				_y1 = std::min(_y1,height - 1);
+				const int bw = _x1 - _x0 + 1, bh = _y1 - _y0 + 1;
+				
+				const CGRect rect = CGMakeRect(_x0, _y0, bw, bh);
+			
+				CGImageRef screenshot = CGWindowListCreateImage(rect,
+											kCGWindowListOptionIncludingWindow,
+											[window windowNumber],
+											kCGWindowImageBoundsIgnoreFraming);
+				NSBitmapImageRep *bitmap = [[NSBitmapImageRep alloc] initWithCGImage:screenshot];
+				if (bitmap) {
+					img.assign(bitmap.size.width, bitmap.size.height, 1, 3);
+					
+					T *pR = img.data(0,0,0,0), *pG = img.data(0,0,0,1), *pB = img.data(0,0,0,2);
+					cimg_forXY(img,x,y) {
+						NSUInteger ptrs[4];
+						[bitmap getPixel:ptrs atX:x atY:y];
+						*(pR++) = (T)ptrs[2];
+						*(pG++) = (T)ptrs[1];
+						*(pB++) = (T)ptrs[0];
+					}
+				}
+			}
+		}
+		if (img.is_empty())
+			throw CImgDisplayException("CImgDisplay::screenshot(): Failed to take screenshot "
+									   "with coordinates (%d,%d)-(%d,%d).",
+									   x0,y0,x1,y1);
+    }
+	
+	template<typename T>
+    const CImgDisplay& snapshot(CImg<T>& img) const {
+      if (is_empty()) { img.assign(); return *this; }
+      const unsigned int *ptrs = _data;
+      img.assign(_width,_height,1,3);
+      T
+        *data1 = img.data(0,0,0,0),
+        *data2 = img.data(0,0,0,1),
+        *data3 = img.data(0,0,0,2);
+      for (cimg_ulong xy = (cimg_ulong)img._width*img._height; xy>0; --xy) {
+        const unsigned int val = *(ptrs++);
+        *(data1++) = (T)(unsigned char)(val>>16);
+        *(data2++) = (T)(unsigned char)((val>>8)&0xFF);
+        *(data3++) = (T)(unsigned char)(val&0xFF);
+      }
+      return *this;
+    }
+
 #endif
 
     //@}
