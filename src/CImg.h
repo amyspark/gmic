@@ -7311,7 +7311,7 @@ namespace cimg_library_suffixed {
       static const char *const str = "Linux";
 #elif defined(sun) || defined(__sun)
       static const char *const str = "Sun OS";
-#elif defined(BSD) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined (__DragonFly__)
+#elif (defined(BSD) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined (__DragonFly__)) && !defined(__MACOSX__) && !defined(__APPLE__)
       static const char *const str = "BSD";
 #elif defined(sgi) || defined(__sgi)
       static const char *const str = "Irix";
