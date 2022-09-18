@@ -434,6 +434,10 @@ enum {FALSE_WIN = 0};
 #error CImg Library: To use the Cocoa backend, you need to compile with Objective-C++ enabled.
 #error Add the compile flag '-x objective-c++' to your build configuration.
 #endif
+#if !__has_feature(objc_arc)
+#error CImg Library: To use the Cocoa backend, you need to enable ARC for the object files using this library.
+#error Add the compile flag '-fobjc-arc' to your build configuration.
+#endif
 #import <AppKit/AppKit.h>
 #import <Carbon/Carbon.h>
 #endif
@@ -2311,38 +2315,6 @@ extern "C" {
 #define _cimglist_instance "[instance(%u,%u,%p)] CImgList<%s>::"
 #define cimglist_instance _width,_allocated_width,_data,pixel_type()
 
-#if cimg_display==3
-
-/*-------------------------------------------------
- #
- # Define Objective-C classes
- #
- -------------------------------------------------*/
-//! Implements a window delegate for the Cocoa backend.
-/**
-    This delegate captures all window events and communicates them
-    back to the CImg instance.
-**/
-@interface CImgWindow : NSWindow<NSWindowDelegate>
-- (void)setDisplay:(cil::CImgDisplay &)cimgDisplay;
-- (void)keyDown:(NSEvent *)event;
-- (void)keyUp:(NSEvent *)event;
-- (void)mouseMoved:(NSEvent *)event;
-- (void)mouseExited:(NSEvent *)event;
-- (void)mouseDown:(NSEvent *)event;
-- (void)rightMouseDown:(NSEvent *)event;
-- (void)otherMouseDown:(NSEvent *)event;
-- (void)mouseUp:(NSEvent *)event;
-- (void)rightMouseUp:(NSEvent *)event;
-- (void)otherMouseUp:(NSEvent *)event;
-- (void)scrollWheel:(NSEvent *)event;
-- (void)windowWillClose:(NSNotification *)notification;
-- (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize;
-- (void)windowDidMove:(NSNotification *)notification;
-- (void)windowDidUpdate:(NSNotification *)notification;
-@end
-#endif
-
 /*------------------------------------------------
  #
  #
@@ -2363,13 +2335,45 @@ extern "C" {
    to simplify the declaration of \CImg Library objects afterwards.
 **/
 namespace cimg_library_suffixed {
-
   // Declare the four classes of the CImg Library.
   template<typename T=float> struct CImg;
   template<typename T=float> struct CImgList;
   struct CImgDisplay;
   struct CImgException;
+}; //namespace cimg_library_suffixed
 
+#if cimg_display==3
+/*-------------------------------------------------
+ #
+ # Define Objective-C classes
+ #
+ -------------------------------------------------*/
+//! Implements a window delegate for the Cocoa backend.
+/**
+    This delegate captures all window events and communicates them
+    back to the CImg instance.
+**/
+@interface CImgWindow : NSWindow<NSWindowDelegate>
+- (void)setDisplay:(cimg_library_suffixed::CImgDisplay *)cimgDisplay;
+- (void)keyDown:(NSEvent *)event;
+- (void)keyUp:(NSEvent *)event;
+- (void)mouseMoved:(NSEvent *)event;
+- (void)mouseExited:(NSEvent *)event;
+- (void)mouseDown:(NSEvent *)event;
+- (void)rightMouseDown:(NSEvent *)event;
+- (void)otherMouseDown:(NSEvent *)event;
+- (void)mouseUp:(NSEvent *)event;
+- (void)rightMouseUp:(NSEvent *)event;
+- (void)otherMouseUp:(NSEvent *)event;
+- (void)scrollWheel:(NSEvent *)event;
+- (void)windowWillClose:(NSNotification *)notification;
+- (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize;
+- (void)windowDidMove:(NSNotification *)notification;
+- (void)windowDidUpdate:(NSNotification *)notification;
+@end
+#endif
+
+namespace cimg_library_suffixed {
   // Declare cimg:: namespace.
   // This is an incomplete namespace definition here. It only contains some
   // necessary stuff to ensure a correct declaration order of the classes and functions
@@ -9484,7 +9488,7 @@ namespace cimg_library_suffixed {
 #elif cimg_display==2
         SetEvent(cimg::Win32_attr().wait_event);
 #elif cimg_display==3
-          pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
+        pthread_cond_broadcast(&cimg::macOS_attr().wait_event);
 #endif
       }
       return *this;
@@ -11800,9 +11804,7 @@ namespace cimg_library_suffixed {
     pthread_mutex_t _mutex;
     pthread_cond_t _is_created;
     CImgWindow *_window, *_background_window;
-    NSView *view;
-    unsigned int *data;
-    NSGraphicsContext* _context;
+    unsigned int *_data;
 
     static int screen_width() {
         const NSRect frame = [[NSScreen mainScreen] frame];
@@ -11831,7 +11833,7 @@ namespace cimg_library_suffixed {
               [_background_window setBackgroundColor:[NSColor blackColor]];
               [_background_window setAlphaValue:0];
               [_background_window setLevel:NSScreenSaverWindowLevel];
-              [_background_window setDisplay: *this];
+              [_background_window setDisplay: this];
               [_background_window makeKeyAndOrderFront:nil];
             }
         }
@@ -11960,12 +11962,16 @@ namespace cimg_library_suffixed {
         dimy = tmpdimy?tmpdimy:1;
       if (_width!=dimx || _height!=dimy || _window_width!=dimx || _window_height!=dimy) {
         if (_window_width!=dimx || _window_height!=dimy) {
-		  NSRect rect = NSMakeRect(0, 0, dimx, dimy);
-		  rect = [_window frameRectForContentRect: rect];
-		  [_window setFrame: rect display: YES];
+          NSRect rect = NSMakeRect(0, 0, dimx, dimy);
+          rect = [_window frameRectForContentRect: rect];
+          [_window setFrame: rect display: YES];
         }
         if (_width!=dimx || _height!=dimy) {
-		  // todo: recreate cgimage here
+          unsigned int *const ndata = new unsigned int[dimx*dimy];
+          if (force_redraw) _render_resize(_data,_width,_height,ndata,dimx,dimy);
+          else std::memset(ndata,0x80,sizeof(unsigned int)*dimx*dimy);
+          delete[] _data;
+          _data = ndata;
           _width = dimx;
           _height = dimy;
         }
@@ -11981,9 +11987,13 @@ namespace cimg_library_suffixed {
     CImgDisplay& toggle_fullscreen(const bool force_redraw=true) {
       if (is_empty()) return *this;
       if (force_redraw) {
-        // todo: copy cgimage from old instance to new, release the old (because resizing)
+        const cimg_ulong buf_size = (cimg_ulong)_width*_height*sizeof(unsigned int);
+        void *odata = std::malloc(buf_size);
         if (odata) {
+          std::memcpy(odata,_data,buf_size);
           assign(_width,_height,_title,_normalization,!_is_fullscreen,false);
+          std::memcpy(_data,odata,buf_size);
+          std::free(odata);
         }
         return paint();
       }
@@ -12075,8 +12085,10 @@ namespace cimg_library_suffixed {
       if (_is_closed) return *this;
       pthread_mutex_lock(&_mutex);
       NSGraphicsContext *ctxt = [NSGraphicsContext graphicsContextWithWindow:_window];
-      // todo determine the bounds of the CGContext
-      CGContextDrawImage(_context, [_window bounds], _image);
+      CGDataProviderRef data = CGDataProviderCreateWithData(NULL, _data, _width*_height*sizeof(unsigned int), NULL);
+      CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+      CGImageRef image = CGImageCreate(_width, _height, 8, 32, _width*sizeof(unsigned int), cs, kCGBitmapByteOrderDefault | kCGImageAlphaLast, data, NULL, true, kCGRenderingIntentDefault);
+      CGContextDrawImage([ctxt CGContext], [_window frame], image);
       pthread_mutex_unlock(&_mutex);
       return *this;
     }
@@ -12097,7 +12109,6 @@ namespace cimg_library_suffixed {
         *data2 = (img._spectrum>=2)?img.data(0,0,0,1):data1,
         *data3 = (img._spectrum>=3)?img.data(0,0,0,2):data1;
 
-      // todo: render the image changing the bit depth etc.
       pthread_mutex_lock(&_mutex);
       unsigned int
         *const ndata = (img._width==_width && img._height==_height)?_data:
@@ -67101,16 +67112,13 @@ namespace cimg_library_suffixed {
   } // namespace cimg { ...
 } // namespace cimg_library { ...
 
-//! Short alias name.
-namespace cil = cimg_library_suffixed;
-
-#if cimg_display==3
+#if cimg_display==3 && defined(cimg_cocoa_export)
 @implementation CImgWindow
 {
 @private
-cil::CImgDisplay &disp;
+cimg_library_suffixed::CImgDisplay *disp;
 }
-- (void)setDisplay:(cil::CImgDisplay &)cimgDisplay
+- (void)setDisplay:(cimg_library_suffixed::CImgDisplay *)cimgDisplay
 {
   disp = cimgDisplay;
   [self setDelegate:self];
@@ -67119,12 +67127,12 @@ cil::CImgDisplay &disp;
 {
   // todo: verify if this matches the provided enum
   disp->set_key([event keyCode]);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)keyUp:(NSEvent *)event
 {
   disp->set_key([event keyCode],false);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)mouseMoved:(NSEvent *)event
 {
@@ -67138,63 +67146,63 @@ cil::CImgDisplay &disp;
   if (disp->_mouse_x<0 || disp->_mouse_y<0 || disp->_mouse_x>=disp->width() || disp->_mouse_y>=disp->height())
     disp->_mouse_x = disp->_mouse_y = -1;
   disp->_is_event = true;
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
-  cil::cimg_lock_display();
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
+  cimg_library_suffixed::cimg_lock_display();
   if (disp->_is_cursor_visible) [NSCursor unhide]; else [NSCursor hide];
-  cil::cimg_unlock_display();
+  cimg_library_suffixed::cimg_unlock_display();
 }
 - (void)mouseExited:(NSEvent *)event
 {
   disp->_mouse_x = disp->_mouse_y = -1;
   disp->_is_mouse_tracked = false;
-  cil::cimg_lock_display();
+  cimg_library_suffixed::cimg_lock_display();
   [NSCursor unhide];
-  cil::cimg_unlock_display();
+  cimg_library_suffixed::cimg_unlock_display();
 }
 - (void)mouseDown:(NSEvent *)event
 {
   disp->set_button(1);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)rightMouseDown:(NSEvent *)event
 {
   disp->set_button(2);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)otherMouseDown:(NSEvent *)event
 {
   disp->set_button(3);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)mouseUp:(NSEvent *)event
 {
   disp->set_button(1,false);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)rightMouseUp:(NSEvent *)event
 {
   disp->set_button(2,false);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)otherMouseUp:(NSEvent *)event
 {
   disp->set_button(3,false);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)scrollWheel:(NSEvent *)event
 {
   // TODO: is it necessary to check hasPreciseScrollingDeltas?
   disp->set_wheel([event scrollingDeltaY]);
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 - (void)windowWillClose:(NSNotification *)notification
 {
   disp->_mouse_x = disp->_mouse_y = -1;
-  disp->_window_x = disp->_window_y = cil::cimg::type<int>::min();
+  disp->_window_x = disp->_window_y = cimg_library_suffixed::cimg::type<int>::min();
   disp->set_button().set_key(0).set_key(0,false)._is_closed = true;
   pthread_mutex_unlock(&disp->_mutex);
   disp->_is_event = true;
-  pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+  pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
 }
 
 - (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize
@@ -67206,7 +67214,7 @@ cil::CImgDisplay &disp;
     disp->_window_height = nh;
     disp->_mouse_x = disp->_mouse_y = -1;
     disp->_is_resized = disp->_is_event = true;
-    pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+    pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
   }
   pthread_mutex_unlock(&disp->_mutex);
   return frameSize;
@@ -67221,19 +67229,22 @@ cil::CImgDisplay &disp;
     disp->_window_x = nx;
     disp->_window_y = ny;
     disp->_is_moved = disp->_is_event = true;
-    pthread_cond_broadcast(&cil::cimg::macOS_attr().wait_event);
+    pthread_cond_broadcast(&cimg_library_suffixed::cimg::macOS_attr().wait_event);
   }
   pthread_mutex_unlock(&disp->_mutex);
 }
 - (void)windowDidUpdate:(NSNotification *)notification
 {
   disp->paint();
-  cil::cimg_lock_display();
+  cimg_library_suffixed::cimg_lock_display();
   if (disp->_is_cursor_visible) [NSCursor unhide]; else [NSCursor hide];
-  cil::cimg_unlock_display();
+  cimg_library_suffixed::cimg_unlock_display();
 }
 @end
 #endif
+
+//! Short alias name.
+namespace cil = cimg_library_suffixed;
 
 #ifdef _cimg_redefine_False
 #define False 0

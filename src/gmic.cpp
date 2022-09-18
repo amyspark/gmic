@@ -2037,6 +2037,12 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
 
 #else // #if defined(cimg_plugin) .. #elif defined(cimglist_plugin)
 
+// Make sure that if we're using the Cocoa backend, its symbols are only exported here.
+#if cimg_display==3
+#ifndef cimg_cocoa_export
+#define cimg_cocoa_export 1
+#endif
+#endif
 #include "gmic.h"
 using namespace cimg_library;
 
