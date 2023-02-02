@@ -31,9 +31,6 @@
 #include <QStringList>
 #include "Common.h"
 #include "JpegQualityDialog.h"
-#ifndef gmic_core
-#include "CImg.h"
-#endif
 #include "gmic.h"
 
 namespace gmic_qt_standalone
@@ -41,9 +38,9 @@ namespace gmic_qt_standalone
 
 ImageView::ImageView(QWidget * parent) : QWidget(parent) {}
 
-void ImageView::setImage(const cimg_library::CImg<gmic_pixel_type> & image)
+void ImageView::setImage(const gmic_library::gmic_image<gmic_pixel_type> & image)
 {
-  GmicQt::convertCImgToQImage(image, _image);
+  GmicQt::convertGmicImageToQImage(image, _image);
   setMinimumSize(std::min(640, image.width()), std::min(480, image.height()));
 }
 
@@ -56,11 +53,11 @@ void ImageView::setImage(const QImage & image)
 bool ImageView::save(const QString & filename, int quality)
 {
   QString ext = QFileInfo(filename).suffix().toLower();
-  if ((ext == "jpg" || ext == "jpeg") && (quality == -1)) {
+  if ((ext == "jpg" || ext == "jpeg") && (quality == ImageDialog::UNSPECIFIED_JPEG_QUALITY)) {
     quality = JpegQualityDialog::ask(dynamic_cast<QWidget *>(parent()), -1);
-  }
-  if (quality == -1) {
-    return false;
+    if (quality == ImageDialog::UNSPECIFIED_JPEG_QUALITY) {
+      return false;
+    }
   }
   if (!_image.save(filename, nullptr, quality)) {
     QMessageBox::critical(this, tr("Error"), tr("Could not write image file %1").arg(filename));
@@ -90,7 +87,7 @@ ImageDialog::ImageDialog(QWidget * parent) : QDialog(parent)
   hbox->addWidget(_saveButton);
 }
 
-void ImageDialog::addImage(const cimg_library::CImg<float> & image, const QString & name)
+void ImageDialog::addImage(const gmic_library::gmic_image<float> & image, const QString & name)
 {
   auto view = new ImageView(_tabWidget);
   view->setImage(image);

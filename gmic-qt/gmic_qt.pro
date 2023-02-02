@@ -1,6 +1,6 @@
 #
 # Set HOST variable to define target host software.
-# Possible values are "none", "gimp", "gimp3" (experimental) "krita" and "paintdotnet"
+# Possible values are "none", "gimp", "gimp3" (experimental), and "paintdotnet"
 #
 #
 
@@ -63,14 +63,18 @@ equals( HOST, "gimp3" ) {
   PKGCONFIG += gimp-3.0
 }
 
+equals( HOST, "8bf") {
+  PKGCONFIG += lcms2
+}
+
 DEFINES += cimg_use_cpp11=1
 DEFINES += cimg_use_fftw3 cimg_use_zlib
 DEFINES += cimg_use_abort gmic_is_parallel cimg_use_curl cimg_use_png cimg_use_jpeg
 DEFINES += cimg_appname="\\\"gmic\\\""
 
-equals(TIMING, "on") {
-DEFINES += _TIMING_ENABLED_
-message(Timing is enabled)
+equals(TIMING, "on")|equals(TIMING,"ON") {
+ DEFINES += _TIMING_ENABLED_
+ message(Timing is enabled)
 }
 
 defined(GMIC_PATH, var) {
@@ -87,55 +91,68 @@ defined(GMIC_PATH, var) {
 defined(GMIC_PATH, var):!exists( $$GMIC_PATH/gmic.cpp ) {
  error("G'MIC repository was not found ("$$GMIC_PATH")")
 }
+!defined(GMIC_PATH, var) {
+ error("GMIC_PATH variable not set, and no G'MIC source tree found")
+}
 
 message("G'MIC repository was found ("$$GMIC_PATH")")
+
+DEPENDPATH += $$GMIC_PATH
+
+CIMG.target = $$GMIC_PATH/CImg.h
+CIMG.commands = \$(MAKE) -C $$GMIC_PATH CImg.h
+QMAKE_EXTRA_TARGETS += CIMG
+
+GMIC_STDLIB.target = $$GMIC_PATH/gmic_stdlib_community.h
+GMIC_STDLIB.commands = \$(MAKE) -C $$GMIC_PATH gmic_stdlib_community.h
+QMAKE_EXTRA_TARGETS += GMIC_STDLIB
+
+# $$escape_expand(\n\t)
+
+'translations/%.qm'.depends += 'translations/%.ts'
+'translations/%.qm'.commands += './translations/lrelease.sh $<'
+
+'translations/filters/%.qm'.depends += 'translations/filters/%.ts'
+'translations/filters/%.qm'.commands += './translations/lrelease.sh $<'
+
+'translations/filters/%.ts'.depends += 'translations/filters/gmic_qt_%.csv'
+'translations/filters/%.ts'.commands += './translations/filters/csv2ts.sh -o $@ $<'
+
+QMAKE_EXTRA_TARGETS += 'translations/%.qm' \
+                       'translations/filters/%.qm' \
+                       'translations/filters/%.ts'
+
+GMIC_VERSION = $$system(bash check_versions.sh $$GMIC_PATH gmic)
+message("G'MIC version is ................." $$GMIC_VERSION)
+exists($$GMIC_PATH/CImg.h) {
+ CIMG_VERSION = $$system(bash check_versions.sh $$GMIC_PATH CImg)
+ message("CImg version is .................." $$CIMG_VERSION)
+}
+exists($$GMIC_PATH/gmic_stdlib_community.h) {
+ STDLIB_VERSION = $$system(bash check_versions.sh $$GMIC_PATH stdlib)
+ message("gmic_stdlib_community.h version is" $$STDLIB_VERSION)
+}
+exists($$GMIC_PATH/CImg.h):exists($$GMIC_PATH/gmic_stdlib_community.h) {
+ GMIC_VERSION = $$system(bash check_versions.sh $$GMIC_PATH gmic)
+ STDLIB_VERSION = $$system(bash check_versions.sh $$GMIC_PATH stdlib)
+ CIMG_VERSION = $$system(bash check_versions.sh $$GMIC_PATH CImg)
+ !equals(GMIC_VERSION, $$CIMG_VERSION):{
+   error("Version numbers of files 'gmic.h' (" $$GMIC_VERSION ") and 'CImg.h' (" $$CIMG_VERSION ") mismatch")
+ }
+ !equals(GMIC_VERSION, $$STDLIB_VERSION):{
+   error("Version numbers of files 'gmic.h' (" $$GMIC_VERSION ") and 'gmic_stdlib_community.h' (" $$STDLIB_VERSION ") mismatch")
+ }
+}
+
+QMAKE_DISTCLEAN = \
+  translations/*.qm \
+  translations/filters/*.ts \
+  translations/filters/*.qm
 
 equals( COMPILER, "clang" ) {
  message("Compiler is clang++")
  QMAKE_CXX = clang++
  QMAKE_LINK = clang++
-}
-
-#
-# Make sure CImg.h is in G'MIC source tree
-#
-!exists( $$GMIC_PATH/CImg.h ) {
-  message( "CImg.h is missing. Trying to get it..." )
-  !system(make -C $$GMIC_PATH CImg.h) {
-    error("Could not get CImg.h from G'MIC repository")
-  }
-  !exists($$GMIC_PATH/CImg.h) {
-    error("Could not get CImg.h from G'MIC repository")
-  }
-  message("CImg.h found")
-}
-
-#
-# Make sure gmic_stdlib_community.h is in G'MIC source tree
-#
-!exists( $$GMIC_PATH/gmic_stdlib_community.h ) {
-  message( "gmic_stdlib_community.h is missing. Trying to get it..." )
-  !system(make -C $$GMIC_PATH gmic_stdlib_community.h) {
-    error("Could not get gmic_stdlib_community.h from G'MIC repository")
-  }
-  !exists($$GMIC_PATH/gmic_stdlib_community.h) {
-    error("Could not get gmic_stdlib_community.h from G'MIC repository")
-  }
-  message("gmic_stdlib_community.h found")
-}
-
-# Make sure CImg, gmic and gmic_stdlib_community.h are the same version
-GMIC_VERSION = $$system(bash check_versions.sh $$GMIC_PATH gmic)
-STDLIB_VERSION = $$system(bash check_versions.sh $$GMIC_PATH stdlib)
-CIMG_VERSION = $$system(bash check_versions.sh $$GMIC_PATH CImg)
-message("G'MIC version is ................." $$GMIC_VERSION)
-message("gmic_stdlib_community.h version is" $$STDLIB_VERSION)
-message("CImg version is .................." $$CIMG_VERSION)
-!equals(GMIC_VERSION, $$CIMG_VERSION):{
-   error("Version numbers of files 'gmic.h' (" $$GMIC_VERSION ") and 'CImg.h' (" $$CIMG_VERSION ") mismatch")
-}
-!equals(GMIC_VERSION, $$STDLIB_VERSION):{
-   error("Version numbers of files 'gmic.h' (" $$GMIC_VERSION ") and 'gmic_stdlib_community.h' (" $$STDLIB_VERSION ") mismatch")
 }
 
 !isEmpty(PRERELEASE) {
@@ -182,14 +199,6 @@ equals( HOST, "none") {
  message(Building standalone version)
 }
 
-equals( HOST, "krita") {
- TARGET = gmic_krita_qt
- SOURCES += src/Host/Krita/host_krita.cpp
- DEFINES += GMIC_HOST=krita
- DEPENDPATH += $$PWD/src/Host/Krita
- message(Target host software is Krita)
-}
-
 equals( HOST, "paintdotnet") {
  TARGET = gmic_paintdotnet_qt
  SOURCES += src/Host/PaintDotNet/host_paintdotnet.cpp
@@ -213,7 +222,6 @@ equals( HOST, "8bf") {
 !macx:equals(COMPILER,"clang") {
     CONFIG += openmp
 }
-
 
 # use qmake CONFIG+=openmp ... to force using openmp
 # For example, on OS X with GCC 4.8 installed:
@@ -239,7 +247,8 @@ openmp:equals(COMPILER,"clang") {
     QMAKE_LFLAGS_RELEASE += -fopenmp=libomp
 }
 
-CONFIG(release, debug|release):gcc|clang:equals(LTO,"on") {
+equals(LTO,"on") { LTO = ON }
+CONFIG(release, debug|release):gcc|clang:equals(LTO,"ON") {
     message("Link Time Optimizer enabled")
     QMAKE_CXXFLAGS_RELEASE += -flto
     QMAKE_LFLAGS_RELEASE += -flto
@@ -330,10 +339,7 @@ HEADERS +=  \
   src/Widgets/LanguageSelectionWidget.h \
   src/Widgets/ProgressInfoWindow.h
 
-
 HEADERS += $$GMIC_PATH/gmic.h
-HEADERS += $$GMIC_PATH/CImg.h
-HEADERS += $$GMIC_PATH/gmic_stdlib_community.h
 
 SOURCES += \
   src/ClickableLabel.cpp \
@@ -409,14 +415,13 @@ SOURCES += \
   src/Widgets/LanguageSelectionWidget.cpp \
   src/Widgets/ProgressInfoWindow.cpp
 
-equals(GMIC_DYNAMIC_LINKING, "on" ) {
+equals(GMIC_DYNAMIC_LINKING, "on" )|equals(GMIC_DYNAMIC_LINKING, "ON" ) {
   message(Dynamic linking with libgmic)
   LIBS += -Wl,-rpath,. $$GMIC_PATH/libgmic.so
 }
 
-equals(GMIC_DYNAMIC_LINKING, "off" ) {
+equals(GMIC_DYNAMIC_LINKING, "off" )|equals(GMIC_DYNAMIC_LINKING, "OFF" ) {
    SOURCES += $$GMIC_PATH/gmic.cpp
-   DEFINES += gmic_core
 }
 
 # ALL_FORMS
@@ -456,24 +461,8 @@ translations/zh_tw.ts
 
 RESOURCES += wip_translations.qrc
 
-# message(Build QM translation files)
-# system(make -C translations)
-# system(make -C translations/filters)
-
-qm_files.commands += make -C translations
-qm_filter_files.commands += make -C translations/filters
-QMAKE_EXTRA_TARGETS += qm_files qm_filter_files
-PRE_TARGETDEPS += qm_files qm_filter_files
-
-QMAKE_DISTCLEAN = \
-  translations/*.qm \
-  translations/filters/*.ts \
-  translations/filters/*.qm
-
 # Prevent overwriting of these files by lupdate
 # TRANSLATIONS += translations/filters/fr.ts
-
-# PRE_TARGETDEPS +=
 
 QMAKE_CXXFLAGS_RELEASE += -Ofast # -O3 -s
 QMAKE_LFLAGS_RELEASE += -s
@@ -492,7 +481,7 @@ CONFIG(debug, debug|release) {
 #    QMAKE_CXXFLAGS_DEBUG += -Wfatal-errors
 }
 
-equals(ASAN, "on" ) {
+equals(ASAN,"on")|equals(ASAN,"ON") {
     message(Address sanitizer enabled)
     QMAKE_CXXFLAGS_DEBUG += -fsanitize=address
     QMAKE_LFLAGS_DEBUG += -fsanitize=address
