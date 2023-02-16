@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 320
+#define gmic_version 321
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -496,12 +496,12 @@ struct gmic {
   gmic_image<void*> display_windows;
   gmic_image<char> status;
 
-  float focale3d, light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
+  float light3d_x, light3d_y, light3d_z, _progress, *progress;
   gmic_uint64 reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_foreachdones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
     debug_filename, debug_line, cimg_exception_mode;
-  int verbosity, render3d, renderd3d, network_timeout;
-  bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
+  int verbosity, network_timeout;
+  bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
   const char *starting_commands_line;
 };

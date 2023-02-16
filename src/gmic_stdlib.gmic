@@ -207,18 +207,16 @@ cli_noarg :
     +e "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help)."
   fi
   file_update=${_path_rc}update$_version.gmic
-  need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
-                Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
-                D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
-                date_current - date_file>=7"}
-  if $need_update
-    +e "[gmic] Updating commands..."
-    l[] {
-      update
-      +e "\r[gmic] Updating commands: "${g}"Succeeded!"$n
-    onfail
-      +e "\r[gmic] Updating commands: "${r}"Failed!"$n
-    }
+  if "isfile(['"{/$file_update}"'])"
+    update_old={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
+                 Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
+                 D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
+                 date_current - date_file"}
+    if $update_old>=14
+      +e "[gmic] Command update file is "$update_old" days old, type "$g"'gmic up'"$n" to update it."
+    fi
+  else
+    +e "[gmic] Command update file not found, type "$g"'gmic up'"$n" to get it."
   fi
   +e "\n"
 
@@ -439,8 +437,6 @@ reference : skip "${2=}"
 "  - 'command[50%-100%]': Apply command only on the second half of the image list."\n\
 "  - 'command[0,-4--1]': Apply command only on the first image and the last four images."\n\
 "  - 'command[0-9:3]': Apply command only on images '[0]' to '[9]', with a step of 3 "\
-"(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
-"  - 'command[0-9:25%]': Apply command only on images '[0]' to '[9]', with a step of 25% "\
 "(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
 "  - 'command[0--1:2]': Apply command only on images of the list with even indices. "\n\
 "  - 'command[0,2-4,50%--1]': Apply command on images '[0]', '[2]', '[3]', '[4]' and on the second half of "\
@@ -787,8 +783,8 @@ reference : skip "${2=}"
 "'**=' (complex self-multiplication), '//=' (complex self-division), '^^=' (complex self-exponentiation), "\
 "'cabs()' (complex modulus), 'carg()' (complex argument), 'cconj()' (complex conjugate), "\
 "'cexp()' (complex exponential), 'clog()' (complex logarithm),  'ccos()' (complex cosine), "\
-"'csin()' (complex sine), 'ctan()' (complex tangent), 'ccosh()' (complex hyperpolic cosine), "\
-"'csinh()' (complex hyperbolic sine) and 'ctanh()' (complex hyperbolic tangent)."\n\
+"'csin()' (complex sine), 'csqrt()' (complex square root), 'ctan()' (complex tangent), 'ccosh()' "\
+"(complex hyperpolic cosine), 'csinh()' (complex hyperbolic sine) and 'ctanh()' (complex hyperbolic tangent)."\n\
 "* A `MN`-dimensional vector may be seen as a `M` x `N` matrix and used in those particular functions/operators: "\
 "'*' (matrix-vector multiplication), 'det(A)' (determinant), 'diag(V)' (diagonal matrix from a vector), "\
 "'eig(A)' (eigenvalues/eigenvectors), 'eye(n)' (n x n identity matrix), 'invert(A,_nb_colsA,_use_LU,_lambda)' "\
@@ -814,7 +810,7 @@ reference : skip "${2=}"
 "in it."\n\
 "* Function 'v2s(expr,_nb_digits,_siz)' returns a vector of size 'siz' which contains the character representation "\
 "of values described by expression 'expr'. "\
-"'nb_digits' can be { -1=auto-reduced | 0=all | >0=max number of digits }."\n\
+"'nb_digits' can be { <-1=0-padding of integers | -1=auto-reduced | 0=all | >0=max number of digits }."\n\
 "* Function 'echo(str1,str2,...,strN)' prints the concatenation of given string arguments on the console."\n\
 "* Function 'string(_#siz,str1,str2,...,strN)' generates a vector corresponding to the concatenation of given "\
 "string/number arguments."\n\
@@ -2583,20 +2579,16 @@ _display3d :
   is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
   foreach {
-    l. {
-      check3d 0
-      onfail l[] { ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm } error[] "Command 'display3d': "$msg
-    }
-    nm={n}
-    bnm={b} if ['{x}']!=0 bnm.=.{x} fi
-    nbv,nbp={f2ui([i[6],i[7]])}
+    l. { check3d 1 onfail l[] { ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm } error[] "Command 'display3d': "$msg }
+    nm={n} bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
+    nbv,nbp:=f2ui([i[6],i[7]])
     e[0--4] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
-    disp_title=$bnm" ("$nbv" vertices, "$nbp" primitives)"
+    if ['$_d3d_title']==0 disp_title=$bnm" ("$nbv" vertices, "$nbp" primitives)" else disp_title=$_d3d_title fi
     if !{*}
-      if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1},0,$disp_title
-      else w[] {0.7*[{*,u,v}]},0,$disp_title
+      if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1,128,1024},0,$disp_title
+      else w[] ${fitscreen\ {[0.5,0.6]*[{*,u,v}]},1,128,1024},0,$disp_title
       fi
     else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
     disp_size0={*,w,h}
@@ -2604,13 +2596,13 @@ _display3d :
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoom_factor=50,50,1
     is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
-    mode_render=4
-    mode_drender={$nbp<2048?$mode_render:-1}
-    mode_background={$is_user_background?7:3}
-    mode_orientation=2
+    mode_render:=isint($_mode3d)?$_mode3d:4
+    mode_drender:=isint($_moded3d)?$_moded3d:-1
+    mode_background={$is_user_background?7:5}
+    mode_orientation:=!isbool($_double3d)?2:$_double3d==1?2:0;
     mode_animate=1
     speed_animate=1
-    focale=800
+    focale:=isnum($_focale3d)?$_focale3d:800
     mx0,my0,mx1,my1=
     notification= fontsize_notif=
     wait_event=1
@@ -2626,9 +2618,9 @@ _display3d :
       # Init background image.
       if !narg($background)
         if $mode_background<3 {*,w,h},1,3,{arg(1+$mode_background,0,255,128)}
-        elif $mode_background==3 3,2,1,1,"32,32,64,64,116,96" permute. cyzx r. {*,w,h},1,3,3 round.
+        elif $mode_background==3 3,2,1,1,"16,16,48,44,96,76" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==4 3,2,1,1,"0,0,0,0,64,96" permute. cyzx r. {*,w,h},1,3,3 round.
-        elif $mode_background==5 3,2,1,1,"8,0,0,160,90,0" permute. cyzx r. {*,w,h},1,3,3 round.
+        elif $mode_background==5 3,3,1,1,"0,0,0,0,0,100,100,0,50" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==6 2,2,1,1,110,90,90,110 r. 64,64,1,3 r. {*,w,h},1,3,0,2,0.5,0.5
         else $_d3d_background r. {*,w,h},1,3,1
         fi
@@ -2641,7 +2633,7 @@ _display3d :
         +c3d[0] n3d. *3d. {background,$zoom_factor*0.65*min(w,h)}
         if $mode_orientation==1 rv3d. fi
         rmn boundingbox3d
-        if $is_boundingbox +boundingbox3d. o3d. 0.35 => boundingbox3d +3d.. . rv[-2,-1] fi
+        if $is_boundingbox +boundingbox3d. o3d. 0.2 => boundingbox3d +3d.. . rv[-2,-1] fi
         => object3d
         rmn render
       fi
@@ -2676,7 +2668,8 @@ _display3d :
             +channels. 0 !=. -1
             +dilate. 5 r. 100%,100%,1,3 j[render] .,0,0,0,0,0.8,. rm.
             j[render] ..,0,0,0,0,1,. rm[-2,-1]
-          else j3d[render] .,$posx%,$posy%,0,1,$m,{$mode_orientation==2},$is_zbuffer,$focale
+          else
+            j3d[render] .,$posx%,$posy%,0,1,$m,{$mode_orientation==2},$is_zbuffer,$focale
           fi
           rm.
         fi
@@ -2702,7 +2695,7 @@ _display3d :
             notification="Output Video:\nDone!"
           else
             is_outvideo+=1
-            notification="Output Video:\nFrame "{$is_outvideo+1}/$nb_frames
+            notification="Output Video:\nFrame "{$is_outvideo-1}/$nb_frames
           fi
         fi
       fi
@@ -3519,6 +3512,42 @@ _display_tensors : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && 
     rm..
   }
 
+#@cli dv3d : eq. to 'display_voxels3d'.
+dv3d :
+  _gmic_s="$?" v + _display_voxels3d
+
+#@cli display_voxels3d
+#@cli : Display selected images as set of 3D voxels.
+#@cli : (eq. to 'dv3d').
+display_voxels3d :
+  _gmic_s="$?" v + _$0
+
+_display_voxels3d :
+  mode3d,moded3d,double3d=$_mode3d,$_moded3d,$_double3d
+  m3d 2 md3d 2 db3d 0
+  +foreach {
+    w,h,d:=w,h,d
+    nm={n} bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
+    asiz:=max(w,h,d)/5
+    +norm1. !=. 0 nbv:=is rm. # Count voxels
+    e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("${w}x${h}x${d}", "$nbv" voxels)."
+    args=0.5,1,0.75
+    if s==1
+      im,iM:=im,iM
+      eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
+      if $is_binary # Colorize binary images according to rough normal estimation
+        +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
+        shrink_xyz. 1 *. .. k. args=0.9,1.1,1
+      fi
+    fi
+    surfels3d $args box3d $w,$h,$d p3d. 1 o3d. 0.2 axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
+    _d3d_title=$bnm" ("${w}x${h}x${d}", "$nbv" voxels)"
+    d3d 0
+    rm _d3d_title=
+  }
+  _mode3d,_moded3d,_double3d=$mode3d,$moded3d,$double3d
+  is_change 0
+
 #@cli dw : eq. to 'display_warp'.
 dw :
   _gmic_s="$?" v + _display_warp $*
@@ -3879,14 +3908,14 @@ _input_glob :
         s_ind_prim = string('ind_prim',p_img);
         ind_prim = get(s_ind_prim);
         isnan(ind_prim)?( # Texture never used before
-          da_push(#3,-128,p_whs[0],p_whs[1],p_whs[2]);
+          da_push(#3,-128,ui2f(p_whs[0]),p_whs[1],p_whs[2]);
           dsiz = da_size(#3); isiz = prod(p_whs);
           resize(#3,1,h(#3) + isiz,1,1,0);
           copy(i[#3,dsiz],i[#p_img,0],isiz);
-          i[#3,h(#3) - 1] = dsiz + isiz;
+          i[#3,h(#3) - 1] = ui2f(dsiz + isiz);
           set(s_ind_prim,nbp);
         ):( # Texture used before -> shared version
-          da_push(#3,-128,ind_prim,0,0);
+          da_push(#3,-128,ui2f(ind_prim),0,0);
         );
       );
 
@@ -3902,8 +3931,9 @@ _input_glob :
         np==p?(++p; continue()):np<0?(np = h#0);
         q = min(np,p + size(line) - 1);
         copy(line,i[#0,p],q - p); line[q - p] = 0;
+        line02 = line[0,2];
 
-        line[0,2]==id_v?( # Coordinates: vertex
+        line02==id_v?( # Coordinates: vertex
           q = 0; next_item();
           X = s2v(line,q); next_item();
           Y = s2v(line,q); next_item();
@@ -3919,7 +3949,7 @@ _input_glob :
           line[q]?(Z = s2v(line,q)):(Z = 0);
           da_push(#5,[X,1 - Y]);
 
-        ):line[0,2]==id_p?( # Primitive: point
+        ):line02==id_p?( # Primitive: point
           q = 0; next_item();
           v0 = s2v(line,q) - 1;
           da_push(#2,1,v0);
@@ -3927,7 +3957,7 @@ _input_glob :
           da_push(#4,p_alpha);
           ++nbp;
 
-        ):line[0,2]==id_l?( # Primitive: polyline
+        ):line02==id_l?( # Primitive: polyline
           q = 0; next_item();
           v0 = s2v(line,q) - 1; next_item();
           while (line[q],
@@ -3939,7 +3969,7 @@ _input_glob :
             v0 = v1;
           );
 
-        ):line[0,2]==id_f?( # Primitive: colored or textured face
+        ):line02==id_f?( # Primitive: colored or textured face
           q = 0; next_item();
           v0 = s2v(line,q) - 1; next_item();
           vt0 = -1; line[q]=='/'?(++q; vt0 = s2v(line,q) - 1; isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
@@ -4011,6 +4041,7 @@ _input_glob :
       repeat(5,k,k1 = k + 1; resize(#k1,1,da_size(#k1),1,s#k1,0));
       set('nbp',nbp);
       set('nbv',nbv)"
+
     rm[0,5--1] i[0] ({'CImg3d'},{ui2f([$nbv,$nbp])}:y) a y => "$1"
   }
 
@@ -4035,7 +4066,7 @@ _input_obj_parse_mtl : skip "${1=}"
         l[] {
           "$1"$img_filename
           _input_obj_img_$m:=$img_ind img_ind+=1
-          _input_obj_whs_$m:=w,h,s
+          _input_obj_whs_$m:=[w,h,s]
           y
         onfail _input_obj_img_$m=-1 _input_obj_whs_$m=0,0,0
         }
@@ -4206,7 +4237,7 @@ output_gmz : skip ${2=auto}
 #@cli : Set 'save_materials' to '1' to produce a corresponding material file (`.mtl`) and eventually texture files.
 #@cli : Beware, the export to `.obj` files may be quite slow for large 3D objects.
 #@cli : Default value: 'save_materials=1'.
-output_obj : check "isbool(${2=1})" check3d 0
+output_obj : check "isbool(${2=1})" check3d
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '"{/"$1"}"' (with"${s$2}" materials)."
   N=$! +foreach {
@@ -4230,7 +4261,7 @@ output_obj : check "isbool(${2=1})" check3d 0
              out+=l_s)"
 
     # Decompose into vertices, primitives and colors.
-    s3d 0 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1]
+    s3d nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1]
     e "  > File '"$folder$basename$ext"' ("$nb_vertices" vertices, "$nbp" primitives)."
 
     # Export vertices.
@@ -4268,7 +4299,7 @@ output_obj : check "isbool(${2=1})" check3d 0
             strhex(rgba,s_rgba);
             vname = string('mat_',s_rgba);
             m = get(vname);
-            !m?(
+            isnan(m)?(
               ++nb_materials;
               opac!=-128 && opac<1?copy(s_opac,string('d ',tos(cut(opac,0,1)),'\n'));
               ref(string('newmtl m',nb_materials,'\n',
@@ -8372,7 +8403,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.2.0').
+# $1 = version number (e.g. '3.2.1').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8805,8 +8836,7 @@ update_gallery_html : check "isbool(${1=0})"
                      distance,gradient_norm,normalize_local,sharpen,solidify
   commands_patterns=_gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
                     sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
-  commands_3dmeshes=_gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
-                    skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
+  commands_3dmeshes=_gallery_3dmeshes
   commands_stylization=_gallery_stylization
   commands_codesamples=_gallery_codesamples
 
@@ -9117,10 +9147,13 @@ update_gallery_html : check "isbool(${1=0})"
 
 # Generate a single image from a list of images, for the gallery.
 _gallery :
-  foreach { W$>,H$>,D$>,S$>:=[w,h,d,s] IS_3D$>=${-_is_3d} }
   foreach {
-    if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
-    else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
+    if ${-_is_3d}
+      r3d 1,1,0,-80 r3d 0,1,0,30
+      animate3d 20,0,5,0,1.5,0 s z +rv[1--2]
+    else
+      if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi
+      n 0,255
     fi
   }
 
@@ -10072,7 +10105,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (320,$_version) sort. discard. store. compat
+  (320,321,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -11548,12 +11581,27 @@ normp : check "isnum(${1==2}) && $1>=0"
   else ^ $1 compose_channels + ^ {1/$1}
   fi
 
-#@cli norm
-#@cli : Compute the pointwise euclidean norm of vector-valued pixels in selected images.
+#@cli norm1
+#@cli : Compute the pointwise L1-norm of vector-valued pixels in selected images.
+#@cli : $ image.jpg +norm1
+#@cli : $$
+norm1 :
+  e[^-1] "Compute pointwise L1-norm of vectors, in image$?."
+  abs compose_channels +
+
+#@cli norm : eq. to 'norm2'.
+norm :
+  _gmic_s="$?" v + _norm2
+
+#@cli norm2
+#@cli : Compute the pointwise L2-norm (euclidean norm) of vector-valued pixels in selected images.
 #@cli : $ image.jpg +norm
 #@cli : $$
-norm :
-  e[^-1] "Compute pointwise euclidean norm of vectors, in image$?."
+norm2 :
+  _gmic_s="$?" v + _$0
+
+_norm2 :
+  e[^-1] "Compute pointwise euclidean norm of vectors, in image"$_gmic_s"."
   sqr compose_channels + sqrt
 
 #@cli n : eq. to 'normalize'. : (+)
@@ -11889,7 +11937,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   ('$/') id:="h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)" rm.
   _ac_$channels m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
   foreach {
-    _ac_precond$id is_alpha:="s==2 || s==4"
+    s={s} _ac_precond$id is_alpha:="s==2 || s==4"
     if $is_alpha s c,{1-s} fi
     _ac_forward$id[0] a c
     sh $_s _ac. "$1"
@@ -11897,6 +11945,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     rm.
     if $is_alpha s c,{1-s} fi
     _ac_backward$id[0] a c
+    to_colormode $s
   }
   um _ac_precond$id,_ac_forward$id,_ac_backward$id
 
@@ -11917,13 +11966,13 @@ _ac :
 
 _ac_all : _p="" _f="" _b="" _s=0,100%
 
-_ac_rgba : _p="to_rgba" _f="" _b="" _s=0,3
-_ac_rgba_r : _p="to_color" _f="" _b="" _s=0
-_ac_rgba_g : _p="to_color" _f="" _b="" _s=1
-_ac_rgba_b : _p="to_color" _f="" _b="" _s=2
-_ac_rgba_a : _p="to_rgba" _f="" _b="" _s=3
+_ac_rgba : _p="to_rgba" _f,_b= _s=0,3
+_ac_rgba_r : _p="to_color" _f,_b= _s=0
+_ac_rgba_g : _p="to_color" _f,_b= _s=1
+_ac_rgba_b : _p="to_color" _f,_b= _s=2
+_ac_rgba_a : _p="to_rgba" _f,_b= _s=3
 
-_ac_rgb : _p="to_color" _f="" _b="" _s=0,2
+_ac_rgb : _p="to_color" _f,_b= _s=0,2
 _ac_rgb_r : _ac_rgba_r
 _ac_rgb_g : _ac_rgba_g
 _ac_rgb_b : _ac_rgba_b
@@ -20102,6 +20151,23 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
 #@cli : $ image.jpg repeat 500 line 50%,50%,{u(w)},{u(h)},0.5,${-rgb} done line 0,0,100%,100%,1,0xCCCCCCCC,255 \
 # line 100%,0,0,100%,1,0xCCCCCCCC,255
 
+#@cli line_aa : x0[%],y0[%],x1[%],y1[%],_opacity,_color1,...
+#@cli : Draw specified antialiased colored line on selected images.
+#@cli : Default values: 'opacity=1' and 'color1=0'.
+#@cli : $ 512,512,1,3 repeat 100 line_aa {round(u([w,h,w,h])-1)},1,${-RGB} done
+line_aa : check "isnum(${5=1}) && isnum(${6=0})"
+  e[^-1] "Draw antialiased line ($1,$2) - ($3,$4) on image$?, with opacity $5 and color (${6--1})."
+  if !$5 return fi
+  foreach {
+    x0={${"is_percent $1"}?(w-1)*$1:$1}
+    y0={${"is_percent $2"}?(h-1)*$2:$2}
+    x1={${"is_percent $3"}?(w-1)*$3:$3}
+    y1={${"is_percent $4"}?(h-1)*$4:$4}
+    if $#>6 eval ${-math_lib}"line_aa($x0,$y0,$x1,$y1,$5,[${6--1}])"
+    else eval ${-math_lib}"line_aa($x0,$y0,$x1,$y1,$5,$6)"
+    fi
+  }
+
 #@cli thickline : x0[%],y0[%],x1[%],y1[%],_thickness,_opacity,_color1
 #@cli : Draw specified colored thick line on selected images.
 #@cli : Default values: 'thickness=2', 'opacity=1' and 'color1=0'.
@@ -20944,7 +21010,8 @@ transpose :
 #@cli : Generate 3D animation frames of rotating 3D objects.
 #@cli : Frames are stacked along the z-axis (volumetric image).
 #@cli : Frame size is the same as the size of the '[background]' image (or 800x800 if no background specified).
-#@cli : Default values: 'filename=(undefined)'.
+#@cli : Default values: 'step_angle_x=0', 'step_angle_y=5', 'step_angle_z=0', 'zoom_factor=1', 'fake_shadow_level=50' \
+# and 'background=(undefined)'.
 animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(${4=0}) && ${5=1}>0 && "\
                   "inrange(${6=50},0,100)" skip "${7=}"
   e[^-1] "Generate 3D animation frames from 3D object$?, with $1 frames, angle steps (${2-4}), zoom factor $5 "\
@@ -21093,9 +21160,24 @@ _axes3d :
 boundingbox3d :
   e[^-1] "Replace 3D object$? by their 3D bounding boxes."
   foreach {
-    nbv={f2ui(i[6])} rows 8,{8+3*$nbv} r. 3,$nbv,1,1,-1 s. x
-    xc,yc,zc,sx,sy,sz={"[ (im#0 + iM#0)/2, (im#1 + iM#1)/2, (im#2 + iM#2)/2, iM#0 - im#0,iM#1 - im#1, iM#2 - im#2 ]"}
-    rm box3d $sx,$sy,$sz c3d +3d $xc,$yc,$zc p3d. 1
+    s3d nbv,nbp={1,f2ui([i[0],i[1]])} k[2,3] => pts,prims
+    r[pts] 3,{pts,h/3},1,1,-1 permute[pts] zycx ($nbv) a[pts,-1] y # Convert vertices to dynamic array
+    $nbp eval. ">begin(p = 0); # Manage 3D spheres by adding virtual vertices
+      N = i[#$prims,p++];
+      N==5?(
+        i0 = i[#$prims,p++]; i1 = i[#$prims,p++]; p+=3;
+        P0 = I[#$pts,i0]; P1 = I[#$pts,i1]; Pc = (P0 + P1)/2;
+        U = (P1 - P0)/2;
+        V = rot(-U[1],U[0],U[2],pi/2)*U;
+        W = cross(U,V)/norm(U);
+        da_push(#$pts,Pc + V,Pc - V,Pc + W,Pc - W);
+      ):(p+=N);
+      end(da_freeze(#$pts))" rm[prims,-1]
+    s c
+    xm,dx={0,[im,iM-im]}
+    ym,dy={1,[im,iM-im]}
+    zm,dz={2,[im,iM-im]}
+    rm box3d $dx,$dy,$dz +3d $xm,$ym,$zm p3d 1
   }
 
 #@cli box3d : _size_x,_size_y,_size_z
@@ -21127,8 +21209,7 @@ center3d :
 
 _center3d :
   e[0--3] "Center 3D object$?."
-  check3d 0
-  foreach {
+  check3d foreach {
     if i[6]
       s3d r[2] 3,{2,h/3},1,1,-1 s[2] x
       -[2] {2,(iM+im)/2} -[3] {3,(iM+im)/2} -[4] {4,(iM+im)/2}
@@ -21150,12 +21231,12 @@ _center3d :
   5,0,1,0,0,0,200,200,200,1
   => [3D\ circle]
 
-#@cli circles3d : _radius>=0,_is_wireframe={ 0 | 1 }
+#@cli circles3d : _radius>=0,_is_outlined={ 0 | 1 }
 #@cli : Convert specified 3D objects to sets of 3D circles with specified radius.
-#@cli : Default values: 'radius=1' and 'is_wireframe=1'.
+#@cli : Default values: 'radius=1' and 'is_outlined=1'.
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 circles3d 0.7
 circles3d : check "${1=1}>=0 && isbool(${2=0})"
-  e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,wireframe}" circles with radius $1."
+  e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,outlined}" circles with radius $1."
   p3d 0
   foreach {
     -3d {$1/2},0,0 ++3d $1,0,0 +3d[1] [0]
@@ -21166,13 +21247,32 @@ circles3d : check "${1=1}>=0 && isbool(${2=0})"
     k[0-5] a y
   }
 
-#@cli col3d : eq. to 'color3d'. : (+)
+#@cli col3d : eq. to 'color3d'.
+col3d :
+  _gmic_s="$?" v + _color3d $*
 
-#@cli color3d : R,_G,_B,_opacity : (no arg) : (+)
-#@cli : Set color and opacity of selected 3D objects.
+#@cli color3d : R,_G,_B,_opacity
+#@cli : Set color (and optionally opacity) of selected 3D objects.
 #@cli : (eq. to 'col3d').
 #@cli : Default value: 'B=G=R' and 'opacity=(undefined)'.
 #@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 color3d[-1] ${-rgb} } add3d
+color3d :
+  _gmic_s="$?" v + _$0 $*
+
+_color3d :
+  $=arg col:=$#==1?[$arg1,$arg1,$arg1]:$#==2?[$arg1,$arg2,0]:[$arg1,$arg2,$arg3]
+  if $#<4 e[0--4] "Set color of 3D object"$_gmic_s" to ("$col")."
+  else e[0--4] "Set color of 3D object"$_gmic_s" to ("$col"), with opacity "$arg4"."
+  fi
+  foreach {
+    nbv,nbp:=f2ui([i[6],i[7]]) $nbp
+    eval. ">begin(p = 8 + 3*$nbv); p+=i[#0,p] + 1; end(set('p',p))" # Find beginning of color data
+    eval. ">begin(p = $p; col = ["$col"]);
+           i[#0,p]==-128?(p+=prod(crop(#0,0,++p,1,3))):copy(i[#0,p],col); p+=3;
+           end(set('p',p))"
+    if $#>3 eval. ">begin(p = $p; const o = $arg4); i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = o)" fi
+    k[0]
+  }
 
 #@cli colorcube3d
 #@cli : Input 3D color cube.
@@ -21340,7 +21440,7 @@ distribution3d :
     1,$nbp,1,1,1 +f. y a[-2,-1] x y.           # Primitives.
     ..                                         # Colors.
     1,$nbp,1,1,1                               # Opacities.
-    a y => [3D\ distribution]                 # Build 3D object.
+    a y => [3D\ distribution]                  # Build 3D object.
   }
 
 #@cli /3d : eq. to 'div3d'. : (+)
@@ -21352,13 +21452,26 @@ distribution3d :
 #@cli : Default value: 'factor_z=1'.
 #@cli : $ torus3d 5,2 repeat 5 { +add3d[-1] 12,0,0 div3d[-1] 1.2 color3d[-1] ${-rgb} } add3d
 
-#@cli db3d : eq. to 'double3d'. : (+)
+#@cli db3d : eq. to 'double3d'.
+db3d :
+  l[] { check "isbool(${1=1})" mode=$1 onfail noarg mode=1 }
+  v + _double3d $mode
 
-#@cli double3d : _is_double_sided={ 0 | 1 } : (+)
+#@cli double3d : _is_double_sided={ 0 | 1 }
 #@cli : Enable/disable double-sided mode for 3D rendering.
 #@cli : (eq. to 'db3d').
 #@cli : Default value: 'is_double_sided=1'.
 #@cli : $ mode3d 1 repeat 2 { torus3d 100,30 rotate3d[-1] 1,1,0,60 double3d $> snapshot3d[-1] 400 }
+double3d :
+  l[] { check "isbool(${1=1})" mode=$1 onfail noarg mode=1 }
+  v + _$0 $mode
+
+_double3d :
+  if $^>=0
+    s0,s1=Disable,Enable
+    e[0--4] ${s$1}" double-sided mode for 3D rendering."
+  fi
+  _double3d=$1
 
 #@cli elevation3d : { z-factor | [elevation_map] | 'formula' },base_height={ -1 | >=0 } : (no arg)
 #@cli : Generate 3D elevation of selected images, opt. with a specified elevation map.
@@ -21438,6 +21551,24 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
   e[^-1] "Input empty 3D object."
   (67.5;73.5;109.5;103.5;51.5;100.5;0;0) => [3D\ empty]
 
+#@cli extract_textures3d
+#@cli : Extract texture data from selected 3D objects.
+#@cli : $ image.jpg imagesphere3d 10,10 +extract_textures3d
+extract_textures3d :
+  e[^-1] "Extract textures from 3D object$?."
+  check3d foreach {
+    ext={x} if ['$ext']!=0 ext..=. fi
+    bn={`"s = ['"{b}'"]; e = ['"$ext"']; p = find(s,e,size(s) - size(e),-1); p>0?s[p] = 0; s"`}
+    s3d nbv,nbp={1,f2ui(crop())}
+    tmp=$! $nbp eval. ">begin(p = N = 0);
+      i[#4,p++]==-128?(
+        W = i[#4,p++]; H = i[#4,p++]; S = i[#4,p++]; WHS = W*H*S;
+        WHS?(run('+z[4] 0,',p,',0,',p + WHS - 1,' r. ',W,',',H,',1,',S,',-1 => tx',N); p+=WHS);
+      ):(p+=2);
+      ++N"
+    rm[0-$tmp] foreach { => ${bn}_texture$> }
+  }
+
 #@cli extrude3d : _depth>0,_resolution>0,_smoothness[%]>=0
 #@cli : Generate extruded 3D object from selected binary XY-profiles.
 #@cli : Default values: 'depth=16', 'resolution=1024' and 'smoothness=0.5%'.
@@ -21454,15 +21585,25 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
     isosurface3d 50% *3d 1,1,$fact rv3d => $nm
   }
 
-#@cli f3d : eq. to 'focale3d'. : (+)
+#@cli f3d : eq. to 'focale3d'.
+f3d :
+  l[] { check "isnum(${1=700})" focale=$1 onfail noarg focale=700 }
+  v + _focale3d $focale
 
-#@cli focale3d : focale : (+)
+#@cli focale3d : focale
 #@cli : Set 3D focale.
 #@cli : (eq. to 'f3d').\n
 #@cli : Set 'focale' to 0 to enable parallel projection (instead of perspective).
 #@cli : Set negative 'focale' will disable 3D sprite zooming.
 #@cli : Default value: 'focale=700'.
 #@cli : $ repeat 5 { torus3d 100,30 rotate3d[-1] 1,1,0,60 focale3d {$<*90} snapshot3d[-1] 400 } remove[0]
+focale3d :
+  l[] { check "isnum(${1=700})" focale=$1 onfail noarg focale=700 }
+  v + _$0 $focale
+
+_focale3d :
+  e[0--3] "Set 3D focale to $1."
+  _focale3d=$1
 
 #@cli gaussians3d : _size>0,_opacity
 #@cli : Convert selected 3D objects into set of 3D gaussian-shaped sprites.
@@ -21487,7 +21628,7 @@ gaussians3d : check "${1=32}>0" skip ${2=0.3}
   text3d M,60,20,2 +3d. 50 col3d. 96,196,255
   text3d I,60,20,2 +3d. 90 col3d. 64,128,255
   text3d C,60,20,2 +3d. 100 col3d. 16,64,255
-  sphere3d 8 +3d. 102,-3,20 col3d. 192,128,255
+  sphere3d 8,-3 +3d. 102,-3,20 col3d. 192,128,255
   +3d[-6--1] c3d.
   repeat 30 {
     box3d {min(3+$</2,10)} col3d. {cut([30*$>,20+80*$>,10*$>],0,255)},0.5
@@ -21834,9 +21975,12 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
   1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y => [3D\ lissajou]
 
-#@cli m3d : eq. to 'mode3d'. : (+)
+#@cli m3d : eq. to 'mode3d'.
+m3d :
+  l[] { check "isint(${1=4}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=4 }
+  v + _mode3d $mode
 
-#@cli mode3d : _mode : (+)
+#@cli mode3d : _mode
 #@cli : Set static 3D rendering mode.
 #@cli : (eq. to 'm3d').\n
 #@cli : 'mode' can be { -1=bounding-box | 0=dots | 1=wireframe | 2=flat | 3=flat-shaded | 4=gouraud-shaded | \
@@ -21845,15 +21989,38 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli : Default value: 'mode=4'.
 #@cli : $ (0,1,2,3,4,5) double3d 0 repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 mode3d {0,@$>} \
 # snapshot3d[-1] 300 } remove[0]
+mode3d :
+  l[] { check "isint(${1=4}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=4 }
+  v + _$0 $mode
 
-#@cli md3d : eq. to 'moded3d'. : (+)
+_mode3d :
+  if $^>=0
+    s0,s1,s2,s3,s4,s5,s6=bounding-box,dots,wireframe,flat,flat-shaded,gouraud-shaded,phong-shaded
+    e[0--4] "Set static 3D rendering mode to "${s{$1+1}}"."
+  fi
+  _mode3d=$1
 
-#@cli moded3d : _mode : (+)
+#@cli md3d : eq. to 'moded3d'.
+md3d :
+  l[] { check "isint(${1=-1}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=-1 }
+  v + _moded3d $mode
+
+#@cli moded3d : _mode
 #@cli : Set dynamic 3D rendering mode for interactive 3D viewer.
 #@cli : (eq. to 'md3d').\n
 #@cli : 'mode' can be { -1=bounding-box | 0=dots | 1=wireframe | 2=flat | 3=flat-shaded | 4=gouraud-shaded | \
 # 5=phong-shaded }.
 #@cli : Default value: 'mode=-1'.
+moded3d :
+  l[] { check "isint(${1=-1}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=-1 }
+  v + _$0 $mode
+
+_moded3d :
+  if $^>=0
+    s0,s1,s2,s3,s4,s5,s6=bounding-box,dots,wireframe,flat,flat-shaded,gouraud-shaded,phong-shaded
+    e[0--4] "Set dynamic 3D rendering mode to "${s{$1+1}}"."
+  fi
+  _moded3d=$1
 
 #@cli *3d : eq. to 'mul3d'. : (+)
 
@@ -21877,8 +22044,7 @@ normalize3d :
 
 _normalize3d :
   e[0--3] "Normalize size of 3D object$?."
-  check3d 0
-  foreach {
+  check3d foreach {
     if i[6]
       s3d r[2] 3,{2,h/3},1,1,-1 s[2] x
       factor={v=max({2,iM-im},{3,iM-im},{4,iM-im});if(v,v,1)}
@@ -21886,13 +22052,26 @@ _normalize3d :
     fi
   }
 
-#@cli o3d : eq. to 'opacity3d'. : (+)
+#@cli o3d : eq. to 'opacity3d'.
+o3d :
+  _gmic_s="$?" v + _opacity3d $*
 
-#@cli opacity3d : _opacity : (+)
+#@cli opacity3d : opacity
 #@cli : Set opacity of selected 3D objects.
 #@cli : (eq. to 'o3d').
-#@cli : Default value: 'opacity=1'.
 #@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 opacity3d[-1] {u} } add3d
+opacity3d :
+  _gmic_s="$?" v + _$0 $*
+
+_opacity3d :
+  e[0--3] "Set opacity of 3D object"$_gmic_s" to $1."
+  foreach {
+    nbv,nbp:=f2ui([i[6],i[7]]) $nbp
+    eval. ">begin(p = 8 + 3*$nbv); p+=i[#0,p] + 1; end(set('p',p))" # Find beginning of color data
+    eval. ">begin(p = $p); i[#0,p]==-128?(p+=prod(crop(#0,0,++p,1,3))); p+=3; end(set('p',p))" # Skip color data
+    eval. ">begin(p = $p; const o = $1); i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = o)"
+    k[0]
+  }
 
 #@cli parametric3d : _x(a,b),_y(a,b),_z(a,b),_amin,_amax,_bmin,_bmax,_res_a>0,_res_b>0,_res_x>0,_res_y>0,_res_z>0,\
 # _smoothness>=0,_isovalue>=0
@@ -22015,7 +22194,7 @@ pointcloud3d :
         elif w>3 i.. 4,{h},1,1,-128,1,1,{w} a[-2,-1] x
         else r. 3,{h},1,1,0
         fi
-        1,{h},1,1,1                                      # Opacities.
+        1,{h},1,1,1                                  # Opacities.
         y[-6--1] a[-6--1] y
       else rm empty3d
       fi
@@ -22041,284 +22220,210 @@ pose3d :
   }
 
 #@cli p3d : eq. to 'primitives3d'.
-p3d : check "isint($1) && $1>=0 && $1<=2"
-  _primitives3d $*
+p3d : check "isint($1) && inrange($1,0,2)"
+  _gmic_s="$?" v + _primitives3d $*
 
 #@cli primitives3d : mode
 #@cli : Convert primitives of selected 3D objects.
 #@cli : (eq. to 'p3d').\n
 #@cli : 'mode' can be { 0=points | 1=outlines | 2=non-textured }.
 #@cli : $ sphere3d 30 primitives3d 1 torus3d 50,10 color3d[-1] ${-rgb} add3d
-primitives3d : check "isint($1) && $1>=0 && $1<=2"
-  _$0 $*
+primitives3d : check "isint($1) && inrange($1,0,2)"
+  _gmic_s="$?" v + _$0 $*
 
 _primitives3d :
-  e[0--3] "Convert primitives of 3D object$? to "${"arg 1+$1,points,outlines,non-textured"}"."
-  foreach {
-    s3d 1,64 .x2
-    eval "
-      const mode = $1;
+  s0,s1,s2=points,segments,non-textured
+  e[0--3] "Convert primitives of 3D object"$_gmic_s" to "$s$1"."
+  check3d foreach {
+    s3d nbv,nbp={1,f2ui(crop())}
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx ($nbv) a[2,-1] y # Vertices as dynamic array of 3D coordinates
 
-      # Read a RGBA color from the current primitive material.
-      get_RGBA(tx,ty,goto_next) = (
-        R = i[#4,pc];
-        R!=-128?( # RGB color
-          G = i[#4,pc+1];
-          B = i[#4,pc+2];
-          goto_next?(pc+=3);
-        ):( # Texture
-          W = i[#4,pc+1]; H = i[#4,pc+2]; S = i[#4,pc+3]; WH = W*H;
-          WH?( # Non-shared texture
-            off = pc + (ty%H)*W + (tx%W) + 4;
-            goto_next?(pc+=WH*S + 4);
-          ):( # Shared texture
-            off = pcol[W];
-            i[#4,off]==-128?(
-              ++off;
-              W = i[#4,off++]; H = i[#4,off++]; S = i[#4,off++]; WH = W*H;
-              off += (ty%H)*W + (tx%W);
-            ):(WH=1);
-            goto_next?(pc+=4);
-          );
-          R = i[#4,off];
-          S==1?(G = B = R):(
-            G = i[#4,off + WH];
-            S==2?(B = 0):(
-              B = i[#4,off + 2*WH];
-            );
+    # Extract textures.
+    tmp=$! $nbp eval. ">begin(p = N = 0);
+      i[#4,p++]==-128?(
+        W = i[#4,p++]; H = i[#4,p++]; S = i[#4,p++]; WHS = W*H*S;
+        WHS?(run('+z[4] 0,',p,',0,',p + WHS - 1,' r. ',W,',',H,',1,',S,',-1 => tx',N); p+=WHS);
+      ):(p+=2);
+      ++N" rm[$tmp]
+
+    # Convert object to new points/primitives/colors/opacities.
+    1x3 => prims,cols,opacs
+    $nbp eval. ">
+      begin(
+        const mode = $1;
+        pp = pc = po = 0;  # Offset values for primitives,
+        M = N = 0; # Index of input / output primitives.
+        RGB0 = RGB1 = RGB2 = RGB3 = [ 0,0,0 ];
+        refc = vector(#$nbp); # Correspondence old -> new indices for shared textures
+
+        add_colored_point(i,R,G,B,O) = ( # Add colored point to object primitives
+          vname = string(#24,'pt',i);
+          isnan(get(vname))?( # If point does not already exist
+            da_push(#$prims,1,ui2f(i));
+            da_push(#$cols,R,G,B);
+            da_push(#$opacs,O);
+            set(vname,1);
+            ++N;
           );
         );
 
-        A = i[#5,po];
-        A!=-128?( # Scalar
-          goto_next?(po+=1);
-        ):( # Texture
-          W = i[#5,po+1]; H = i[#5,po+2]; S = i[#5,po+3]; WH = W*H;
-          WH?( # Non-shared texture
-            off = po + (ty%H)*W + (tx%W) + 4;
-            goto_next?(po+=WH*S + 4);
-          ):( # Shared texture
-            off = popa[W];
-            i[#5,off]==-128?(
-              ++off;
-              W = i[#5,off++]; H = i[#5,off++]; S = i[#5,off++]; WH = W*H;
-              off += (ty%H)*W + (tx%W);
-            );
-            goto_next?(po+=4);
+        add_colored_segment(i0,i1,R,G,B,O) = ( # Add colored segment to object primitives
+          vname = string(#24,'seg',min(i0,i1),'_',max(i0,i1));
+          isnan(get(vname))?( # If segment does not already exist
+            da_push(#$prims,2,ui2f(i0),ui2f(i1));
+            da_push(#$cols,R,G,B);
+            da_push(#$opacs,O);
+            set(vname,1);
+            ++N;
           );
-          A = i[#5,off];
         );
+
+        add_textured_segment(i0,i1) = ( # Add textured segment to object primitives
+          vname = string(#24,'seg',min(i0,i1),'_',max(i0,i1));
+          isnan(get(vname))?( # If segment does not already exist
+            da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1);
+            !is_shared_texture?( # Non-shared texture
+              da_push(#$cols,-128,wc,hc,sc);
+              off = da_size(#$cols);
+              resize(#$cols,1,h(#$cols) + whsc,1,1,0);
+              copy(i[#$cols,off],i[#ind_texture,0],whsc);
+              i[#$cols,h(#$cols) - 1] = off + whsc;
+              is_shared_texture = 1;
+              refc[M] = N;
+              wc = M;
+            ):da_push(#$cols,-128,ui2f(refc[wc]),0,0); # Shared texture
+            da_push(#$opacs,O);
+            set(vname,1);
+            ++N;
+          );
+        );
+
       );
 
-      # Copy material of current primitives 'nb' times.
-      copy_material(nb) = (
-        R = i[#4,pc++]; G = i[#4,pc++]; B = i[#4,pc++];
-        R!=-128?( # RGB color
-          unref(data); data = [ R,G,B ];
-          repeat (nb, copy(i[#-2,qc],data,3); qc+=3);
+      # Read primitive material.
+      n = i[#3,pp++]; # Type of primitive
+      ind_texture = -1; R = i[#4,pc++];
+      R==-128?(
+        wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
+        is_shared_texture = whsc?0:1; vname = string(#24,'tx',whsc?M:wc); ind_texture = get(vname); pc+=whsc;
+        R = G = B = 200;
+      ):(G = i[#4,pc++]; B = i[#4,pc++]);
+
+      O = i[#5,po++];
+      O==-128?( # Ignore opacity mask
+        wo = i[#5,po++]; ho = i[#5,po++]; so = i[#5,po++]; whso = wo*ho*so; po+=whso;
+        O = 1;
+      );
+
+      # Convert primitives.
+      n==1?( # Colored point or sprite
+        i0 = f2ui(i[#3,pp++]);
+        add_colored_point(i0,R,G,B,O);
+
+      ):n==2?( # Colored segment
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
+        mode==0?(add_colored_point(i0,R,G,B,O); add_colored_point(i1,R,G,B,O)):
+        add_colored_segment(i0,i1,R,G,B,O);
+
+      ):n==3?( # Colored triangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
+        mode==0?(add_colored_point(i0,R,G,B,O); add_colored_point(i1,R,G,B,O); add_colored_point(i2,R,G,B,O)):
+        mode==1?(add_colored_segment(i0,i1,R,G,B,O); add_colored_segment(i1,i2,R,G,B,O);
+                 add_colored_segment(i2,i0,R,G,B,O)):
+        (da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2)); da_push(#$cols,R,G,B); da_push(#$opacs,O); ++N);
+
+      ):n==4?( # Colored quadrangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
+        mode==0?(add_colored_point(i0,R,G,B,O); add_colored_point(i1,R,G,B,O);
+                 add_colored_point(i2,R,G,B,O); add_colored_point(i3,R,G,B,O)):
+        mode==1?(add_colored_segment(i0,i1,R,G,B,O); add_colored_segment(i1,i2,R,G,B,O);
+                 add_colored_segment(i2,i3,R,G,B,O); add_colored_segment(i3,i0,R,G,B,O)):
+        (da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3)); da_push(#$cols,R,G,B); da_push(#$opacs,O); ++N);
+
+      ):n==5?( # Colored sphere
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); is_outlined = i[#3,pp]; pp+=3;
+        mode==0?(
+          P0 = I[#2,i0]; P1 = I[#2,i1]; nind = da_size(#2); da_push(#2,(P0 + P1)/2);
+          add_colored_point(nind,R,G,B,O);
         ):(
-          W = G; H = B; S = i[#4,pc++]; WHS = W*H*S;
-          WHS?( # Non-shared texture
-            qc + WHS + 4*nb>=h(#-2)?resize(#-2,1,int(1.5*qc + WHS + 4*nb),1,1,0,0);
-            copy(i[#-2,qc],i[#4,pc-4],WHS+4);
-            pc+=WHS; qc+=WHS+4;
-            unref(data); data = [-128,nq,0,0];
-            for (k = 1, k<nb, ++k, copy(i[#-2,qc],data,4); qc+=4);
-          ):( # Shared texture
-            unref(data); data = [-128,pref[W],0,0];
-            repeat (nb, copy(i[#-2,qc],data,4); qc+=4);
-          );
+          da_push(#$prims,5,ui2f(i0),ui2f(i1),mode==1?1:is_outlined,0,0); da_push(#$cols,R,G,B); da_push(#$opacs,O);
+          ++N;
         );
 
-        A = i[#5,po++];
-        A!=-128?( # Opacity value
-          repeat (nb, i[#-1,qo++] = A);
-        ):( # Texture
-          W = i[#5,po++]; H = i[#5,po++]; S = i[#5,po++]; WHS = W*H*S;
-          WHS?( # Non-shared texture
-            qo + WHS + 4*nb>=h(#-1)?resize(#-1,1,int(1.5*qo + WHS + 4*nb),1,1,0,0);
-            copy(i[#-1,qo],i[#5,po-4],WHS+4);
-            po+=WHS; qo+=WHS+4;
-            unref(data); data = [-128,nq,0,0];
-            for (k = 1, k<nb, ++k, copy(i[#-1,qo],data,4); qo+=4);
-          ):( # Shared texture
-            unref(data); data = [ -128,pref[W],0,0 ];
-            repeat (nb, copy(i[#-1,qo],data,4); qo+=4);
-          );
+      ):n==6?( # Textured segment
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
+        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        mode==0?(
+          copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O)):
+        mode==1?add_textured_segment(i0,i1):(
+          da_push(#$prims,2,ui2f(i0),ui2f(i1));
+          copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          (RGB0+=RGB1)/=2;
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[2]);
+          da_push(#$opacs,O);
+          ++N;
         );
-      );
 
-      # Add a new colored point primitive.
-      add_point(ind,R,G,B,A) = (
-        copy(i[#-3,qp],[1,ind],2); qp+=2;
-        copy(i[#-2,qc],[R,G,B],3); qc+=3;
-        i[#-1,qo++] = A;
-        ++nq;
-      );
-
-      # Add a new colored segment primitive.
-      add_segment(ind0,ind1,R,G,B,A) = (
-        copy(i[#-3,qp],[2,ind0,ind1],3); qp+=3;
-        copy(i[#-2,qc],[R,G,B],3); qc+=3;
-        i[#-1,qo++] = A;
-        ++nq;
-      );
-
-      pcol = popa = pref = vector"{f2ui(i[#1,1])}"();
-      for (pp = pc = po = qp = qc = qo = np = nq = 0, pp<h#3, ++np,
-        qp + 28>=h(#-3)?resize(#-3,1,int(1.5*qp + 28),1,1,0,0);
-        qc + 16>=h(#-2)?resize(#-2,1,int(1.5*qc + 16),1,1,0,0);
-        qo + 4>=h(#-1)?resize(#-1,1,int(1.5*qo + 4),1,1,0,0);
-        N = i[#3,pp++];
-        pcol[np] = pc;
-        popa[np] = po;
-        pref[np] = nq;
-
-        N==1?( # Colored point
-          v0 = i[#3,pp++];
-          get_RGBA(0,0,1);
-          add_point(v0,R,G,B,A);
-
-        ):N==2?( # Colored segment
-          v0 = i[#3,pp++]; v1 = i[#3,pp++];
-          get_RGBA(0,0,1);
-          mode==0?(
-            add_point(v0,R,G,B,A);
-            add_point(v1,R,G,B,A);
-          ):(
-            add_segment(v0,v1,R,G,B,A);
-          );
-
-        ):N==3?( # Colored triangle
-          v0 = i[#3,pp++]; v1 = i[#3,pp++]; v2 = i[#3,pp++];
-          get_RGBA(0,0,1);
-          mode==0?(
-            add_point(v0,R,G,B,A);
-            add_point(v1,R,G,B,A);
-            add_point(v2,R,G,B,A);
-          ):mode==1?(
-            add_segment(v0,v1,R,G,B,A);
-            add_segment(v1,v2,R,G,B,A);
-            add_segment(v2,v0,R,G,B,A);
-          ):(
-            copy(i[#-3,qp],i[#3,pp-4],4); qp+=4;
-            copy(i[#-2,qc],i[#4,pc-3],3); qc+=3;
-            i[#-1,qo++] = A;
-            ++nq;
-          );
-
-        ):N==4?( # Colored quadrangle
-          v0 = i[#3,pp++]; v1 = i[#3,pp++]; v2 = i[#3,pp++]; v3 = i[#3,pp++];
-          get_RGBA(0,0,1);
-          mode==0?(
-            add_point(v0,R,G,B,A);
-            add_point(v1,R,G,B,A);
-            add_point(v2,R,G,B,A);
-            add_point(v3,R,G,B,A);
-          ):mode==1?(
-            add_segment(v0,v1,R,G,B,A);
-            add_segment(v1,v2,R,G,B,A);
-            add_segment(v2,v3,R,G,B,A);
-            add_segment(v3,v0,R,G,B,A);
-          ):(
-            copy(i[#-3,qp],i[#3,pp-5],5); qp+=5;
-            copy(i[#-2,qc],i[#4,pc-3],3); qc+=3;
-            i[#-1,qo++] = A;
-            ++nq;
-          );
-
-        ):N==5?( # Colored sphere
-          v0 = i[#3,pp++]; v1 = i[#3,pp++]; i[#3,pp++] = (mode==1); v2 = i[#3,pp++]; v3 = i[#3,pp++];
-          get_RGBA(0,0,1);
-          mode==0?(
-            x0 = i[#2,3*v0]; y0 = i[#2,3*v0+1]; z0 = i[#2,3*v0+2];
-            x1 = i[#2,3*v1]; y1 = i[#2,3*v1+1]; z1 = i[#2,3*v1+2];
-            copy(i[#2,3*v0],([ x0,y0,z0 ] + [ x1,y1,z1 ])/2,3);
-            add_point(v0,R,G,B,A);
-          ):(
-            copy(i[#-3,qp],i[#3,pp-6],6); qp+=6;
-            copy(i[#-2,qc],i[#4,pc-3],3); qc+=3;
-            i[#-1,qo++] = A;
-            ++nq;
-          );
-
-        ):N==6?( # Textured segment
-          v0 = i[#3,pp++]; v1 = i[#3,pp++];
-          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
-          mode==0?(
-            get_RGBA(tx0,ty0,0); add_point(v0,R,G,B,A);
-            get_RGBA(tx1,ty1,1); add_point(v1,R,G,B,A);
-          ):mode==1?(
-            copy(i[#-3,qp],i[#3,pp-7],7); qp+=7;
-            copy_material(1);
-            ++nq;
-          ):(
-            get_RGBA(tx0,ty0,0); R0 = R; G0 = G; B0 = B; A0 = A;
-            get_RGBA(tx1,ty1,1); (R0+=R)/=2; (G0+=G)/=2; (B0+=B)/=2; (A0+=A)/=2;
-            add_segment(v0,v1,R0,G0,B0,A0);
-          );
-
-        ):N==9?( # Textured triangle
-          v0 = i[#3,pp++]; v1 = i[#3,pp++]; v2 = i[#3,pp++];
-          tx0 = i[#3,pp++]; ty0 = i[#3,pp++];
-          tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
-          tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
-          mode==0?(
-            get_RGBA(tx0,ty0,0); add_point(v0,R,G,B,A);
-            get_RGBA(tx1,ty1,0); add_point(v1,R,G,B,A);
-            get_RGBA(tx2,ty2,1); add_point(v2,R,G,B,A);
-          ):mode==1?(
-            copy(i[#-3,qp],[ 6,v0,v1,tx0,ty0,tx1,ty1,
-                             6,v1,v2,tx1,ty1,tx2,ty2,
-                             6,v2,v0,tx2,ty2,tx0,ty0 ],21); qp+=21;
-            copy_material(3);
-            nq+=3;
-          ):(
-            get_RGBA(tx0,ty0,0); R0 = R; G0 = G; B0 = B; A0 = A;
-            get_RGBA(tx1,ty1,0); R0+=R; G0+=G; B0+=B; A0+=A;
-            get_RGBA(tx2,ty2,2); (R0+=R)/=3; (G0+=G)/=3; (B0+=B)/=3; (A0+=A)/=3;
-            copy(i[#-3,qp],[ 3,v0,v1,v2 ],4); qp+=4;
-            copy(i[#-2,qc],[ R,G,B ],3); qc+=3;
-            i[#-1,qo++] = A;
-            ++nq;
-          );
-
-        ):N==12?( # Textured quadrangle
-          v0 = i[#3,pp++]; v1 = i[#3,pp++]; v2 = i[#3,pp++]; v3 = i[#3,pp++];
-          tx0 = i[#3,pp++]; ty0 = i[#3,pp++];
-          tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
-          tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
-          tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
-          mode==0?(
-            get_RGBA(tx0,ty0,0); add_point(v0,R,G,B,A);
-            get_RGBA(tx1,ty1,0); add_point(v1,R,G,B,A);
-            get_RGBA(tx2,ty2,0); add_point(v2,R,G,B,A);
-            get_RGBA(tx3,ty3,1); add_point(v3,R,G,B,A);
-          ):mode==1?(
-            copy(i[#-3,qp],[ 6,v0,v1,tx0,ty0,tx1,ty1,
-                             6,v1,v2,tx1,ty1,tx2,ty2,
-                             6,v2,v3,tx2,ty2,tx3,ty3,
-                             6,v3,v0,tx3,ty3,tx0,ty0 ],28); qp+=28;
-            copy_material(4);
-            nq+=4;
-          ):(
-            get_RGBA(tx0,ty0,0); R0 = R; G0 = G; B0 = B; A0 = A;
-            get_RGBA(tx1,ty1,0); R0+=R; G0+=G; B0+=B; A0+=A;
-            get_RGBA(tx2,ty2,0); R0+=R; G0+=G; B0+=B; A0+=A;
-            get_RGBA(tx3,ty3,2); (R0+=R)/=4; (G0+=G)/=4; (B0+=B)/=4; (A0+=A)/=4;
-            copy(i[#-3,qp],[ 4,v0,v1,v2,v3 ],5); qp+=5;
-            copy(i[#-2,qc],[ R,G,B ],3); qc+=3;
-            i[#-1,qo++] = A;
-            ++nq;
-          );
+      ):n==9?( # Textured triangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
+        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+        mode==0?(
+          copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB2,i(#ind_texture,tx2,ty2,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
+          add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O)):
+        mode==1?(add_textured_segment(i0,i1); add_textured_segment(i1,i2); add_textured_segment(i2,i0)):
+        (
+          da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2));
+          copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB2,i(#ind_texture,tx2,ty2,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          (RGB0+=RGB1+=RGB2)/=3;
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[2]);
+          da_push(#$opacs,O);
+          ++N;
         );
-      );
-      resize(#-3,1,qp,1,1,0,0);
-      resize(#-2,1,qc,1,1,0,0);
-      resize(#-1,1,qo,1,1,0,0);
-      i[#1,1] = nq"
 
-    rm[3-5] a y
+      ):n==12?( # Textured quadrangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
+        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+        mode==0?(
+          copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB2,i(#ind_texture,tx2,ty2,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB3,i(#ind_texture,tx3,ty3,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
+          add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
+          add_colored_point(i3,RGB3[0],RGB3[1],RGB3[2],O)):
+        mode==1?(add_textured_segment(i0,i1); add_textured_segment(i1,i2);
+                 add_textured_segment(i2,i3); add_textured_segment(i3,i0)):
+        (
+          da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3));
+          copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB2,i(#ind_texture,tx2,ty2,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          copy(RGB3,i(#ind_texture,tx3,ty3,0,0),min(3,s#ind_texture),1,wh#ind_texture);
+          (RGB0+=RGB1+=RGB2+=RGB3)/=4;
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[2]);
+          da_push(#$opacs,O);
+          ++N;
+        );
+
+      ):(pp+=n);
+      ++M;
+      end(set('N',N));
+    " rm.
+    da_freeze[2,prims,cols,opacs]
+    f[1] {2,h},$N
+    permute[2] cyzx y[2] rv[3,prims] rv[4,cols] rv[5,opacs] k[0-5] a y
   }
 
 #@cli projections3d : _x[%],_y[%],_z[%],_is_bounding_box={ 0 | 1 }
@@ -22384,12 +22489,31 @@ projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
   } fi
   => [3D\ random\ pointcloud]
 
-#@cli rv3d : eq. to 'reverse3d'. : (+)
+#@cli rv3d : eq. to 'reverse3d'.
+rv3d :
+  _gmic_s="$?" v + _reverse3d
 
-#@cli reverse3d : (+)
+#@cli reverse3d
 #@cli : Reverse primitive orientations of selected 3D objects.
 #@cli : (eq. to 'rv3d').
 #@cli : $ torus3d 100,40 double3d 0 +reverse3d
+reverse3d :
+  _gmic_s="$?" v + _$0
+
+_reverse3d :
+  e[0--3] "Reverse primitives orientation of 3D object"$_gmic_s"."
+  check3d foreach {
+    {f2ui(i[7])} eval. ">begin(p = 8 + 3*f2ui(i[#0,6]));
+      n = i[#0,p++];
+      n==2?swap(i[#0,p],i[#0,p + 1]):
+      n==3?swap(i[#0,p + 1],i[#0,p + 2]):
+      n==4?swap(i[#0,p + 1],i[#0,p + 3]):
+      n==6?(swap(i[#0,p],i[#0,p + 1]); swap(i[#0,p + 2],i[#0,p + 4]); swap(i[#0,p + 3],i[#0,p + 5])):
+      n==9?(swap(i[#0,p + 1],i[#0,p + 2]); swap(i[#0,p + 5],i[#0,p + 7]); swap(i[#0,p + 6],i[#0,p + 8])):
+      n==12?(swap(i[#0,p + 1],i[#0,p + 3]); swap(i[#0,p + 6],i[#0,p + 10]); swap(i[#0,p + 7],i[#0,p + 11]));
+      p+=n"
+    rm.
+  }
 
 #@cli r3d : eq. to 'rotate3d'. : (+)
 
@@ -22492,7 +22616,7 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
 
     # Construct bones from skeleton.
     if $4 l[0] {
-      s3d 0
+      s3d
       n={1,@0}
       if $n
         r[2] 3,$n,1,1,-1 r[3] 2,$n,1,1,-1 r[4] 3,$n,1,1,-1
@@ -22548,63 +22672,169 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
    =>[1] {-2,n} rm[0]
   } } rm.
 
-#@cli sl3d : eq. to 'specl3d'. : (+)
+#@cli sl3d : eq. to 'specl3d'.
+sl3d :
+  l[] { check "${1=0.15}>=0" value=$1 onfail noarg value=0.15 }
+  v + _specl3d $value
 
-#@cli specl3d : value>=0 : (+)
+#@cli specl3d : value>=0
 #@cli : Set lightness of 3D specular light.
 #@cli : (eq. to 'sl3d').
 #@cli : Default value: 'value=0.15'.
 #@cli : $ (0,0.3,0.6,0.9,1.2) repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specl3d {0,@$>} \
 # snapshot3d[-1] 400 } remove[0]
+specl3d :
+  l[] { check "${1=0.15}>=0" value=$1 onfail noarg value=0.15 }
+  v + _$0 $value
 
-#@cli ss3d : eq. to 'specs3d'. : (+)
+_specl3d :
+  e[0--3] "Set lightness of 3D specular light to $1."
+  _specl3d=$1
 
-#@cli specs3d : value>=0 : (+)
+#@cli ss3d : eq. to 'specs3d'.
+ss3d :
+  l[] { check "${1=0.8}>=0" value=$1 onfail noarg value=0.8 }
+  v + _specs3d $value
+
+#@cli specs3d : value>=0
 #@cli : Set shininess of 3D specular light.
 #@cli : (eq. to 'ss3d').
 #@cli : Default value: 'value=0.8'.
 #@cli : $ (0,0.3,0.6,0.9,1.2) repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specs3d {0,@$>} \
 # snapshot3d[-1] 400 } remove[0]
+specs3d :
+  l[] { check "${1=0.8}>=0" value=$1 onfail noarg value=0.8 }
+  v + _$0 $value
 
-#@cli sphere3d : radius,_nb_recursions>=0 : (+)
+_specs3d :
+  e[0--3] "Set shininess of 3D specular light to $1."
+  _specs3d=$1
+
+#@cli sphere3d : radius,_nb_recursions!=0 : radius,_nb_phi>=3,_nb_theta>=3
 #@cli : Input 3D sphere at (0,0,0), with specified geometry.
+#@cli : - If 2 arguments are specified:
+#@cli :   - If 'nb_recursions>0', the sphere is generated using recursive subdivisions of an **icosahedron**.
+#@cli :   - If 'nb_recursions<0', the sphere is generated using recursive subdividions of a **cube**.
+#@cli : - If 3 arguments are specified, the sphere is generated using spherical coordinates discretization.
 #@cli : Default value: 'nb_recursions=3'.
 #@cli : $ sphere3d 100 +primitives3d 1 color3d[-2] ${-rgb}
++sphere3d : check "isnum(${1=1})" skip "${2=3},${3=}"
 
-#@cli spherical3d : _nb_azimuth>=3,_nb_zenith>=3,_radius_function(phi,theta)
+  if !narg($3) # Generate 3D sphere with recursive subdivisions
+    e[0--3] "Input 3D sphere, with radius $1 and $2 subdivision iterations."
+    l[] {
+
+      if $2>=0 # Subdivide icosahedron
+        # Generate initial icosahedron.
+        (1;3;1;3;2;2;2;2;4;0;4;0^2;2;2;2;4;4;0;0;3;3;1;1^4;4;0;0;3;1;3;1;2;2;2;2) # List of vertices
+        (-0.850650808352039932,-0.525731112119133606,0,0.525731112119133606,0.850650808352039932)
+        map.. . rm. (12) a[-2,-1] y
+
+        (0;0;9;4;4;8;8;5;5;2;7;7;7;11;0;6;9;9;9;7^\ # List of triangles
+         1;4;4;8;1;1;10;8;3;3;3;10;6;6;6;10;11;2;5;11^\
+         4;9;5;5;8;10;3;3;2;7;10;6;11;0;1;1;0;11;2;2) (20) a[-2,-1] y
+
+        # Subdivide recursively.
+        repeat $2 {
+          0 # Next primitives
+          1,{1,@{1,h-1}},1,1,"
+            unit(V) = (ref(V,_V); _V/norm(_V));
+            p = I[#1,y];
+            P0 = I[#0,p[0]]; P1 = I[#0,p[1]]; P2 = I[#0,p[2]];
+            ref(string(#48,'p',min(p[0],p[1]),'_',max(p[0],p[1])),varname); p01 = get(varname);
+            isnan(p01)?(set(varname,p01 = da_size(#0)); da_push(#0,unit((P0 + P1)/2)));
+            ref(string(#48,'p',min(p[0],p[2]),'_',max(p[0],p[2])),varname); p02 = get(varname);
+            isnan(p02)?(set(varname,p02 = da_size(#0)); da_push(#0,unit((P0 + P2)/2)));
+            ref(string(#48,'p',min(p[1],p[2]),'_',max(p[1],p[2])),varname); p12 = get(varname);
+            isnan(p12)?(set(varname,p12 = da_size(#0)); da_push(#0,unit((P1 + P2)/2)));
+            da_push([p[0],p01,p02],[p01,p[1],p12],[p02,p12,p[2]],[p01,p12,p02])"
+          rm[1,-1]
+        }
+      else # Subdivide cube
+        # Generate initial cube.
+        (-1;1;1;-1;-1;1;1;-1^-1;-1;1;1;-1;-1;1;1^-1;-1;-1;-1;1;1;1;1) /. {sqrt(3)} (8) a[-2,-1] y # List of vertices
+        (0;4;0;3;0;1^3;5;1;7;4;2^2;6;5;6;7;6^1;7;4;2;3;5) (6) a[-2,-1] y # List of triangles
+
+        # Subdivide recursively.
+        repeat -$2 {
+          0 # Next primitives
+          1,{1,@{1,h-1}},1,1,"
+            unit(V) = (ref(V,_V); _V/norm(_V));
+            p = I[#1,y];
+            P0 = I[#0,p[0]]; P1 = I[#0,p[1]]; P2 = I[#0,p[2]]; P3 = I[#0,p[3]];
+            ref(string(#48,'p',min(p[0],p[1]),'_',max(p[0],p[1])),varname); p01 = get(varname);
+            isnan(p01)?(set(varname,p01 = da_size(#0)); da_push(#0,unit((P0 + P1)/2)));
+            ref(string(#48,'p',min(p[1],p[2]),'_',max(p[1],p[2])),varname); p12 = get(varname);
+            isnan(p12)?(set(varname,p12 = da_size(#0)); da_push(#0,unit((P1 + P2)/2)));
+            ref(string(#48,'p',min(p[2],p[3]),'_',max(p[2],p[3])),varname); p23 = get(varname);
+            isnan(p23)?(set(varname,p23 = da_size(#0)); da_push(#0,unit((P2 + P3)/2)));
+            ref(string(#48,'p',min(p[0],p[3]),'_',max(p[0],p[3])),varname); p03 = get(varname);
+            isnan(p03)?(set(varname,p03 = da_size(#0)); da_push(#0,unit((P0 + P3)/2)));
+            pc = da_size(#0);
+            da_push(#0,unit((P0 + P1 + P2 + P3)/4));
+            da_push([p[0],p01,pc,p03],[p01,p[1],p12,pc],[pc,p12,p[2],p23],[p03,pc,p23,p[3]])"
+          rm[1,-1]
+        }
+      fi
+
+      # Convert coordinates/primitives to a 3D object.
+      da_freeze nbp={1,h}
+      *[0] $1 permute cyzx i.. 1,100%,1,1,{w} a[-2,-1] x
+      i[0] ({'CImg3d'},{0,h},$nbp) 3,$nbp,1,1,200 1,$nbp,1,1,1 y a y
+    }
+  else # Generate 3D sphere with discretization of spherical coordinates
+    e[0--3] "Input 3D sphere, with radius $1 and angular discretizations ($2,$3)."
+    l[] {
+      nb_phi,nb_theta={max(3,$2)},{max(3,$3)}
+
+      # Generate vertices.
+      1 $nb_phi,{$nb_theta-2},1,1,"
+        begin(da_push(#0,0,0,-1));
+        theta = lerp(0,pi,(y + 1)/(h + 1));
+        phi = lerp(0,2*pi,x/w);
+        st = sin(theta);
+        da_push(#0,cos(phi)*st,sin(phi)*st,-cos(theta));
+        end(da_push(#0,0,0,1); da_freeze())" rm.
+
+      # Generate primitives.
+      1 $nb_phi,{$nb_theta-1},1,1,"
+        const p = w; const ptm2p1 = p*(h - 1) + 1;
+        xp1 = x + 1; xp1mpp1 = xp1%p + 1;
+        yp = (y - 1)*p; yp1p = yp + p;
+        !y?da_push(3,0,xp1mpp1,xp1):
+        y<h-1?da_push(4,xp1 + yp,xp1mpp1 + yp,xp1mpp1 + yp1p,xp1 + yp1p):
+        y==h-1?da_push(3,ptm2p1,xp1 + yp,yp + xp1mpp1);
+        end(da_freeze())" rm.
+
+      nbp:=$nb_phi*($nb_theta-1)
+      i[0] ({'CImg3d'},{0,h/3},$nbp:y) 3,$nbp,1,1,200 1,$nbp,1,1,1 y a y
+    }
+  fi
+  => "[3D sphere]"
+
+#@cli spherical3d : "radius_function(phi,theta)",_nb_recursions!=0 : \
+# "radius_function(phi,theta)",_nb_phi>=3,_nb_theta>=3
 #@cli : Input 3D spherical object at (0,0,0), with specified geometry.
-#@cli : Default values: 'nb_zenith=nb_azimut=64' and 'radius_function="abs(1+0.5*cos(3*phi)*sin(4*theta))"'.
-#@cli : $ spherical3d 64 +primitives3d 1
-+spherical3d : check "${1=64}>=3 && ${2=$1}>=3" skip "${3=abs(1+0.5*cos(3*phi)*sin(4*theta))}"
-  e[^-1] "Input 3D spherical object, with subdivisions ($1,$2) and height function '$3'."
-  ('CImg3d':y) # Magic number.
-  n1={round($1)} n2={round($2)}
-
-  # Define 3D vertices.
-  $n1,{$n2-1},1,3,"phi = 2*pi*(x+0.5)/w;\
-                   theta = -pi/2+pi*(y+0.5)/h;\
-                   cp = cos(phi);\
-                   sp = sin(phi);\
-                   ct = cos(theta);\
-                   ($3)*if(c==0,ct*cp,if(c==1,ct*sp,sin(theta)))"
-  r. {w*h},3,1,1,-1 permute. yxzc
-  i.. (0,0,{phi=0;theta=-pi/2;-$3};0,0,{phi=0;theta=pi/2;$3}) a[-2,-1] y  # Add the two poles.
-  nbv={h} y.
-
-  # Define 3D primitives.
-  $n1,{$n2-2},1,4,"nx=(x+1)%w;ny=(y+1);2+if(c==0,x+y*"$n1",if(c==1,nx+y*"$n1",if(c==2,nx+ny*"$n1",x+ny*"$n1")))"
-  r. {w*h},4,1,1,-1 permute. yxzc i.. 1,{h},1,1,4 a[-2,-1] x
-  2,$n1,1,1,3,0 1,$n1,1,1,'y' ++. 1 %. {h} 2,$n1,1,1,3,1 [-3,-2]  # Connect the two poles.
-  +[-5,-4] 2 rv[-5,-4] +[-2,-1] {$nbv-$n1} a[-3--1] x a[-4--2] x
-  nbp={h+{-2,h}+{-3,h}}
-  y[-3--1] a[-3--1] y
-
-  # Define other object information (properties, colors and opacities).
-  i... ($nbv;$nbp)
-  1,{3*$nbp},1,1,200 1,$nbp,1,1,1 a[-2,-1] y
-
-  # Append as a 3D object.
-  a[-5--1] y => "[3D spherical surface '$3']"
+#@cli : Second and third arguments are the same as in command ''sphere3d''.
+#@cli : Default values: 'nb_recursions=5'.
+#@cli : $ spherical3d "abs(1+0.5*cos(3*phi)*sin(4*theta))" +primitives3d 1
++spherical3d : check "${2=5}!=0" skip "${3=}"
+  e[^-1] "Input 3D spherical object, with radius function '$1'."
+  l[] {
+    sphere3d 1,${2--1}
+    s3d
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx
+    f[2] "
+      V = [ i0,i1,i2 ];
+      V/=norm(V);
+      theta = -acos(V[2]);
+      phi = atan2(V[1],V[0]);
+      R = ($1);
+      st = sin(theta);
+      [ R*cos(phi)*st,R*sin(phi)*st,R*cos(theta) ]"
+    permute[2] cyzx y[2] a y
+    => "[3D spherical surface '$1']"
+  }
 
 #@cli spline3d : x0[%],y0[%],z0[%],u0[%],v0[%],w0[%],x1[%],y1[%],z1[%],u1[%],v1[%],w1[%],_nb_vertices>=2
 #@cli : Input 3D spline with specified geometry.
@@ -22625,16 +22855,30 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
   1,{3*($13-1)},1,1,200 1,{$13-1},1,1,1 # Colors / opacities.
   y[-3,-4,-6] a[-6--1] y
 
-#@cli s3d : eq. to 'split3d'. : (+)
+#@cli s3d : eq. to 'split3d'.
+s3d :
+  _gmic_s="$?" v + _split3d
 
-#@cli split3d : _full_split={ 0 | 1 } : (+)
+#@cli split3d
 #@cli : Split selected 3D objects into feature vectors :
-#@cli : * If 'full_split==0', { header, sizes, vertices, primitives, colors, opacities }.
-#@cli : * If 'full_split==1', { header, sizes, vertices, p0,...,pP, c0,...,cP, o0,...,oP }.
+#@cli : { header, sizes, vertices, primitives, colors, opacities }.
 #@cli : (eq. to 's3d').\n
-#@cli : To recreate the 3D object, append all produced images along the y-axis.
-#@cli : Default value: 'full_split=0'.
+#@cli : To recreate the 3D object, append all produced images along the y-axis (with command `append y`).
 #@cli : $ box3d 100 +split3d
+split3d :
+  _gmic_s="$?" v + _$0
+
+_split3d :
+  e[0--3] "Split 3D object$? into feature vectors."
+  check3d foreach { nm={n}
+    +z. 0,0,0,5 +z.. 0,6,0,7 nbv,nbp:=f2ui(crop())
+    indp:=8+3*$nbv +z... 0,8,0,{$indp-1} # Vertices
+    $nbp eval. ">begin(p = $indp); p+=i[#0,p] + 1; end(set('indc',p))" rm.
+    +z[0] 0,$indp,0,{$indc-1} # Primitives
+    $nbp eval. ">begin(p = $indc); i[#0,p]==-128?(p+=prod(crop(#0,0,++p,1,3))); p+=3; end(set('indo',p))" rm.
+    +z[0] 0,$indc,0,{$indo-1} +z[0] 0,$indo,0,100% rm[0]
+    => $nm,${nm}_c1,${nm}_c2,${nm}_c3,${nm}_c4,${nm}_c5
+  }
 
 #@cli sprite3d
 #@cli : Convert selected images as 3D sprites.
@@ -22715,6 +22959,117 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 #@cli : Default values: 'ty=tz=0'.
 #@cli : $ sphere3d 10 repeat 5 { +sub3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d
 
+#@cli subdivide3d
+#@cli : Subdivide primitives of selected 3D objects.
+subdivide3d :
+  e[^-1] "Subdivide primitives of selected 3D objects."
+  foreach {
+    s3d nbv,nbp={1,f2ui(crop())}
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx
+    foreach[2--1] { ({h}) a y } # Convert features to dynamic arrays
+
+    $nbp eval. ">begin(pp = pc = po = M = N = 0);
+
+      # Read primitive material.
+      n = i[#3,pp++]; # Type of primitive
+      R = i[#4,pc++];
+      R==-128?(
+        wc = f2ui(i[#4,pc++]); hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc; ind_texture = whsc?wc:M; pc+=whsc;
+        R = G = B = 200;
+      ):(G = i[#4,pc++]; B = i[#4,pc++]);
+
+      O = i[#5,po++];
+      O==-128?( # Ignore opacity mask
+        wo = f2ui(i[#5,po++]); ho = i[#5,po++]; so = i[#5,po++]; whso = wo*ho*so; po+=whso;
+        O = 1;
+      );
+
+      # Subdivide primitives.
+      n==2 || n==6?( # Colored/textured segment
+        opp = pp; i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
+        P0 = I[#2,i0]; P1 = I[#2,i1];
+        P01 = (P0 + P1)/2;
+        i01 = da_size(#2); da_push(#2,P01);
+        i0 = ui2f(i0); i1 = ui2f(i1); i01 = ui2f(i01);
+        n==2?( # Colored segment
+          copy(i[#3,opp],[ i0,i01 ]);
+          da_push(#3,2,i01,i1);
+          da_push(#4,R,G,B);
+        ):( # Textured segment
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+          tx01 = round((tx0 + tx1)/2); ty01 = round((ty0 + ty1)/2);
+          copy(i[#3,opp],[ i0,i01,tx0,ty0,tx01,ty01 ]);
+          da_push(#3,6,i01,i1,tx01,ty01,tx1,ty1);
+          whsc?(ui2fM = ui2f(M); da_push(#4,-128,ui2fM,0,0)):
+               (ui2fwc = ui2f(wc); da_push(#4,-128,ui2fwc,0,0));
+        );
+        da_push(#5,O);
+        N+=2):
+
+      n==3 || n==9?( # Colored/textured triangle
+        opp = pp; i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
+        P0 = I[#2,i0]; P1 = I[#2,i1]; P2 = I[#2,i2];
+        P01 = (P0 + P1)/2; P12 = (P1 + P2)/2; P20 = (P2 + P0)/2;
+        i01 = da_size(#2); i12 = i01 + 1; i20 = i12 + 1; da_push(#2,P01,P12,P20);
+        i0 = ui2f(i0); i1 = ui2f(i1); i2 = ui2f(i2); i01 = ui2f(i01); i12 = ui2f(i12); i20 = ui2f(i20);
+        n==3?( # Colored triangle
+          copy(i[#3,opp],[ i01,i12,i20 ]);
+          da_push(#3,3,i0,i01,i20,
+                     3,i01,i1,i12,
+                     3,i20,i12,i2);
+          da_push(#4,R,G,B, R,G,B, R,G,B);
+        ):( # Textured triangle
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+          tx01 = round((tx0 + tx1)/2); ty01 = round((ty0 + ty1)/2);
+          tx12 = round((tx1 + tx2)/2); ty12 = round((ty1 + ty2)/2);
+          tx20 = round((tx2 + tx0)/2); ty20 = round((ty2 + ty0)/2);
+          copy(i[#3,opp],[ i01,i12,i20,tx01,ty01,tx12,ty12,tx20,ty20 ]);
+          da_push(#3,9,i0,i01,i20,tx0,ty0,tx01,ty01,tx20,ty20,
+                     9,i01,i1,i12,tx01,ty01,tx1,ty1,tx12,ty12,
+                     9,i20,i12,i2,tx20,ty20,tx12,ty12,tx2,ty2);
+          whsc?(ui2fM = ui2f(M); da_push(#4,-128,ui2fM,0,0, -128,ui2fM,0,0, -128,ui2fM,0,0)):
+               (ui2fwc = ui2f(wc); da_push(#4,-128,ui2fwc,0,0, -128,ui2fwc,0,0, -128,ui2fwc,0,0));
+        );
+        da_push(#5,O,O,O);
+        N+=4):
+
+      n==4 || n==12?( # Colored/textured quadrangle
+        opp = pp; i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
+        P0 = I[#2,i0]; P1 = I[#2,i1]; P2 = I[#2,i2]; P3 = I[#2,i3];
+        P01 = (P0 + P1)/2; P12 = (P1 + P2)/2; P23 = (P2 + P3)/2; P30 = (P3 + P0)/2; Pc = (P0 + P1 + P2 + P3)/4;
+        i01 = da_size(#2); i12 = i01 + 1; i23 = i12 + 1; i30 = i23 + 1; ic = i30 + 1; da_push(#2,P01,P12,P23,P30,Pc);
+        i0 = ui2f(i0); i1 = ui2f(i1); i2 = ui2f(i2); i3 = ui2f(i3);
+        i01 = ui2f(i01); i12 = ui2f(i12); i23 = ui2f(i23); i30 = ui2f(i30); ic = ui2f(ic);
+        n==4?( # Colored quadrangle
+          copy(i[#3,opp],[ i0,i01,ic,i30 ]);
+          da_push(#3,4,i01,i1,i12,ic,
+                     4,ic,i12,i2,i23,
+                     4,i30,ic,i23,i3);
+          da_push(#4,R,G,B, R,G,B, R,G,B);
+        ):( # Textured quadrangle
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+          tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+          tx01 = round((tx0 + tx1)/2); ty01 = round((ty0 + ty1)/2);
+          tx12 = round((tx1 + tx2)/2); ty12 = round((ty1 + ty2)/2);
+          tx23 = round((tx2 + tx3)/2); ty23 = round((ty2 + ty3)/2);
+          tx30 = round((tx3 + tx0)/2); ty30 = round((ty3 + ty0)/2);
+          txc = (tx0 + tx1 + tx2 + tx3)/4; tyc = (ty0 + ty1 + ty2 + ty3)/4;
+          copy(i[#3,opp],[ i0,i01,ic,i30,tx0,ty0,tx01,ty01,txc,tyc,tx30,ty30 ]);
+          da_push(#3,12,i01,i1,i12,ic,tx01,ty01,tx1,ty1,tx12,ty12,txc,tyc,
+                     12,ic,i12,i2,i23,txc,tyc,tx12,ty12,tx2,ty2,tx23,ty23,
+                     12,i30,ic,i23,i3,tx30,ty30,txc,tyc,tx23,ty23,tx3,ty3);
+          whsc?(ui2fM = ui2f(M); da_push(#4,-128,ui2fM,0,0, -128,ui2fM,0,0, -128,ui2fM,0,0)):
+               (ui2fwc = ui2f(wc); da_push(#4,-128,ui2fwc,0,0, -128,ui2fwc,0,0, -128,ui2fwc,0,0));
+        );
+        da_push(#5,O,O,O);
+        N+=4):
+      (pp+=n; ++N);
+      ++M;
+      end(i[#1,0] = ui2f(da_size(#2)); i[#1,1] = ui2f(N))" rm.
+
+    da_freeze[2--1] nbv={2,h} permute[2] cyzx y[2] a y
+  }
+
 #@cli superformula3d : resolution>1,m>=1,n1,n2,n3
 #@cli : Input 2D superformula curve as a 3D object.
 #@cli : Default values: 'resolution=1024', 'm=8', 'n1=1', 'n2=5' and 'n3=8'.
@@ -22738,8 +23093,7 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 
 #@cli surfels3d : 0<=_left_right_attenuation<=1,0<=_top_bottom_attenuation<=1,0<=_closer_further_attenuation<=1
 #@cli : Convert selected images to 3D objects composed of 3D surfels (or 2D edgels for 2D images).
-#@cli : Selected images must contain binary shapes, where each value 0 is an exterior voxel, \
-# and each value !=0 is an interior voxel.
+#@cli : The binary shape is composed of all non-zero voxels.
 #@cli : The resulting 3D object is colored according to the color of non zero voxels.
 #@cli : Default values: 'left_right_attenuation=1', 'top_bottom_attenuation=1' and 'closer_further_attenuation=1'.
 #@cli : $ 100,100,100 = 1,40%,40%,40% = 1,60%,60%,60% distance 1 lt 30% blur 3 gt 50% surfels3d 0.5,0.75,1
@@ -22786,7 +23140,7 @@ surfels3d : check "${1=1}>0 && ${2=1}>0 && ${3=1}>0"
 
       if !w rm # Empty object
       else
-        to_rgb[cols]
+        c[cols] 0,255 to_rgb[cols]
         k[pts,prims,cols] permute cyzx i[1] 1,{0,h},1,1,0 a[0,1] x i[1] 1,{1,h},1,1,2 a[1,2] x =>.. prims
       fi
 
@@ -22852,7 +23206,7 @@ surfels3d : check "${1=1}>0 && ${2=1}>0 && ${3=1}>0"
 
       if !w rm # Empty object
       else
-        to_rgb[cols]
+        c[cols] 0,255 to_rgb[cols]
         k[pts,prims,cols] permute cyzx i[1] 1,{1,h},1,1,4 a[1,2] x =>.. prims
       fi
     fi
@@ -23113,6 +23467,136 @@ volume3d :
     +rows[0] 100% permute. xzyc
     +rows[0] 0 permute. xzyc mirror. y
     rm[0] image6cube3d *3d $w,$h,$d
+  }
+
+#@cli voxelize3d : _max_resolution>0,_fill_interior={ 0 | 1 },_preserve_colors={ 0 | 1 }
+#@cli : Convert selected 3D objects as 3D volumetric images of binary voxels, using 3D mesh rasterization.
+#@cli : Default values: 'max_resolution=128', 'fill_interior=1' and 'preserve_colors=0'.
+voxelize3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
+  s0,s1,t0,t1="",", interior filling","scalar","color"
+  e[^-1] "Voxelize 3D object$?, with max resolution $1"$s$2" and "$t$3" output."
+  foreach {
+    nm={n} p3d 2
+    +boundingbox3d l. { s3d store[2] bbpts rm } # Get exact bounding box (for objects containing 3d sphere primitives)
+    s3d nbp={1,@1} k[2,3,4] => pts,prims,cols
+    l[pts] {
+      $bbpts a y # Merge bounding box vertices
+      r 3,{h/3},1,1,-1 s x
+      w,h,d:="const dx = iM#0 - im#0;
+              const dy = iM#1 - im#1;
+              const dz = iM#2 - im#2;
+              M = max(dx,dy,dz);
+              S = round([ dx, dy, dz ]*$1/M);
+              [ max(S[0],1), max(S[1],1), max(S[2],1) ]"
+      n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
+      round a c
+    }
+    if $3 l[cols] { r 3,{h/3},1,1,-1 permute zycx +norm1 ==. 0 + } else rm[cols] fi
+    $w,$h,$d => out
+
+    $nbp eval. ">
+      begin(
+        p = 0;
+        label = 2;
+        P0 = P1 = P2 = P3 = vector3();
+
+        rasterize_point(P) = (
+          i(#$out,P#) = label;
+        );
+
+        rasterize_segment(P0,P1) = (
+          l01 = max(1,abs(P1# - P0#));
+          repeat (l01 + 1,l,
+            ln = l/l01;
+            Q = round(lerp(P0#,P1#,ln));
+            i(#$out,Q) = label;
+          );
+        );
+
+        rasterize_triangle(P0,P1,P2) = (
+          N = cross(P1# - P0#,P2# - P0#); # Normal vector
+          rasterize_segment(P0#,P1#); # Hack: Ensure correct jonction between adjacent triangles
+          rasterize_segment(P0#,P2#);
+          rasterize_segment(P1#,P2#);
+          norm(N)?( # Non-colinear vertices
+            S = -dot(N,P0#); # Affine shift
+            proj_plane = argmax(abs(N)); # Best 2D projection plane
+            proj_plane==0?( # YZ-backprojection
+              Q0 = [ P0#[1],P0#[2] ]; Q1 = [ P1#[1],P1#[2] ]; Q2 = [ P2#[1],P2#[2] ];
+              _rasterize_triangle(Q0,Q1,Q2,round((-N[1]*a - N[2]*b - S)/N[0]),a,b);
+            ):proj_plane==1?( # XZ-backprojection
+              Q0 = [ P0#[0],P0#[2] ]; Q1 = [ P1#[0],P1#[2] ]; Q2 = [ P2#[0],P2#[2] ];
+              _rasterize_triangle(Q0,Q1,Q2,a,round((-N[0]*a - N[2]*b - S)/N[1]),b);
+            ):( # XY-backprojection
+              Q0 = [ P0#[0],P0#[1] ]; Q1 = [ P1#[0],P1#[1] ]; Q2 = [ P2#[0],P2#[1] ];
+              _rasterize_triangle(Q0,Q1,Q2,a,b,round((-N[0]*a - N[1]*b - S)/N[2]));
+            );
+          );
+        );
+
+        _rasterize_triangle(P0,P1,P2,projX,projY,projZ) = ( # Back-project 2D triangle
+          P0#[1]>P1#[1]?swap(P0#,P1#);
+          P0#[1]>P2#[1]?swap(P0#,P2#);
+          P1#[1]>P2#[1]?swap(P1#,P2#);
+          db01 = P1#[1] - P0#[1]; m1db01 = max(1,db01);
+          db02 = P2#[1] - P0#[1]; m1db02 = max(1,db02);
+          db12 = P2#[1] - P1#[1]; m1db12 = max(1,db12);
+          repeat (db01,l,
+            b = P0#[1] + l;
+            a0 = round(lerp(P0#[0],P1#[0],l/m1db01));
+            a1 = round(lerp(P0#[0],P2#[0],l/m1db02));
+            a0>a1?swap(a0,a1);
+            for (a = a0, a<=a1, ++a, i(#$out,projX#,projY#,projZ#) = label);
+          );
+          repeat (db12 + 1,l,
+            b = P1#[1] + l;
+            a0 = round(lerp(P1#[0],P2#[0],l/m1db12));
+            a1 = round(lerp(P0#[0],P2#[0],(db01 + l)/m1db02));
+            a0>a1?swap(a0,a1);
+            for (a = a0, a<=a1, ++a, i(#$out,projX#,projY#,projZ#) = label);
+          );
+        );
+
+        rasterize_sphere(P0,P1) = (
+          P = (P0# + P1#)/2;
+          R = norm(P1# - P0#)/2;
+          xm = floor(P[0] - R); xM = ceil(P[0] + R);
+          ym = floor(P[1] - R); yM = ceil(P[1] + R);
+          zm = floor(P[2] - R); zM = ceil(P[2] + R);
+          for (z = zm, z<=zM, ++z,
+            for (y = ym, y<=yM, ++y,
+              for (x = xm, x<=xM, ++x,
+                norm([x,y,z] - P)<=R?(i(#$out,x,y,z) = label);
+              );
+            );
+          );
+        );
+
+      );
+
+      n = i[#$prims,p++];
+
+      # Get coordinates of vertices in voxel space.
+      P0 = I[#$pts,f2ui(i[#$prims,p++])];
+      n>1?(P1 = I[#$pts,f2ui(i[#$prims,p++])]);
+      n>2?(P2 = I[#$pts,f2ui(i[#$prims,p++])]);
+      n>3?(P3 = I[#$pts,f2ui(i[#$prims,p++])]);
+      n>4?(p+=n - 4);
+
+      # Draw primitives.
+      n==1?rasterize_point(P0):
+      n==2 || n==6?rasterize_segment(P0,P1):
+      n==3 || n==9?rasterize_triangle(P0,P1,P2):
+      n==4 || n==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
+      n==5?rasterize_sphere(P0,P1);
+
+      $3?++label" rm.
+
+    if $2 expand_xyz[out] 1,0 flood[out] 0,0,0,0,0,1,-1 +<[out] 2 +[out,-1] shrink_xyz[out] 1 fi # Fill interior
+    if $3 r[cols] 1,{cols,h+2},1,100%,0,0,0,1 point[cols] 0,1,0,1,1 map[out] [cols] # Output colors
+    else >[out] 0 # Output scalars
+    fi
+    k[out] => $nm
   }
 
 #@cli weird3d : _resolution>0
@@ -23390,8 +23874,8 @@ check_opencv : skip "${1=check_opencv}"
 #@cli eval : expression : (+)
 #@cli : Evaluate specified math expression.
 #@cli : - If no command selection is specified, the expression is evaluated once and its result is set to status.
-#@cli : - If command selection is specified, the evaluation is looped over selected images. Status is not modified.
-#@cli :   (in this latter case, 'eval' is similar to 'fill' without assigning the image values).
+#@cli : - If command selection is specified, the evaluation is looped over selected images. Status is unchanged. \
+# In this case, 'eval' is similar to ''fill'' without assigning the image values.
 
 #@cli x : eq. to 'exec'. : (+)
 
@@ -26106,7 +26590,7 @@ nn_reshape : if ['$2']=='.' in=$_nn_latest else in=$2 fi nn_check_layer $in
 
 #@cli nn_resize : out,in,width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0,_interpolation
 #@cli : Add a 'resize' layer to the network.
-#@cli : Default values: 'height=depth=spectrum=100%'.
+#@cli : Default values: 'height=depth=spectrum=100%' and 'interpolation=3'.
 nn_resize : if ['$2']=='.' in=$_nn_latest else in=$2 fi nn_check_layer $in
             check "isvarname('$1') && $3>0 && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0"
             skip ${7=3}
@@ -27233,7 +27717,7 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
       +r[brush,brushlight] $ratio,$ratio,100%,1,2
       ri[-2,-1] [brush],0,0,0.5,0.5
     }
-    a[^:2] z a[^0] z
+    a[0--1:2] z a[^0] z
   }
 
   # Generate images with brushes.
@@ -30337,6 +30821,12 @@ covariance_vectors : skip "${1=avg}"
          C+=mul(mI,mI,s);
          end(merge(C,+); C/=whd - 1; run('u ',v2s(C)))"
 
+#@cli da_freeze
+#@cli : Convert each of the selected dynamic arrays into a 1-column image whose height is the number of array elements.
+da_freeze :
+  e[^-1] "Freeze dynamic array$?."
+  $! eval. "da_freeze(#x)" rm.
+
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
 dec :
@@ -30671,7 +31161,7 @@ _is_3d :
 #@cli : Default value: 'value=1'.
 is_change :
   l[] { check "isbool(${1=1})" arg=$1 onfail noarg arg=1 }
-  if $arg 0 rm. else w9[] 0 fi
+  if $arg 0 rm. else v - p[] fi
 
 #@cli is_half
 #@cli : Return 1 if the type of image pixels is limited to half-float.
@@ -30732,6 +31222,11 @@ is_macos :
 is_windows :
   if !narg($_is_windows) _is_windows={['$OS']!=0" && "['$WINDIR']!=0} fi
   u $_is_windows
+
+#@cli lof : feature
+#@cli : Return the list of specified features (separated by commas) for each selected images.
+lof :
+  foreach { res.=$c{"$*"} c=, } u $res
 
 #@cli math_lib
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
@@ -30990,6 +31485,76 @@ math_lib :
       );
     );
     nan;
+  );
+
+  # Implementation of the Xiaolin Wu's antialiased line algorithm, as described in
+  # https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
+  #
+  line_aa_plot(ind,x,y,o) = (
+    _line_aa_o = o*line_aa_opacity;
+    (I(#ind,x,y)*=1 - _line_aa_o)+=line_aa_color*_line_aa_o;
+  );
+  line_aa_fpart(x) = (x - floor(x));
+  line_aa_rfpart(x) = (1 - line_aa_fpart(x));
+  line_aa(x0,y0,x1,y1,opacity,color) = line_aa(#-1,#x0,#y0,#x1,#y1,opacity,color);
+
+  line_aa(ind,x0,y0,x1,y1,opacity,color) = (
+    line_aa_x0 = x0; line_aa_y0 = y0;
+    line_aa_x1 = x1; line_aa_y1 = y1;
+    line_aa_color = color;
+    line_aa_opacity = opacity;
+
+    line_aa_steep = abs(line_aa_y1 - line_aa_y0)>abs(line_aa_x1 - line_aa_x0);
+    line_aa_steep?(swap(line_aa_x0, line_aa_y0); swap(line_aa_x1, line_aa_y1));
+    line_aa_x0>line_aa_x1?(swap(line_aa_x0, line_aa_x1); swap(line_aa_y0, line_aa_y1));
+    line_aa_dx = line_aa_x1 - line_aa_x0;
+    line_aa_dy = line_aa_y1 - line_aa_y0;
+    line_aa_gradient = line_aa_dx?line_aa_dy/line_aa_dx;1;
+
+    # Draw first endpoint.
+    line_aa_xend = round(line_aa_x0);
+    line_aa_yend = line_aa_y0 + line_aa_gradient*(line_aa_xend - line_aa_x0);
+    line_aa_xgap = line_aa_rfpart(line_aa_x0 + 0.5);
+    line_aa_xpxl1 = line_aa_xend;
+    line_aa_ypxl1 = floor(line_aa_yend);
+
+    line_aa_steep?(
+      line_aa_plot(#ind,line_aa_ypxl1,line_aa_xpxl1,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_ypxl1 + 1,line_aa_xpxl1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    ):(
+      line_aa_plot(#ind,line_aa_xpxl1,line_aa_ypxl1,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_xpxl1,line_aa_ypxl1 + 1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    );
+    line_aa_intery = line_aa_yend + line_aa_gradient;
+
+    # Draw second endpoint.
+    line_aa_xend = round(line_aa_x1);
+    line_aa_yend = line_aa_y1 + line_aa_gradient*(line_aa_xend - line_aa_x1);
+    line_aa_xgap = line_aa_fpart(line_aa_x1 + 0.5);
+    line_aa_xpxl2 = line_aa_xend;
+    line_aa_ypxl2 = floor(line_aa_yend);
+    line_aa_steep?(
+      line_aa_plot(#ind,line_aa_ypxl2,line_aa_xpxl2,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_ypxl2 + 1,line_aa_xpxl2,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    ):(
+      line_aa_plot(#ind,line_aa_xpxl2,line_aa_ypxl2,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_xpxl2,line_aa_ypxl2 + 1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    );
+
+    # Draw intermediate points.
+    line_aa_steep?(
+      for (line_aa_x = line_aa_xpxl1 + 1, line_aa_x<=line_aa_xpxl2 - 1, ++line_aa_x,
+        line_aa_plot(#ind,floor(line_aa_intery),line_aa_x,line_aa_rfpart(line_aa_intery));
+        line_aa_plot(#ind,floor(line_aa_intery) + 1,line_aa_x,line_aa_fpart(line_aa_intery));
+        line_aa_intery+=line_aa_gradient;
+      );
+    ):(
+      for (line_aa_x = line_aa_xpxl1 + 1, line_aa_x<=line_aa_xpxl2 - 1, ++line_aa_x,
+        line_aa_plot(#ind,line_aa_x,floor(line_aa_intery),line_aa_rfpart(line_aa_intery));
+        line_aa_plot(#ind,line_aa_x,floor(line_aa_intery) + 1,line_aa_fpart(line_aa_intery));
+        line_aa_intery+=line_aa_gradient;
+      );
+    );
   );
 
   hsv2rgb(I) = ( # Convert HSV vector to RGB
@@ -31631,7 +32196,8 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
     # Parse CSV data.
     "$1"
 #    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate in 2020).
-    eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
+#    eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
+    eur2usd={1/0.873824} # Change rate from EUR to USD (Paypal conversion rate in 2023/01).
     nb_entries={h}
     repeat $nb_entries { e=$>
       date_$e={`I(0,$e)`}
@@ -32041,8 +32607,10 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
     +f[0] z+1
     1,1,100%,3,u(128,255) r. 1,[0],[0],3 *. 'y/(h-1)' r. [0],[0],[0],3,3
 
-    100%,100%,1,1,"x = min(x,w-1-x); y = min(y,h-1-y); (x*y/wh)^0.7>0.01"
+    200%,200%,1,1,"x = min(x,w-1-x); y = min(y,h-1-y); (x*y/wh)^0.7>0.01"
     +dilate. 3 xor.. .
+    distance.. 1 c.. 0,2 negate.. distance. 0 c. 0,2
+    r2dx[-2,-1] 50% n[-2,-1] 0,1
     +[0] ..
     *.. 100 +[1,-2]
     *[2,3] .
@@ -32096,7 +32664,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   # Generate background.
   {menu_fgcol,[w,h]},1,3 +plasma. 1,1,5 n. 0,230 water. 100
   (0.1;0.3^0.1;0.2^0.5;0.3) ri. ..,3 *[-2,-1]
-  (0;1) r. ..,..,1,1,3 pow. 1.5 n. 0.2,1.15 *[-2,-1] n. 0,128
+  (0;1) r. ..,..,1,1,3 ^. 1.5 n. 0.2,1.15 *[-2,-1] n. 0,128
   => background
   w. -1,-1,0,"[G'MIC - "$strver"]" cursor 0 w[] -1,-1,0,0,{([{*,u,v}]-[{*,w,h}])/2}
 
@@ -33112,7 +33680,7 @@ x_connect4 : check_display $0
   to_rgba. circle. 50%,50%,27%,1,0
 
   {4*$R},{4*$R} circle. 50%,50%,20%,1,1 b. 1% g. xy +[-2,-1] n. 0,1 negate.
-  pow. 0.5 +n. -1,0.8 abs. negate. +f. 10 rv[-3--1] a[-3--1] c
+  sqrt. +n. -1,0.8 abs. negate. +f. 10 rv[-3--1] a[-3--1] c
   . sh. 0 f. 60 rm. hsv2rgb[-2,-1]
   100%,100% circle. 50%,50%,30%,1,255 a[-3,-2] .,c rm.
 
@@ -33393,8 +33961,8 @@ x_fireworks : check_display $0
 --------------------------------------------"
   l[] {
   (16;64^64;32^128;32) r 320,160,1,3,3             # [-2] = Background (color gradient).
-  .                                                 # [-1] = Rendered image.
-  w. {1.5*w},{1.5*h},0,"[G"{`39`}"MIC] Fireworks"  # Display window.
+  .                                                # [-1] = Rendered image.
+  w. ${"fitscreen .,35%"},0,"[G"{`39`}"MIC] Fireworks"  # Display window.
   time=0
   do                                               # Start animation loop.
     time-=1
@@ -35478,9 +36046,10 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
 
     # Create and display visualization.
     if !narg($visu_3d) # Update 3D visualization.
-      +-[centroids] 2 ++[centroids] 2 a[-2,-1] x permute. cxyz y. -. 128
+      +-[centroids] 3 ++[centroids] 3 a[-2,-1] x permute. cxyz y. -. 128
       j[obj3d] .,0,8 rm.  # Update centroids position in 3D object.
       [obj3d]
+
       if $clustering
         if {colors,iM}<256 # Estimate nearest centroids for all colors.
           +index[colors] [centroids] *. 256 +[colors,-1]
@@ -35488,7 +36057,8 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
         +channels[colors] 0 >>. 8 map. 2 permute. cxyz y. j.. .,0,{{-2,h}-$_N-h} rm.
       fi
 
-      pose3d. {pose3d,^} 300,300,1,3 j3d. ..,50%,50%,100,1,2,0,0,300 rm..
+      pose3d. {pose3d,^}
+      600,600,1,3 j3d. ..,50%,50%,-150,1,2,0,0,600 *. 1.5 b. 0.75 c. 0,255 rm.. r2dx. 50%
       j. [clustering$clustering],2,0,0,0,1,[mclustering$clustering],255
       => visu_3d j[visu] [visu_3d],5,5
     fi
@@ -35588,7 +36158,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
   if $obj3d rm[obj3d] fi
   +distribution3d[centroids] circles3d. 5 col3d. 255      # Pre-compute 3D object.
   colorcube3d p3d. 1
-  +&[colors] 255 distribution3d. circles3d. 3 o3d. 0.25 +3d[-3--1]
+  +&[colors] 255 distribution3d. circles3d. 5 o3d. 0.2 +3d[-3--1]
   -3d. 128,128,128 => obj3d _N={i[7]}
 
 _x_quantize_rgb_text :
@@ -35609,20 +36179,20 @@ x_reflection3d : check_display $0
 -------------------------------------------"
 
   # Render background.
-  128,256,1,3 rand. 0,255 plasma. 1,100 blur_xy. 30,2
+  200,400,1,3 rand. 0,255 plasma. 1,100 blur_xy. 30,2
   sh. 0 n. 0,90 rm. sh. 1 n. 0,60 rm. sh. 2 n. 0,180 rm.
   +mirror. x [-2,-1] a[-4--1] x
   +luminance. mirror. x b. 2 n. 0,255
 
   # Create 3D objects.
-  torus3d 30,10 col3d. 255,200,0
-  spherical3d 47,34,"80+20*abs(cos(2*theta))" s3d. rm.. i.. 3,{h},1,1,150,220,255,200,255,255 y.. a[-6--1] y
-  spherical3d 47,34,"100*abs(1+0.6*cos(3*phi)*sin(4*theta))"
+  torus3d 45,16 col3d. 255,200,0
+  spherical3d "125+32*abs(cos(2*theta))",51,50 s3d. rm.. i.. 3,{h},1,1,150,220,255,200,255,255 y.. a[-6--1] y
+  spherical3d "150*abs(1+0.6*cos(3*phi)*sin(4*theta))",51,50
   r3d[-2,-1] 0,1,0,90 db3d 0
 
   # Start animation loop.
   xb,xl,anim=0
-  w[] 400,400,0,"[G"{`39`}"MIC] 3D Reflection"
+  w[] ${"fitscreen 400,400,1,35%"},0,"[G"{`39`}"MIC] 3D Reflection"
   do
 
     tic=$|
@@ -35630,10 +36200,10 @@ x_reflection3d : check_display $0
     +rows. 8,{8+3*i[6]-1} +j... .,0,8,0,0,{if($anim<250,0,0.5-0.5*cos(($anim-250)/100))} rm..
 
     # Render 3D background object (with flat colors).
-    +z[-6] $xb,0,{$xb+255},255 j3d. ..,75%,50%,0,1,3,0,0
+    +z[-6] $xb,0,{$xb+399},399 j3d. ..,75%,50%,0,1,3,0,0
 
     # Render light reflection map.
-    +z[-6] $xl,0,{$xl+255},255
+    +z[-6] $xl,0,{$xl+399},399
     xf={min(30,$anim-70)+20*cos(1.8*$|)}
     yf={50+20*sin(2.7*$|)}
     j3d. [-6],{20+$xf}%,$yf%,0,1,4,0,0
@@ -35649,8 +36219,8 @@ x_reflection3d : check_display $0
     w. rm.
 
     if {*,CTRLLEFT}" && "{*,D} w[] 800,800 elif {*,CTRLLEFT}" && "{*,C} w[] 400,400 fi
-    xb={($xb+6)&255}
-    xl={($xl-6)&255}
+    xb={($xb+6)%400}
+    xl={($xl-6)%400}
     anim+=1
     r3d[-2,-1] {sin(0.5*$|)},{cos($|)},1,{max(0.005,$|-$tic)*33}
     r3d... -1,0.3,0.8,{max(0.005,$|-$tic)*100}
@@ -35677,7 +36247,7 @@ x_rubber3d : check_display $0
   400,400,64,3
   {w},{h},1,3,'if(c==0,x,if(c==1,y,y*{1,d}/h))'
   {w},{h},1,3
-  w[] {w},{h},0,"[G"{`39`}"MIC] 3D Rubber Object"
+  w[] ${"fitscreen .,35%"},0,"[G"{`39`}"MIC] 3D Rubber Object"
   frame=0
   do
     fps=${-fps}
@@ -36313,7 +36883,7 @@ x_shadebobs : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------------"
-  rm t=100 w 512,512,0,"[G"{`39`}"MIC] Shade Bobs"
+  rm t=100 w ${"fitscreen 512,512,1,35%"},0,"[G"{`39`}"MIC] Shade Bobs"
 
   # Start animation loop.
   do
@@ -36481,7 +37051,7 @@ x_starfield3d : check_display $0
     0 t. "Version "${-strver},0,0,48,1,1 r2dy. 18 +f. 255 to_rgb.
     random3d 2500 col3d. 255 *3d. 320,200,1000 -3d. 160,100
     l3d 0,0,-600
-    w[] 640,400,0,"[G"{`39`}"MIC] 3D Starfield"
+    w[] ${"fitscreen 640,400,1,35%"},0,"[G"{`39`}"MIC] 3D Starfield"
     t0=0 t=0
 
     do
@@ -36617,7 +37187,7 @@ x_tetris : check_display $0
 
     +shift[background] 0,{round(-13*$|*1.04^$score)},0,0,2
     j. [curr_render],0,0,0,0,1,[curr_render_mask],255
-    w. {2.25*w},{2.25*h},0,"[G"{`39`}"MIC] Tetris" rm. cursor[0] 0
+    w. ${"fitscreen .,20%"},0,"[G"{`39`}"MIC] Tetris" rm. cursor[0] 0
 
     # Manage user interactions.
     if {*,SPACE} fall_mode=1 fi
@@ -37033,7 +37603,8 @@ x_waves : check_display $0
     shape_fern {2*w},70%,25 r2dx. {-2,3*w/4} to_rgb. ri. ..,0,0,0.5,0.5 n. 0,196 +[-2,-1] c. 0,255
   } else k[0] r[0] 100,100,1,3,2 fi
   i[0] (20;80;0^20;80;0^20;80;0) r[0] 400,300,1,3,3 water[0] 100,2
-  w[0] {0,1.25*w},{0,1.25*h},0,"[G"{`39`}"MIC] Image Waves"
+
+  w[0] ${"fitscreen [0],35%"},0,"[G"{`39`}"MIC] Image Waves"
   w={w} elevation3d. 0 rv3d.
   sh. 8,{7+3*i[6]},0,0 r. 3,{h/3},1,1,-1
   (0,1,0;1,0,1;0,1,0) /. 2
@@ -37088,7 +37659,7 @@ x_whirl : check "${1=0.2}>=0" check_display $0
 ----\n
 --------------------------------------------------"
 
-  5,5,1,3 256,256,1,3 [-1] w. 384,384,0,"[G"{`39`}"MIC] Fractal Whirls"
+  5,5,1,3 256,256,1,3 [-1] w. ${"fitscreen 384,384,1,35%"},0,"[G"{`39`}"MIC] Fractal Whirls"
   tangle=0 tzoom=0 xc={(w-{-3,w})/2} yc={(h-{-3,h})/2}
   do
     rand... 0,255 j.. [-3],$xc,$yc,0,0
@@ -37154,7 +37725,9 @@ gui_filter_sources : skip ${1=0},${2=1}
 
 # Function that always returns a valid preview size.
 gui_preview_wh :
-  u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:[400,400]}
+  u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:\
+     0$_preview_width?[0$_preview_width,0$_preview_height]:\
+     min(w,h)>=256?[w,h]:[400,400]}
 
 # Function used for filters based on parallelization with spatial splitting.
 gui_parallel_overlap :
@@ -38410,8 +38983,9 @@ fx_gmicky_preview :
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
-#@gui : - <span foreground="purple"><b>2023/01/16</b> : version <i>3.2.0</i> (Current stable).</span>\n
-##@gui : - <b>2023/02/XX</b> : version <i>3.2.1_pre</i> (Current pre-release).\n
+#@gui : - <b>2023/01/16</b> : version <i>3.2.0</i>.\n
+#@gui : - <span foreground="purple"><b>2023/02/15</b> : version <i>3.2.1</i> (Current stable).</span>\n
+##@gui : - <b>2023/03/XX</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.3)","https://discuss.pixls.us/t/on-the-road-to-3-3"}
@@ -39767,7 +40341,7 @@ fx_feltpen_preview :
 fx_ghost :
   foreach {
     split_opacity l[0] {
-      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
+      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 ^.. $4 n.. 0,$1
       100%,100%
       eval.. "*
         ca = i(x,y,0,0);
@@ -42200,12 +42774,12 @@ fx_colorblind_preview :
   gui_split_preview "colorblind $*",${-3--1}
 
 #@gui Color Presets : fx_color_presets, fx_color_presets_preview(1)+
-#@gui : LUTs Pack = choice{19,"Abigail Gonzalez (21)","Alex Jordan (81)","Berat (10)","Cinematic (8)",
+#@gui : LUTs Pack = choice{20,"Abigail Gonzalez (21)","Alex Jordan (81)","Berat (10)","Cinematic (8)",
 #@gui : "Cinematic Travel (29)","Creative Pack (33)","Eric Ellerbrock (14)","FilterGrade Cinematic (8)",
-#@gui : "InAvision (15)","J.T. Semple (14)","Kyler Holland (10)","Lutify.Me (7)","Michael Ezra (2)","Moviz (48)",
-#@gui : "Ohad Peretz (7)","Olivio Sarikas (19)","ON1 Photography (90)","PictureFX (25)","Pixelmator (45)",
-#@gui : "PIXLS.US (31)","Purple11 (12)","RocketStock (35)","Shamoon Abbasi (25)","SmallHD Movie Look (7)",
-#@gui : "Todd Blankenship (13)","Youssef Hossam (5)","Others (69)"}
+#@gui : "Hollywood Movies (74)","InAvision (15)","J.T. Semple (14)","Kyler Holland (10)","Lutify.Me (7)",
+#@gui : "Michael Ezra (2)","Moviz (48)","Ohad Peretz (7)","Olivio Sarikas (19)","ON1 Photography (90)",
+#@gui : "PictureFX (25)","Pixelmator (45)","PIXLS.US (31)","Purple11 (12)","RocketStock (35)","Shamoon Abbasi (25)",
+#@gui : "SmallHD Movie Look (7)","Todd Blankenship (13)","Youssef Hossam (5)","Others (69)"}
 
 ##### Abigail Gonzales
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -42266,6 +42840,21 @@ fx_colorblind_preview :
 #@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Cine Basic","Cine Bright","Cine Cold","Cine Drama","Cine Teal Orange 1","Cine Teal Orange 2",
 #@gui : "Cine Vibrant","Cine Warm"}_0
+
+##### Hollywood Movies
+#@gui : Preset = choice{1,"All [Collage]","None",
+#@gui : "12 Years a Slave","1917","Ad Astra","Aladdin","Ant-Man","Aquaman","Avengers Endgame","Baby Driver",
+#@gui : "Bad Boys for Life","Beauty and the Beast","Black Panther","Bohemian Rhapsody","Bombshell","Captain Marvel",
+#@gui : "City of God","Creed 2","Doctor Strange","Dunkirk","Fight Club","Ford v Ferrari","Green Book","Greyhound",
+#@gui : "Inception","I Tonya","Jojo Rabbit","Joker ","Jumanji The Next Level","Jurassic World Fallen Kingdom",
+#@gui : "Justice League","Kingsman The Golden Circle","Knives Out","La La Land","Little Women","Logan",
+#@gui : "Mad Max Fury Road","Marriage Story","Moonlight","Mother!","No Time to Die","Once Upon a Time in Hollywood",
+#@gui : "Parasite","Pirates of the Caribbean","Rocketman","Separation","Sicario","Spider-Man Far From Home",
+#@gui : "Spotlight","Star Wars The Rise of Skywalker","Sully","TENET","The Darkest Hour","The Dark Knight",
+#@gui : "The Gentelmen","The Grand Budapest Hotel","The Hurt Locker","The Irishman","The Lighthouse","The Lobster",
+#@gui : "The Martian","The Revenant","The Shape of Water","The Social Network","The Two Popes","The Way Back",
+#@gui : "Thor Ragnarok","Top Gun Maverick","Uncut Gems","Underwater","Venom","War for the Planet of the Apes",
+#@gui : "Wolf of Wall Street","Wonder Woman","X-Men Dark Phoenix","Zombieland Double Tap"}_0
 
 ##### InAvision
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -42576,6 +43165,10 @@ fx_colorblind_preview :
 # M4haLCLm/czOkdtwMy7UbfSp4Uuhe0QXj+hUK3KgLRJ13BfcnCWlgFDSKiuWqhz6z+pY1DdzmVkNXwTI0iaqWVSZBZgW2KViWYyYrJPR7jUY5QYIlx5A9\
 # t6zU1LIKtGLA8w5ZQmFqLm8iOLb3T31HOjHObv+v2yn/dj5Vzm7H8Qt/zkuzg1TiwQAAAABJRU5ErkJggg=="/>  <a href="https://f\
 # iltergrade.com/free-cinematic-luts-video-editing/">FilterGrade Free Cinematic LUTs Pack</a></center>"}
+
+#@gui : sep = value(0)_0+
+#@gui : note = note{"<center><a href="\
+# https://drive.google.com/file/d/1G8sk_TEI14xbpNQaJnuFmrFlJ8_nHIyl/view">Hollywood LUTs</a></center>"}
 
 #@gui : sep = value(0)_0+
 #@gui : note = note{"<center><img src="data:image/png;base64,\
@@ -42904,12 +43497,12 @@ fx_colorblind_preview :
 #@gui :         Latest Update: <i>2019/10/11</i>.</small>")
 fx_color_presets :
   category=${arg\ 1+$1,abigailgonzalez,alexjordan,berat,cinematic,cinematic_travel,creative,ericellerbrock,filtergrade,\
-                       inavision,jtsemple,kylerholland,lutifyme,michaelezra,moviz,ohadperetz,oliviosarikas,on1,\
-                       picturefx,pixelmator,pixlsus,purple11,rocketstock,shamoonabbasi,smallhd,toddblankenship,\
-                       youssefhossam,others}
+                       hollywood,inavision,jtsemple,kylerholland,lutifyme,michaelezra,moviz,ohadperetz,\
+                       oliviosarikas,on1,picturefx,pixelmator,pixlsus,purple11,rocketstock,shamoonabbasi,smallhd,\
+                       toddblankenship,youssefhossam,others}
   presets=${-_fx_cluts_$category}
-  index={arg(1+$1,${2-28})}
-  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${29-36}
+  index={arg(1+$1,${2-29})}
+  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${30-37}
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
     foreach { split_opacity balance_gamma[0] , a c }
@@ -42949,9 +43542,9 @@ fx_color_presets :
 
 fx_color_presets_preview :
   _is_preview=1
-  index={arg(1+$1,${2-27})}
+  index={arg(1+$1,${2-28})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
-  else gui_split_preview "fx_color_presets $*",${36-38}
+  else gui_split_preview "fx_color_presets $*",${38-40}
   fi
   u "{$1}{$2}_"{2*($1==0)}\
         "{$3}_"{2*($1==1)}\
@@ -42980,8 +43573,9 @@ fx_color_presets_preview :
         "{$26}_"{2*($1==24)}\
         "{$27}_"{2*($1==25)}\
         "{$28}_"{2*($1==26)}\
-        "{$29}_"{1+!$index}\
-        "{$30}{$31}{$32}{$33}{$34}{$35}{$36}{$37}{$38,$39}"\
+        "{$29}_"{2*($1==27)}\
+        "{$30}_"{1+!$index}\
+        "{$31}{$32}{$33}{$34}{$35}{$36}{$37}{$38}{$39,$40}"\
         "{0}_"{2*($1!=24)}\
         "{0}_"{2*($1==0)}\
         "{0}_"{2*($1==1)}\
@@ -43009,6 +43603,7 @@ fx_color_presets_preview :
         "{0}_"{2*($1==23)}\
         "{0}_"{2*($1==24)}\
         "{0}_"{2*($1==25)}\
+        "{0}_"{2*($1==26)}\
         "{0}"
 
 _fx_cluts_abigailgonzalez :
@@ -43055,6 +43650,19 @@ _fx_cluts_ericellerbrock :
 
 _fx_cluts_filtergrade :
   u fgcinebasic,fgcinebright,fgcinecold,fgcinedrama,fgcinetealorange_1,fgcinetealorange_2,fgcinevibrant,fgcinewarm
+
+_fx_cluts_hollywood :
+  u 12_years_a_slave,1917,ad_astra,aladdin,ant-man,aquaman,avengers_endgame,baby_driver,bad_boys_for_life,\
+    beauty_and_the_beast,black_panther,bohemian_rhapsody,bombshell,captain_marvel,city_of_god,creed_2,doctor_strange,\
+    dunkirk,fight_club,ford_v_ferrari,green_book,greyhound,i_tonya,inception,jojo_rabbit,joker,jumanji_the_next_level,\
+    jurassic_world_fallen_kingdom,justice_league,kingsman_the_golden_circle,knives_out,la_la_land,little_women,logan,\
+    mad_max_fury_road,marriage_story,moonlight_2,mother!,no_time_to_die,once_upon_a_time_in_hollywood,parasite,\
+    pirates_of_the_caribbean,rocketman,separation,sicario,spider-man_far_from_home,spotlight,\
+    star_wars_the_rise_of_skywalker,sully,tenet,the_dark_knight,the_darkest_hour,the_gentelmen,\
+    the_grand_budapest_hotel,the_hurt_locker,the_irishman,the_lighthouse,the_lobster,the_martian,the_revenant,\
+    the_shape_of_water,the_social_network,the_two_popes,the_way_back,thor_ragnarok,top_gun_maverick,uncut_gems,\
+    underwater,venom,war_for_the_planet_of_the_apes,wolf_of_wall_street,wonder_woman,x-men_dark_phoenix,\
+    zombieland_double_tap
 
 _fx_cluts_inavision :
   u 7drk_21,bc_darkum,brown_mobster,cold_ice,dark_man_x,film_gb-19,formula_b,gremerta,hitman,jwick_21,london_nights,\
@@ -45435,8 +46043,8 @@ fx_extract_foreground :
       sh. 3 *. -1 +. 255 rm.
       gui_autocrop_layers[0]
       pos0=${gui_layer_pos[0]} pos1=${gui_layer_pos[1]}
-      =>[0] "name("$nm" [foreground]),pos("{[$pos0]+[$initial_pos]}")"
-      =>[1] "name("$nm" [background]),pos("{[$pos1]+[$initial_pos]}")"
+      =>[0] "name("$nm" [foreground]),pos("{``{[$pos0]+[$initial_pos]}}")"
+      =>[1] "name("$nm" [background]),pos("{``{[$pos1]+[$initial_pos]}}")"
     fi
   }
   if narg($status)>=4 u \{$1\}\{$2\}\{$3\}\{$4\}\{{w},{h}\}\{$status\} else u "" fi
@@ -47176,8 +47784,8 @@ _fx_chromatic_aberrations :
   fi
   if $5 # Center/Borders attenuation
     100%,100% =. 1,50%,50% distance. 1 n. 0,1.4142 c. 0,1
-    if $5>0 pow. {0.1+$6} n. {1-$5%},1
-    else negate. 1 pow. $6 n. {1+$5%},1
+    if $5>0 ^. {0.1+$6} n. {1-$5%},1
+    else negate. 1 ^. $6 n. {1+$5%},1
     fi
     *[-2,-1]
   fi
@@ -48210,7 +48818,7 @@ _fx_magic_details :
   foreach {
     +bilateral $2,$3
     +gradient_norm.. +. 1
-    pow. {$4>=0?3.1-$4:-3.1-$4}
+    ^. {$4>=0?3.1-$4:-3.1-$4}
     b. $5 n. 1,{1+$1}
     -... .. *[-3,-1] + c 0,255
   }
@@ -49856,7 +50464,7 @@ fx_guided_lightrays :
         polygon(#-1,2,xl,yl,xl + L*u,yl + L*v,-1,255);
      )"
 
-    equalize. 65536,1,{iM} n. 0,1 power={10^(-$1%)} pow. {max(1e-2,$power)} b. $5% n. 0,255
+    equalize. 65536,1,{iM} n. 0,1 power={10^(-$1%)} ^. {max(1e-2,$power)} b. $5% n. 0,255
     i[-2] (${9-11}:cyzx) r.. .,.,1,3 a[-2,-1] c
     k. gui_set_layer_mode $bmode gui_set_layer_opacity $13
   }
@@ -51763,7 +52371,7 @@ fx_inpaint_patch :
   }
 
 fx_inpaint_patch_preview :
-  fx_inpaint_patch ${1-12},{1+$13},100
+  fx_inpaint_patch ${1-12},{1+$13},0
 
 #@gui Inpaint [Transport-Diffusion] : fx_inpaint_pde, fx_inpaint_pde_preview(1)
 #@gui : Smoothness (%) = float(75,0,100)
@@ -55085,7 +55693,7 @@ fx_moire :
           l4
         )
       )"}
-    k[^:$skip]
+    k[0--1:$skip]
     if $!>6 rm[6--1] fi
   fi
   N=$!
@@ -55981,6 +56589,24 @@ fx_solve_maze_preview :
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
 #@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 \
 # _label="3D~text~pointcloud"
+#@cli : $ sphere3d 10 repeat 5 { +add3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d _fps=10 _label="3D~Spheres"
+#@cli : $ repeat 20 { torus3d 15,2 color3d[-1] ${-rgb} mul3d[-1] 0.5,1 if $>%2 rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 \
+# add3d rotate3d[-1] 0,0,1,18 } double3d 0 _fps=10 _label="3D~Ring"
+#@cli : $ image.jpg distribution3d circles3d 5 o3d 0.5 colorcube3d primitives3d[-1] 1 add3d _fps=10 \
+# _label="RGB~Color~Distribution"
+#@cli : $ image.jpg blur 5 elevation3d. 0.75 _fps=10 _label="3D~Elevation"
+#@cli : 128,128,1,3,u(255) plasma 10,3 blur 4 sharpen 10000 n 0,255 \
+# elevation3d[-1] 'X=(x-64)/6;Y=(y-64)/6;-100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))' _fps=10 _label="3D~Elevation"
+#@cli : $ gmic3d _fps=10 _label="3D~G'MIC~Logo"
+#@cli : $ image.jpg resize2dy 32 imageblocks3d -20 mode3d 3 _fps=10 _label="3D~Image~Blocks"
+#@cli : $ image.jpg imagerubik3d , _fps=10 _label="Rubik~Cube"
+#@cli : $ shape_cupid 480 skeleton3d , _fps=10 _label="3D~Skeleton"
+#@cli : $ spherical3d "abs(1+0.5*cos(3*phi)*sin(4*theta))" _fps=10 _label="3D~Spherical~Function"
+#@cli : $ 6,6,6,9,"U = [x,y,z] - [w,h,d]/2; U/=norm(U); mul(U,U,3) + 0.3*eye(3)" tensors3d 0.8 _fps=10 \
+# _label="3D~Tensors"
+#@cli : $ text3d "G'MIC Rocks!" _fps=10 _label="3D~Text"
+#@cli : $ torus3d 10,3 color3d[-1] ${-rgb} _fps=10 _label="3D~Torus"
+#@cli : $ weird3d 48 color3d[-1] ${-rgb} _fps=10 _label="3D~Weird"
 
 #@cli _gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
