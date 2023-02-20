@@ -562,12 +562,42 @@ set (gmic_qt_FORMS
 
 if(ENABLE_DYNAMIC_LINKING)
   set(CMAKE_SKIP_RPATH TRUE)
-  set(gmic_qt_LIBRARIES
-    ${gmic_qt_LIBRARIES}
-    "gmic"
+  # G'MIC-Qt needs visibility into the private symbols defined
+  # by the gmic.cpp plugin. However, this is only possible
+  # if the library is static OR if it's dynamic and built by
+  # a compiler that supports .so-style exports.
+  if (MSVC OR NOT ENABLE_SYSTEM_GMIC)
+    set(gmic_qt_LIBRARIES
+      ${gmic_qt_LIBRARIES}
+      gmicstatic
     )
-  if (NOT ENABLE_SYSTEM_GMIC)
-    link_directories(${GMIC_LIB_PATH})
+    # Mimic an external G'MIC library build for catching link ABI errors.
+    add_library(gmicstatic STATIC ../src/gmic.cpp)
+    target_include_directories(gmicstatic PUBLIC ../src)
+    # We need internal access into the gmic-core API.
+    target_compile_definitions(gmicstatic PUBLIC gmic_core)
+    set_target_properties(gmicstatic
+      PROPERTIES
+        AUTOMOC OFF
+    )
+    target_link_libraries(gmicstatic PUBLIC
+      ${PNG_LIBRARIES}
+      ${FFTW3_LIBRARIES}
+      ${ZLIB_LIBRARIES}
+      ${CURL_LIBRARIES}
+      ${EXTRA_LIBRARIES})
+  elseif(TARGET libgmicstatic OR TARGET libgmic OR GMIC_LIB_PATH)
+    set(gmic_qt_LIBRARIES
+      ${gmic_qt_LIBRARIES}
+      "gmic"
+    )
+    if (GMIC_LIB_PATH)
+      link_directories(${GMIC_LIB_PATH})
+    endif()
+    # Inject the G'MIC CImg plugin.
+    include_directories(../src)
+  else()
+    message(FATAL_ERROR "No G'MIC library is available for linking. Please build libgmic as a static library.")
   endif()
 else(ENABLE_DYNAMIC_LINKING)
   set(gmic_qt_SRCS
