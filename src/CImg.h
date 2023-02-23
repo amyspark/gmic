@@ -54,7 +54,7 @@
 
 // Set version number of the library.
 #ifndef cimg_version
-#define cimg_version 316
+#define cimg_version 320
 
 /*-----------------------------------------------------------
  #
@@ -11822,28 +11822,14 @@ namespace cimg_library_suffixed {
         pthread_mutex_unlock(&cimg::macOS_attr().wait_event_mutex);
     }
 
-    void _init_fullscreen() {
-        _background_window = nullptr;
-        if (!_is_fullscreen || _is_closed) return;
-        else {
-            const int sx = (int)screen_width(), sy = (int)screen_height();
-            if (sx != _width || sy != _height) {
-              NSRect rect = NSMakeRect(0, 0, sx, sy);
-              _background_window = [[CImgWindow alloc] initWithContentRect:rect styleMask: NSWindowStyleMaskFullScreen backing: NSBackingStoreBuffered defer:YES];
-              [_background_window setBackgroundColor:[NSColor blackColor]];
-              [_background_window setAlphaValue:0];
-              [_background_window setLevel:NSScreenSaverWindowLevel];
-              [_background_window setDisplay: this];
-              [_background_window makeKeyAndOrderFront:nil];
-            }
-        }
-    }
-
-    void _desinit_fullscreen() {
-        if (!_is_fullscreen) return;
-        if (_background_window) [_background_window close];
-        _background_window = nullptr;
-        _is_fullscreen = false;
+    static void* events_thread(void*) {
+      if (![NSThread mainThread]) {
+        throw CImgDisplayException("CImgDisplay::events_thread(): this function must be run in the main thread.");
+      }
+      [NSApplication sharedApplication];
+      if ([NSApp isRunning]) return;
+      [NSApp run];
+      return 0;
     }
 
     CImgDisplay& _update_window_pos() {
@@ -11857,7 +11843,54 @@ namespace cimg_library_suffixed {
         return *this;
     }
 
-     CImgDisplay& _assign(const unsigned int dimw, const unsigned int dimh, const char *const ptitle=0,
+    void test() {
+      if (!_is_fullscreen) { // Normal window
+        const NSWindowStyleMask mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView;
+        NSRect rect = NSMakeRect(0, 0, _width, _height);
+        rect = [NSWindow frameRectForContentRect:rect styleMask:mask];
+        const int
+          ww = rect.size.width,
+          wh = rect.size.height,
+          sw = CImgDisplay::screen_width(),
+          sh = CImgDisplay::screen_height();
+        int
+          wx = (int)cimg::round(cimg::rand(0,sw - ww -1)),
+          wy = (int)cimg::round(cimg::rand(64,sh - wh - 65));
+        if (wx + ww>=sw) wx = sw - ww;
+        if (wy + wh>=sh) wy = sh - wh;
+        if (wx<0) wx = 0;
+        if (wy<0) wy = 0;
+        rect = NSMakeRect(wx, wy, ww, wh);
+        _window = [[CImgWindow alloc] initWithContentRect:rect styleMask: mask backing: NSBackingStoreBuffered defer:YES];
+        NSString *t = [[NSString alloc] initWithUTF8String:_title];
+        [_window setTitle:t];
+        [_window setBackgroundColor:[NSColor blackColor]];
+        [_window setAlphaValue:0];
+        [_window setDisplay: this];
+        if (!_is_closed) {
+          rect = [_window frame];
+          _window_x = rect.origin.x;
+          _window_y = rect.origin.y;
+        } else _window_x = _window_y = cimg::type<int>::min();
+      } else { // Fullscreen window
+        const unsigned int
+          sx = (unsigned int)screen_width(),
+          sy = (unsigned int)screen_height();
+        NSRect rect = NSMakeRect(0, 0, sx, sy);
+        _window = [[CImgWindow alloc] initWithContentRect:rect styleMask: NSWindowStyleMaskFullScreen backing: NSBackingStoreBuffered defer:YES];
+        [_window setBackgroundColor:[NSColor blackColor]];
+        [_window setAlphaValue:0];
+        [_window setLevel:NSScreenSaverWindowLevel];
+        [_window setDisplay: this];
+        _window_x = _window_y = 0;
+      }
+      [_window makeKeyAndOrderFront:nil];
+      _window_width = _width;
+      _window_height = _height;
+      flush();
+    }
+
+    CImgDisplay& _assign(const unsigned int dimw, const unsigned int dimh, const char *const ptitle=0,
                          const unsigned int normalization_type=3,
                          const bool fullscreen_flag=false, const bool closed_flag=false) {
 
@@ -11881,22 +11914,25 @@ namespace cimg_library_suffixed {
       _is_mouse_tracked = false;
       _title = tmp_title;
       flush();
-      if (_is_fullscreen) _init_fullscreen();
 
-       // todo: who calls the event thread?!
+      // Create Cocoa window
+      _data = new unsigned int[(size_t)_width*_height];
+      pthread_mutex_init(&_mutex, NULL);
+      pthread_cond_init(&_is_created, NULL);
+      dispatch_
+      pthread_cond_wait(&_is_created, &_mutex);
+
       return *this;
     }
 	
     CImgDisplay& assign() {
       if (is_empty()) return flush();
       [_window close];
-      [_window setDelegate:nil];
       _window = 0;
       delete[] _data;
       delete[] _title;
       _data = 0;
       _title = 0;
-      if (_is_fullscreen) _desinit_fullscreen();
       _width = _height = _normalization = _window_width = _window_height = 0;
       _window_x = _window_y = cimg::type<int>::min();
       _is_fullscreen = false;
@@ -11945,14 +11981,14 @@ namespace cimg_library_suffixed {
       return display(nimg);
     }
 	
-	CImgDisplay& assign(const CImgDisplay& disp) {
+    CImgDisplay& assign(const CImgDisplay& disp) {
       if (!disp) return assign();
       _assign(disp._width,disp._height,disp._title,disp._normalization,disp._is_fullscreen,disp._is_closed);
-      // todo copy cgimage _data
+      std::memcpy(_data,disp._data,sizeof(unsigned int)*_width*_height);
       return paint();
     }
 	
-	CImgDisplay& resize(const int nwidth, const int nheight, const bool force_redraw=true) {
+    CImgDisplay& resize(const int nwidth, const int nheight, const bool force_redraw=true) {
       if (!nwidth || !nheight || (is_empty() && (nwidth<0 || nheight<0))) return assign();
       if (is_empty()) return assign((unsigned int)nwidth,(unsigned int)nheight);
       const unsigned int
@@ -12001,21 +12037,20 @@ namespace cimg_library_suffixed {
     }
 
     CImgDisplay& show() {
-        if (is_empty() || !_is_closed) return *this;
-        _is_closed = false;
-        if (_is_fullscreen) _init_fullscreen();
-        [_window makeKeyAndOrderFront:nil];
-        _update_window_pos();
-        return paint();
+      if (is_empty() || !_is_closed) return *this;
+      _is_closed = false;
+      [_window orderFront:nil];
+      _update_window_pos();
+      return paint();
     }
 
     CImgDisplay& close() {
-        if (is_empty() || _is_closed) return *this;
-        _is_closed = true;
-        if (_is_fullscreen) _desinit_fullscreen();
-        [_window orderOut:nil];
-        _window_x = _window_y = cimg::type<int>::min();
-        return *this;
+      if (is_empty() || _is_closed) return *this;
+      _is_closed = true;
+      _is_fullscreen = false;
+      [_window orderOut:nil];
+      _window_x = _window_y = cimg::type<int>::min();
+      return *this;
     }
 
     CImgDisplay& move(const int posx, const int posy) {
@@ -22332,10 +22367,10 @@ namespace cimg_library_suffixed {
             }
 #endif
 
-            if (!std::strncmp(ss,"stov(",5)) { // String to double
-              _cimg_mp_op("Function 'stov()'");
-              s1 = ss5; while (s1<se1 && (*s1!=',' || level[s1 - expr._data]!=clevel1)) ++s1;
-              arg1 = compile(ss5,s1,depth1,0,block_flags);
+            if (!std::strncmp(ss,"s2v(",4)) { // String to double
+              _cimg_mp_op("Function 's2v()'");
+              s1 = ss4; while (s1<se1 && (*s1!=',' || level[s1 - expr._data]!=clevel1)) ++s1;
+              arg1 = compile(ss4,s1,depth1,0,block_flags);
               arg2 = arg3 = 0;
               if (s1<se1) {
                 s2 = s1 + 1; while (s2<se1 && (*s2!=',' || level[s2 - expr._data]!=clevel1)) ++s2;
@@ -22346,7 +22381,7 @@ namespace cimg_library_suffixed {
               _cimg_mp_check_type(arg3,3,1,0);
               p1 = _cimg_mp_size(arg1);
               pos = scalar();
-              CImg<ulongT>::vector((ulongT)mp_stov,pos,arg1,p1,arg2,arg3).move_to(code);
+              CImg<ulongT>::vector((ulongT)mp_s2v,pos,arg1,p1,arg2,arg3).move_to(code);
               return_new_comp = true;
               _cimg_mp_return(pos);
             }
@@ -22751,10 +22786,10 @@ namespace cimg_library_suffixed {
               _cimg_mp_return(pos);
             }
 
-            if (!std::strncmp(ss,"vtos(",5)) { // Double(s) to string
-              _cimg_mp_op("Function 'vtos()'");
-              s1 = ss5; while (s1<se1 && (*s1!=',' || level[s1 - expr._data]!=clevel1)) ++s1;
-              arg1 = compile(ss5,s1,depth1,0,block_flags);
+            if (!std::strncmp(ss,"v2s(",4)) { // Double(s) to string
+              _cimg_mp_op("Function 'v2s()'");
+              s1 = ss4; while (s1<se1 && (*s1!=',' || level[s1 - expr._data]!=clevel1)) ++s1;
+              arg1 = compile(ss4,s1,depth1,0,block_flags);
               arg2 = 0; arg3 = ~0U;
               if (s1<se1) {
                 s2 = s1 + 1; while (s2<se1 && (*s2!=',' || level[s2 - expr._data]!=clevel1)) ++s2;
@@ -22770,7 +22805,7 @@ namespace cimg_library_suffixed {
                 p1 = (unsigned int)mem[arg3];
               }
               pos = vector(p1);
-              CImg<ulongT>::vector((ulongT)mp_vtos,pos,p1,arg1,_cimg_mp_size(arg1),arg2).move_to(code);
+              CImg<ulongT>::vector((ulongT)mp_v2s,pos,p1,arg1,_cimg_mp_size(arg1),arg2).move_to(code);
               return_new_comp = true;
               _cimg_mp_return(pos);
             }
@@ -27586,7 +27621,7 @@ namespace cimg_library_suffixed {
       }
 #endif
 
-      static double mp_stov(_cimg_math_parser& mp) {
+      static double mp_s2v(_cimg_math_parser& mp) {
         const double *ptrs = &_mp_arg(2);
         const ulongT siz = (ulongT)mp.opcode[3];
         longT ind = (longT)_mp_arg(4);
@@ -28104,7 +28139,7 @@ namespace cimg_library_suffixed {
         _cimg_mp_vfunc(res = vec.get_stats()[3]);
       }
 
-      static double mp_vtos(_cimg_math_parser& mp) {
+      static double mp_v2s(_cimg_math_parser& mp) {
         double *ptrd = &_mp_arg(1) + 1;
         const unsigned int
           sizd = (unsigned int)mp.opcode[2],
@@ -57040,7 +57075,14 @@ namespace cimg_library_suffixed {
       for (unsigned int i = 0; i<skip_frames; ++i) captures[camera_index]->grab();
       cv::Mat cvimg;
       captures[camera_index]->read(cvimg);
-      if (cvimg.empty()) assign(); else _cvmat2cimg(cvimg).move_to(*this);
+      if (cvimg.empty()) {
+        cimg::mutex(9,0);
+        load_camera(camera_index,0,0,0,true); // Release camera
+        throw CImgIOException(_cimg_instance
+                              "load_camera(): Failed to retrieve a %ux%u frame from camera #%u.",
+                              cimg_instance,
+                              capture_width,capture_height,camera_index);
+      } else _cvmat2cimg(cvimg).move_to(*this);
       cimg::mutex(9,0);
       return *this;
 #else
@@ -59458,7 +59500,7 @@ namespace cimg_library_suffixed {
       rowsperstrip = TIFFDefaultStripSize(tif,rowsperstrip);
       TIFFSetField(tif,TIFFTAG_ROWSPERSTRIP,rowsperstrip);
       TIFFSetField(tif,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB);
-      TIFFSetField(tif,TIFFTAG_SOFTWARE,"CImg");
+      TIFFSetField(tif,TIFFTAG_SOFTWARE,cimg_appname);
 
       t *const buf = (t*)_TIFFmalloc(TIFFStripSize(tif));
       if (buf) {
