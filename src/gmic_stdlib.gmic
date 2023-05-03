@@ -120,7 +120,7 @@
 #      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius[%])':
 #          Add X,Y parameters (as a moveable point over the preview).
 #
-#      _ 'file[_in,_out](_default_filename)':
+#      _ 'file(_default_filename)', 'file_in(_default_filename)' or 'file_out(_default_filename)':
 #          Add a filename parameter (as a filechooser).
 #
 #      _ 'float(default_value,min_value,max_value)':
@@ -267,9 +267,12 @@ help : skip ${1=""}
     a y
 
     # Check that requested command exist.
-    ('"$1"') autocrop. {'-'}
-    if {i[-1,2]}==_']'" && "i!=_'[' l. { s -,{'['} k[0] } fi
-    command={t} rm.
+    command={`"
+      s = ['$1']; len = size(s); z = 0;
+      (p = find(s,_'['))>0?(s[p] = 0; len = p);
+      isin(s[0],_'-',_'+') && len>1 && !(s[z + 1]=='3' && s[z + 2]=='d')?(copy(s,s[z + 1],len - 1); s[len - 1] = 0);
+      s"`}
+
     s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
     if $!==1
       l[] {
@@ -1496,7 +1499,7 @@ reference_end_pdf :
   #  I have to print the .pdf manually 'in a file' first).
   delete reference_pdf.pdf
   v 0 e "  > Waiting for file 'reference_pdf.pdf'."
-  for { !isfile('reference_pdf.pdf') wait 5000 }
+  for !isfile('reference_pdf.pdf') { wait 5000 }
   e "  > Removing links in file 'reference_pdf.pdf'."
   x "pdfjam reference_pdf.pdf"
   e "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
@@ -1543,184 +1546,6 @@ v : # Allow 'gmic +v' to get the version number.
 #@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'camera_index=0' (default camera), 'nb_frames=1', 'skip_frames=0' and \
 # 'capture_width=capture_height=0' (default size).
-
-#@cli clut : "clut_name",_resolution>0,_cut_and_round={ 0=no | 1=yes }
-#@cli : Insert one of the 971 pre-defined CLUTs at the end of the image list.\n
-#@cli : 'clut_name' can be { 2-strip-process | 60s | 60s_faded | 60s_faded_alt | 7drk_21 | action_magenta_01 | \
-# action_red_01 | adventure_1453 | agfa_apx_100 | agfa_apx_25 | agfa_precisa_100 | agfa_ultra_color_100 | \
-# agfa_vista_200 | agressive_highligjtes_recovery_5 | alberto_street | alien_green | amstragram | amstragram+ | \
-# analog_film_1 | analogfx_anno_1870_color | analogfx_old_style_i | analogfx_old_style_ii | analogfx_old_style_iii | \
-# analogfx_sepia_color | analogfx_soft_sepia_i | analogfx_soft_sepia_ii | anime | apocalypse_this_very_moment | \
-# aqua | aqua_and_orange_dark | arabica_12 | atomic_pink | autumn | ava_614 | avalanche | azrael_93 | bboyz_2 | \
-# bc_darkum | beach_aqua_orange | beach_faded_analog | berlin_sky | black_and_white | black_star | black_white_01 | \
-# black_white_02 | black_white_03 | black_white_04 | black_white_05 | black_white_06 | blade_runner | bleach_bypass | \
-# bleachbypass_1 | bleachbypass_2 | bleachbypass_3 | bleachbypass_4 | bleech_bypass_green | bleech_bypass_yellow_01 | \
-# blue_cold_fade | blue_dark | blue_house | blue_ice | blue_mono | blue_shadows_01 | bluearchitecture | bluehour | \
-# blues | bob_ford | bourbon_64 | bright_green_01 | bright_teal_orange | bright_warm | brightgreen | brown_mobster | \
-# brownbm | brownish | bw_1 | bw_10 | bw_2 | bw_3 | bw_4 | bw_5 | bw_6 | bw_7 | bw_8 | bw_9 | bw_but_yellow | \
-# byers_11 | candlelight | caribe | chemical_168 | chrome_01 | cineblue | cinebm_4k | cinema | cinema_2 | cinema_3 | \
-# cinema_4 | cinema_5 | cinema_noir | cinematic-1 | cinematic-10 | cinematic-2 | cinematic-3 | cinematic-4 | \
-# cinematic-5 | cinematic-6 | cinematic-7 | cinematic-8 | cinematic-9 | cinematic_01 | cinematic_02 | cinematic_03 | \
-# cinematic_for_flog | cinematic_forest | cinematic_lady_bird | cinematic_mexico | city | city_7 | city_dust | \
-# classic_films_01 | classic_films_02 | classic_films_03 | classic_films_04 | classic_films_05 | \
-# classic_teal_and_orange | clayton_33 | clear_teal_fade | clouseau_54 | cobi_3 | coffee_44 | cold_clear_blue | \
-# cold_clear_blue_1 | cold_ice | cold_simplicity_2 | coldchrome | color_rich | colorful_0209 | colornegative | \
-# conflict_01 | contrail_35 | contrast_with_highlights_protection | contrasty_afternoon | contrasty_green | \
-# crispautumn | crispromance | crispwarm | crispwinter | cross_process_cp_130 | cross_process_cp_14 | \
-# cross_process_cp_15 | cross_process_cp_16 | cross_process_cp_18 | cross_process_cp_3 | cross_process_cp_4 | \
-# cross_process_cp_6 | crushin | cubicle_99 | d_o_1 | dark_blues_in_sunlight | dark_green_02 | dark_green_1 | \
-# dark_man_x | dark_orange_teal | dark_place_01 | darkandsomber | darkness | date_39 | day_4nite | day_for_night | \
-# day_to_night_kings_blue | deep | deep_blue | deep_dark_warm | deep_high_contrast | deep_teal_fade | \
-# deep_warm_fade | deepskintones_2 | deepskintones_3 | delicatessen | denoiser_simple_40 | desert_gold_37 | \
-# dimension | directions_23 | django_25 | domingo_145 | dream_1 | dream_85 | drop_green_tint_14 | dropblues | \
-# duotone_blue_red | earth_tone_boost | edgyember | elegance_38 | enchanted | eterna_for_flog | expired_69 | \
-# expired_fade | expired_polaroid | extreme | fade | fade_to_green | faded | faded_47 | faded_alt | faded_analog | \
-# faded_extreme | faded_green | faded_pink-ish | faded_print | faded_retro_01 | faded_retro_02 | faded_vivid | \
-# fadedlook | fallcolors | faux_infrared | faux_infrared_bw_1 | faux_infrared_color_p_2 | faux_infrared_color_p_3 | \
-# faux_infrared_color_r_0a | faux_infrared_color_r_0b | faux_infrared_color_yp_1 | fgcinebasic | fgcinebright | \
-# fgcinecold | fgcinedrama | fgcinetealorange_1 | fgcinetealorange_2 | fgcinevibrant | fgcinewarm | film_0987 | \
-# film_9879 | film_gb-19 | film_high_contrast | film_print_01 | film_print_02 | filmic | flat_30 | flat_blue_moon | \
-# flavin | foggynight | folger_50 | formula_b | french_comedy | frosted | frostedbeachpicnic | fuji_160c | \
-# fuji_160c_+ | fuji_160c_++ | fuji_160c_- | fuji_3510_constlclip | fuji_3510_constlmap | fuji_3510_cuspclip | \
-# fuji_3513_constlclip | fuji_3513_constlmap | fuji_3513_cuspclip | fuji_400h | fuji_400h_+ | fuji_400h_++ | \
-# fuji_400h_- | fuji_800z | fuji_800z_+ | fuji_800z_++ | fuji_800z_- | fuji_astia_100_generic | fuji_astia_100f | \
-# fuji_fp-100c | fuji_fp-100c_+ | fuji_fp-100c_++ | fuji_fp-100c_+++ | fuji_fp-100c_++_alt | fuji_fp-100c_- | \
-# fuji_fp-100c_-- | fuji_fp-100c_alt | fuji_fp-100c_cool | fuji_fp-100c_cool_+ | fuji_fp-100c_cool_++ | \
-# fuji_fp-100c_cool_- | fuji_fp-100c_cool_-- | fuji_fp-100c_negative | fuji_fp-100c_negative_+ | \
-# fuji_fp-100c_negative_++ | fuji_fp-100c_negative_+++ | fuji_fp-100c_negative_++_alt | fuji_fp-100c_negative_- | \
-# fuji_fp-100c_negative_-- | fuji_fp-3000b | fuji_fp-3000b_+ | fuji_fp-3000b_++ | fuji_fp-3000b_+++ | \
-# fuji_fp-3000b_- | fuji_fp-3000b_-- | fuji_fp-3000b_hc | fuji_fp-3000b_negative | fuji_fp-3000b_negative_+ | \
-# fuji_fp-3000b_negative_++ | fuji_fp-3000b_negative_+++ | fuji_fp-3000b_negative_- | fuji_fp-3000b_negative_-- | \
-# fuji_fp-3000b_negative_early | fuji_fp_100c | fuji_hdr | fuji_neopan_1600 | fuji_neopan_1600_+ | \
-# fuji_neopan_1600_++ | fuji_neopan_1600_- | fuji_neopan_acros_100 | fuji_provia_100_generic | fuji_provia_100f | \
-# fuji_provia_400f | fuji_provia_400x | fuji_sensia_100 | fuji_superia_100 | fuji_superia_100_+ | \
-# fuji_superia_100_++ | fuji_superia_100_- | fuji_superia_1600 | fuji_superia_1600_+ | fuji_superia_1600_++ | \
-# fuji_superia_1600_- | fuji_superia_200 | fuji_superia_200_xpro | fuji_superia_400 | fuji_superia_400_+ | \
-# fuji_superia_400_++ | fuji_superia_400_- | fuji_superia_800 | fuji_superia_800_+ | fuji_superia_800_++ | \
-# fuji_superia_800_- | fuji_superia_hg_1600 | fuji_superia_reala_100 | fuji_superia_x-tra_800 | \
-# fuji_velvia_100_generic | fuji_velvia_50 | fuji_xtrans_iii_acros | fuji_xtrans_iii_acros+g | \
-# fuji_xtrans_iii_acros+r | fuji_xtrans_iii_acros+ye | fuji_xtrans_iii_astia | fuji_xtrans_iii_classic_chrome | \
-# fuji_xtrans_iii_mono | fuji_xtrans_iii_mono+g | fuji_xtrans_iii_mono+r | fuji_xtrans_iii_mono+ye | \
-# fuji_xtrans_iii_pro_neg_hi | fuji_xtrans_iii_pro_neg_std | fuji_xtrans_iii_provia | fuji_xtrans_iii_sepia | \
-# fuji_xtrans_iii_velvia | fusion_88 | futuristicbleak_1 | futuristicbleak_2 | futuristicbleak_3 | \
-# futuristicbleak_4 | going_for_a_walk | golden | golden_bright | golden_fade | golden_mono | \
-# golden_night_softner_43 | golden_sony_37 | golden_vibrant | goldengate | goldentime | goldfx_bright_spring_breeze | \
-# goldfx_bright_summer_heat | goldfx_hot_summer_heat | goldfx_perfect_sunset_01min | goldfx_perfect_sunset_05min | \
-# goldfx_perfect_sunset_10min | goldfx_spring_breeze | goldfx_summer_heat | good_morning | green_15 | green_2025 | \
-# green_action | green_afternoon | green_and_orange | green_blues | green_conflict | green_day_01 | green_day_02 | \
-# green_g_09 | green_indoor | green_light | green_mono | green_yellow | greenish_contrasty | greenish_fade | \
-# greenish_fade_1 | gremerta | hackmanite | hallowen_dark | happyness_133 | hard_teal_orange | hardboost | \
-# harsh_day | harsh_sunset | helios | herderite | heulandite | hiddenite | highlights_protection | hilutite | \
-# hitman | hlg_1_1 | honey_light | hong_kong | horrorblue | howlite | hydracore | hyla_68 | hypersthene | hypnosis | \
-# hypressen | ilford_delta_100 | ilford_delta_3200 | ilford_delta_3200_+ | ilford_delta_3200_++ | \
-# ilford_delta_3200_- | ilford_delta_400 | ilford_fp_4_plus_125 | ilford_hp_5 | ilford_hp_5_+ | ilford_hp_5_++ | \
-# ilford_hp_5_- | ilford_hp_5_plus_400 | ilford_hps_800 | ilford_pan_f_plus_50 | ilford_xp_2 | indoor_blue | \
-# industrial_33 | infrared_-_dust_pink | instantc | justpeachy | jwick_21 | k_tone_vintage_kodachrome | kh_1 | \
-# kh_10 | kh_2 | kh_3 | kh_4 | kh_5 | kh_6 | kh_7 | kh_8 | kh_9 | killstreak | kodak_2383_constlclip | \
-# kodak_2383_constlmap | kodak_2383_cuspclip | kodak_2393_constlclip | kodak_2393_constlmap | kodak_2393_cuspclip | \
-# kodak_bw_400_cn | kodak_e-100_gx_ektachrome_100 | kodak_ektachrome_100_vs | kodak_ektachrome_100_vs_generic | \
-# kodak_ektar_100 | kodak_elite_100_xpro | kodak_elite_chrome_200 | kodak_elite_chrome_400 | kodak_elite_color_200 | \
-# kodak_elite_color_400 | kodak_elite_extracolor_100 | kodak_hie_hs_infra | kodak_kodachrome_200 | \
-# kodak_kodachrome_25 | kodak_kodachrome_64 | kodak_kodachrome_64_generic | kodak_portra_160 | kodak_portra_160_+ | \
-# kodak_portra_160_++ | kodak_portra_160_- | kodak_portra_160_nc | kodak_portra_160_nc_+ | kodak_portra_160_nc_++ | \
-# kodak_portra_160_nc_- | kodak_portra_160_vc | kodak_portra_160_vc_+ | kodak_portra_160_vc_++ | \
-# kodak_portra_160_vc_- | kodak_portra_400 | kodak_portra_400_+ | kodak_portra_400_++ | kodak_portra_400_- | \
-# kodak_portra_400_nc | kodak_portra_400_nc_+ | kodak_portra_400_nc_++ | kodak_portra_400_nc_- | \
-# kodak_portra_400_uc | kodak_portra_400_uc_+ | kodak_portra_400_uc_++ | kodak_portra_400_uc_- | \
-# kodak_portra_400_vc | kodak_portra_400_vc_+ | kodak_portra_400_vc_++ | kodak_portra_400_vc_- | kodak_portra_800 | \
-# kodak_portra_800_+ | kodak_portra_800_++ | kodak_portra_800_- | kodak_portra_800_hc | kodak_t-max_100 | \
-# kodak_t-max_3200 | kodak_t-max_400 | kodak_tmax_3200 | kodak_tmax_3200_+ | kodak_tmax_3200_++ | kodak_tmax_3200_- | \
-# kodak_tmax_3200_alt | kodak_tri-x_400 | kodak_tri-x_400_+ | kodak_tri-x_400_++ | kodak_tri-x_400_- | \
-# kodak_tri-x_400_alt | korben_214 | landscape_01 | landscape_02 | landscape_03 | landscape_04 | landscape_05 | \
-# landscape_1 | landscape_10 | landscape_2 | landscape_3 | landscape_4 | landscape_5 | landscape_6 | landscape_7 | \
-# landscape_8 | landscape_9 | lateafternoonwanderlust | latesunset | lc_1 | lc_10 | lc_2 | lc_3 | lc_4 | lc_5 | \
-# lc_6 | lc_7 | lc_8 | lc_9 | lenox_340 | life_giving_tree | light_blown | lomo | lomography_redscale_100 | \
-# lomography_x-pro_slide_200 | london_nights | longbeachmorning | louetta | low_contrast_blue | low_key_01 | \
-# lucky_64 | lushgreen | lushgreensummer | magenta_day | magenta_day_01 | magenta_dream | magenta_yellow | \
-# magentacoffee | magichour | matrix | mckinnon_75 | memories | metropolis | milo_5 | minimalistcaffeination | \
-# modern_film | modern_films_01 | modern_films_02 | modern_films_03 | modern_films_04 | modern_films_05 | \
-# modern_films_06 | modern_films_07 | mono_tinted | monochrome | monochrome_1 | monochrome_2 | moody_1 | moody_10 | \
-# moody_2 | moody_3 | moody_4 | moody_5 | moody_6 | moody_7 | moody_8 | moody_9 | moonlight | moonlight_01 | \
-# moonrise | morning_6 | morroco_16 | mostly_blue | moviz_1 | moviz_10 | moviz_11 | moviz_12 | moviz_13 | moviz_14 | \
-# moviz_15 | moviz_16 | moviz_17 | moviz_18 | moviz_19 | moviz_2 | moviz_20 | moviz_21 | moviz_22 | moviz_23 | \
-# moviz_24 | moviz_25 | moviz_26 | moviz_27 | moviz_28 | moviz_29 | moviz_3 | moviz_30 | moviz_31 | moviz_32 | \
-# moviz_33 | moviz_34 | moviz_35 | moviz_36 | moviz_37 | moviz_38 | moviz_39 | moviz_4 | moviz_40 | moviz_41 | \
-# moviz_42 | moviz_43 | moviz_44 | moviz_45 | moviz_46 | moviz_47 | moviz_48 | moviz_5 | moviz_6 | moviz_7 | \
-# moviz_8 | moviz_9 | mute_shift | muted_01 | muted_fade | mysticpurplesunset | nah | natural_vivid | naturalboost | \
-# nemesis | neon_770 | neutral_pump | neutral_teal_orange | neutral_warm_fade | newspaper | night_01 | \
-# night_blade_4 | night_king_141 | night_spy | nightfromday | nightlife | nostalgiahoney | nostalgic | nw-1 | nw-10 | \
-# nw-2 | nw-3 | nw-4 | nw-5 | nw-6 | nw-7 | nw-8 | nw-9 | old_west | once_upon_a_time | only_red | \
-# only_red_and_blue | operation_yellow | orange_dark_4 | orange_dark_7 | orange_dark_look | orange_tone | \
-# orange_underexposed | orangeandblue | oranges | paladin | paladin_1875 | pasadena_21 | passing_by | pink_fade | \
-# pitaya_15 | pmcinematic_01 | pmcinematic_02 | pmcinematic_03 | pmcinematic_04 | pmcinematic_05 | pmcinematic_06 | \
-# pmcinematic_07 | pmnight_01 | pmnight_02 | pmnight_03 | pmnight_04 | pmnight_05 | polaroid_664 | polaroid_665 | \
-# polaroid_665_+ | polaroid_665_++ | polaroid_665_- | polaroid_665_-- | polaroid_665_negative | \
-# polaroid_665_negative_+ | polaroid_665_negative_- | polaroid_665_negative_hc | polaroid_667 | polaroid_669 | \
-# polaroid_669_+ | polaroid_669_++ | polaroid_669_+++ | polaroid_669_- | polaroid_669_-- | polaroid_669_cold | \
-# polaroid_669_cold_+ | polaroid_669_cold_- | polaroid_669_cold_-- | polaroid_672 | polaroid_690 | polaroid_690_+ | \
-# polaroid_690_++ | polaroid_690_- | polaroid_690_-- | polaroid_690_cold | polaroid_690_cold_+ | \
-# polaroid_690_cold_++ | polaroid_690_cold_- | polaroid_690_cold_-- | polaroid_690_warm | polaroid_690_warm_+ | \
-# polaroid_690_warm_++ | polaroid_690_warm_- | polaroid_690_warm_-- | polaroid_polachrome | polaroid_px-100uv+_cold | \
-# polaroid_px-100uv+_cold_+ | polaroid_px-100uv+_cold_++ | polaroid_px-100uv+_cold_+++ | polaroid_px-100uv+_cold_- | \
-# polaroid_px-100uv+_cold_-- | polaroid_px-100uv+_warm | polaroid_px-100uv+_warm_+ | polaroid_px-100uv+_warm_++ | \
-# polaroid_px-100uv+_warm_+++ | polaroid_px-100uv+_warm_- | polaroid_px-100uv+_warm_-- | polaroid_px-680 | \
-# polaroid_px-680_+ | polaroid_px-680_++ | polaroid_px-680_- | polaroid_px-680_-- | polaroid_px-680_cold | \
-# polaroid_px-680_cold_+ | polaroid_px-680_cold_++ | polaroid_px-680_cold_++_alt | polaroid_px-680_cold_- | \
-# polaroid_px-680_cold_-- | polaroid_px-680_warm | polaroid_px-680_warm_+ | polaroid_px-680_warm_++ | \
-# polaroid_px-680_warm_- | polaroid_px-680_warm_-- | polaroid_px-70 | polaroid_px-70_+ | polaroid_px-70_++ | \
-# polaroid_px-70_+++ | polaroid_px-70_- | polaroid_px-70_-- | polaroid_px-70_cold | polaroid_px-70_cold_+ | \
-# polaroid_px-70_cold_++ | polaroid_px-70_cold_- | polaroid_px-70_cold_-- | polaroid_px-70_warm | \
-# polaroid_px-70_warm_+ | polaroid_px-70_warm_++ | polaroid_px-70_warm_- | polaroid_px-70_warm_-- | \
-# polaroid_time_zero_expired | polaroid_time_zero_expired_+ | polaroid_time_zero_expired_++ | \
-# polaroid_time_zero_expired_- | polaroid_time_zero_expired_-- | polaroid_time_zero_expired_--- | \
-# polaroid_time_zero_expired_cold | polaroid_time_zero_expired_cold_- | polaroid_time_zero_expired_cold_-- | \
-# polaroid_time_zero_expired_cold_--- | portrait_1 | portrait_10 | portrait_2 | portrait_3 | portrait_4 | \
-# portrait_5 | portrait_6 | portrait_7 | portrait_8 | portrait_9 | progressen | protect_highlights_01 | \
-# prussian_blue | pseudogrey | purple | purple_2 | red_afternoon_01 | red_day_01 | red_dream_01 | redblueyellow | \
-# reds | reds_oranges_yellows | reeve_38 | remy_24 | rest_33 | retro | retro_brown_01 | retro_magenta_01 | \
-# retro_summer_3 | retro_yellow_01 | rollei_ir_400 | rollei_ortho_25 | rollei_retro_100_tonal | rollei_retro_80s | \
-# rotate_muted | rotate_vibrant | rotated | rotated_crush | saturated_blue | saving_private_damon | science_fiction | \
-# sea | serenity | seringe_4 | serpent | seventies_magazine | sevsuz | shade_kings_ink | shadow_king_39 | shine | \
-# skin_tones | smart_contrast | smokey | smooth_clear | smooth_cromeish | smooth_fade | smooth_green_orange | \
-# smooth_sailing | smooth_teal_orange | soft_fade | softblackandwhite | softwarming | solarized_color | \
-# solarized_color_2 | springmorning | sprocket_231 | spy_29 | street | studio_skin_tone_shaper | subtle_blue | \
-# subtle_green | subtle_yellow | summer | summer_alt | sunlightlove | sunny | sunny_alt | sunny_rich | sunny_warm | \
-# sunset_aqua_orange | sunset_intense_violet_blue | sunset_violet_mood | super_warm | super_warm_rich | sutro_fx | \
-# sweet_bubblegum | sweet_gelatto | taiga | tarraco | teal_fade | teal_moonlight | tealmagentagold | tealorange | \
-# tealorange_1 | tealorange_2 | tealorange_3 | technicalfx_backlight_filter | teigen_28 | tensiongreen_1 | \
-# tensiongreen_2 | tensiongreen_3 | tensiongreen_4 | terra_4 | the_matrices | thriller_2 | toastedgarden | trent_18 | \
-# true_colors_8 | turkiest_42 | tweed_71 | ultra_water | undeniable | undeniable_2 | unknown | urban_01 | urban_02 | \
-# urban_03 | urban_04 | urban_05 | urban_cowboy | uzbek_bukhara | uzbek_marriage | uzbek_samarcande | velvetia | \
-# very_warm_greenish | vfb_21 | vibrant | vibrant_alien | vibrant_contrast | vibrant_cromeish | victory | vintage | \
-# vintage_01 | vintage_02 | vintage_03 | vintage_04 | vintage_05 | vintage_163 | vintage_alt | vintage_brighter | \
-# vintage_chrome | vintage_mob | vintage_warmth_1 | violet_taste | vireo_37 | warm | warm_dark_contrasty | \
-# warm_fade | warm_fade_1 | warm_highlight | warm_neutral | warm_sunset_red | warm_teal | warm_vintage | \
-# warm_yellow | waves | well_see | western | westernlut_2 | whiter_whites | winterlighthouse | wipe | \
-# wooden_gold_20 | yellow_55b | yellow_film_01 | yellowstone | you_can_do_it | zed_32 | zeke_39 | \
-# zilverfx_bw_solarization | zilverfx_infrared | zilverfx_vintage_bw }
-#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.
-#@cli : $ clut summer clut alien_green,17 clut orange_dark4,48
-+clut : check "isnum(${2=33}) && $2>0 && isbool(${3=1})"
-  to_clutname "$1" name=${} l[] {
-  e[^-1] "Input CLUT '"$name"' with resolution $2."
-    path_clut=${-path_cache}
-    if isfile(['{/${path_clut}clut_$name.cimgz}']) i ${path_clut}clut_$name.cimgz fi
-    if $!"!=1 || w<$2 || h<$2 || d<$2" # Decompression needed
-      rm input_cached gmic_cluts.gmz k[${"nmd 1,"$name}]
-      if $!!=1
-        rm i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz # Try getting newest version of the CLUTs file
-        repeat $! { if ['{$>,n}']==['$name'] k[$>] break fi }
-        if $!!=1
-          error[0--5] "Command '$0': Unknown CLUT name '"$name"'."
-        fi
-      fi
-      decompress_clut $2,$2,$2
-      if $3 round c 0,255 to_rgb fi
-      o. ${path_clut}clut_$name.cimgz
-    elif "w>$2 || h>$2 || d>$2" r $2,$2,$2,3,2 # Downsize from higher resolution
-    fi
-    k. => $name
-  }
 
 # [Internal] Use this command to 'clean' a .gmz file that represents CLUT keypoints.
 # What it does is:
@@ -1800,7 +1625,7 @@ clean_cluts :
       = 0,0,100% nm={t} rm
     } fi
 
-    to_clutname $nm nm=${}
+    strclut $nm nm=${}
 
     # Standardize names for 'PictureFX'.
     if "str = lowercase(['"$nm"']);
@@ -3532,15 +3357,17 @@ _display_voxels3d :
     +norm1. !=. 0 nbv:=is rm. # Count voxels
     e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("${w}x${h}x${d}", "$nbv" voxels)."
     args=0.5,1,0.75
+
     if s==1
       im,iM:=im,iM
-      eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
-      if $is_binary # Colorize binary images according to rough normal estimation
-        +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
+      eval. "*begin(is_bin = 1); i!=$im && i!=$iM?(is_bin = 0; break()); end(merge(is_bin,&&); set('is_bin',is_bin))"
+      if $is_bin # Colorize binary images according to rough normal estimation
+        >. {lerp($im,$iM,0.5)} +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
         shrink_xyz. 1 *. .. k. args=0.9,1.1,1
       fi
     fi
-    surfels3d $args box3d $w,$h,$d p3d. 1 o3d. 0.2 axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
+    surfels3d $args +3d. 0.5,0.5,0.5 box3d $w,$h,$d p3d. 1 o3d. 0.25
+    axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
     _d3d_title=$bnm" ("${w}x${h}x${d}", "$nbv" voxels)"
     d3d 0
     rm _d3d_title=
@@ -4979,6 +4806,7 @@ parse_cli_html :
       ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
       is_eqto=${parse_cli_is_eqto.}
       if !$is_eqto _is_$name=1 else rm fi
+      onfail rm
     } fi
   }
 
@@ -5087,7 +4915,7 @@ parse_cli_html :
       if "find(#0,'(eq. to ')>=0"
 
         # Found 'Eq. to' description.
-        +l s -,{'\47'} {
+        +l { s -,{'\47'}
           replace_str[1] "&","&amp;"
           replace_str[1] "<","&lt;"
           replace_str[1] ">","&gt;"
@@ -5264,13 +5092,13 @@ parse_cli_images :
                 else o ${_parse_cli_images_path}t_$basename,75 fi
                 rm
               fi
-            onfail
-              rm gui_error_preview "Unable to generate preview image"
-              o ${_parse_cli_images_path}f_$basename,85
-              rr2d 480,320,0,2
-              o ${_parse_cli_images_path}t_$basename,75
-              rm
-              etime="failed"
+            # onfail
+            #   rm gui_error_preview "Unable to generate preview image"
+            #   o ${_parse_cli_images_path}f_$basename,85
+            #   rr2d 480,320,0,2
+            #   o ${_parse_cli_images_path}t_$basename,75
+            #   rm
+            #   etime="failed"
             }
             um run_example
           else etime="skipped"
@@ -7094,7 +6922,7 @@ parse_gui_images :
       l[] {
         $_input_image run $pipeline
         gui_merge_layers
-        onfail e "Error "$_vt100_r${}$_vt100_n"\n" rm
+#        onfail e "Error "$_vt100_r${}$_vt100_n"\n" rm
       }
     fi
 
@@ -7256,7 +7084,7 @@ parse_gui_update :
   path=/
   N:=$_nb_filters-1
   is_af:="date([1,2])==[4,1] && (date(4)%2)" # April fool mode ?
-  repeat $_nb_filters f=$> {
+  repeat $_nb_filters { f=$>
     e "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Insert directives to change folder if necessary.
@@ -7795,12 +7623,12 @@ _parse_gui_strings :
 #@cli : 'xmin', 'xmax', 'ymin', 'ymax' set the coordinates of the displayed xy-axes.
 #@cli : Default values: 'plot_type=1', 'vertex_type=1', 'xmin=xmax=ymin=ymax=0 (auto)' and 'exit_on_anykey=0'.
 
-#@cli portrait : _size>0
-#@cli : Input random portrait image of specified size, retrieved from Internet.
-#@cli : Default values: 'size=800'.
-+portrait : check "isint(${1=800}) && $1>0"
-  e[^-1] "Input random portrait image of size $1x$1."
-  i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1 => portrait
+# #@cli portrait : _size>0
+# #@cli : Input random portrait image of specified size, retrieved from Internet.
+# #@cli : Default values: 'size=800'.
+# +portrait : check "isint(${1=800}) && $1>0"
+#   e[^-1] "Input random portrait image of size $1x$1."
+#   i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1 => portrait
 
 #@cli p : eq. to 'print'. : (+)
 
@@ -8111,6 +7939,26 @@ _random_pattern_check_image :
   } fi
   => "[2D heart shape]"
 
+#@cli shape_menger : _nb_iterations>=0
+#@cli : Input a 3D voxelized representation of the Menger sponge.
+#@cli : Default value: 'nb_iterations=3'.
+#@cli : $ shape_menger 4 surfels3d , color3d 200 m3d 3
++shape_menger : l[] { check "isint(${1=3}) && $1>=0" nbi=$1 onfail noarg nbi=3 }
+  e[^-1] "Input a "$nbi"-iterated Menger sponge, as a 3D binary image."
+  3,3,3,1,"norm([x,y,z]-1)>1" (1)
+  repeat $nbi { r. {3*[w,h,d]},1,0,2 +ri[0] . *[-2,-1] }
+  k. => "[3D Menger Sponge]"
+
+#@cli shape_mosely : _nb_iterations>=0
+#@cli : Input a 3D voxelized representation of the Mosely snowflake.
+#@cli : Default value: 'nb_iterations=3'.
+#@cli : $ shape_mosely 4 surfels3d , color3d 200 m3d 3
++shape_mosely : l[] { check "isint(${1=3}) && $1>=0" nbi=$1 onfail noarg nbi=3 }
+  e[^-1] "Input a "$nbi"-iterated Mosely snowflake, as a 3D binary image."
+  3,3,3,1,"norm1([x,y,z]-1)<=2" =. 0,1,1,1 (1)
+  repeat $nbi { r. {3*[w,h,d]},1,0,2 +ri[0] . *[-2,-1] }
+  k. => "[3D Mosely Snowflake]"
+
 #@cli shape_polygon : _size>=0,_nb_vertices>=3,_angle
 #@cli : Input a 2D polygonal binary shape with specified geometry.
 #@cli : Default value: 'size=512', 'nb_vertices=5' and 'angle=0'.
@@ -8126,7 +7974,7 @@ _random_pattern_check_image :
       a x n 0,{$ir-1} s x +.. {-2,0.5*($ir-im-iM)} +. {-1,0.5*($ir-im-iM)} a x
       $ir,$ir polygon. $2,{-2,^},1,1 rm..
   } fi
-  => "[2D $2-polygon shape]"
+  => "[2D $2-polygon Shape]"
 
 #@cli shape_snowflake : size>=0,0<=_nb_recursions<=6
 #@cli : Input a 2D snowflake binary shape with specified size.
@@ -8403,7 +8251,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.2.1').
+# $1 = version number (e.g. '3.2.2').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8830,7 +8678,7 @@ update_gallery_html : check "isbool(${1=0})"
   commands_artistic=_gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
                     mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
   commands_blackandwhite=_gallery_blackandwhite,pencilbw,old_photo,sepia
-  commands_colors=_gallery_colors,solarize,hsv2rgb,transfer_rgb
+  commands_colors=_gallery_colors,solarize,hsv2rgb,match_rgb
   commands_deformations=_gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
   commands_filtering=_gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
                      distance,gradient_norm,normalize_local,sharpen,solidify
@@ -10105,7 +9953,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (320,321,$_version) sort. discard. store. compat
+  (320,321,322,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -10768,7 +10616,7 @@ med :
 #@cli : Compute the modulo of selected images with specified value, image or mathematical \
 # expression, or compute the pointwise sequential modulo of selected images.
 #@cli : (eq. to '%').
-#@cli : $ image.jpg +mirror x mod
+#@cli : $ image.jpg +mirror x n. 1,255 round. mod
 #@cli : $ image.jpg mod 'R=((x/w-0.5)^2+(y/h-0.5)^2)^0.5;255*R'
 
 #@cli m* : eq. to 'mmul'. : (+)
@@ -11063,7 +10911,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     # Sort keypoints in lexicographic order (increasing order for RBF, decreasing for PDE).
     1,100%,1,1,"P = I(#0); P[0]*65536 + P[1]*256 + P[2]" rv a x sort {`'$method'=='rbf'?_'+':_'-'`},y z. 1,100%
 
-    to_clutname $nm => ${}
+    strclut $nm => ${}
   }
 
 # compress_cluts : {"file_pattern" | "file_list.txt"},_max_error>0,_avg_error>0,_max_nb_points>=8
@@ -11325,10 +11173,14 @@ eigen2tensor :
 #@cli : $ image.jpg (0;255;255^0;128;255^0;0;255) +index[-2] [-1],1,1
 #@cli : $$ https://gmic.eu/tutorial/gindex
 index : check "${2=0}>=0 && $2<=1 && isbool(${3=0})"
-  names=${-_palette_names} N:=narg($names)
-  l[] { if isint("$1") name=${"arg 1+($1%"$N"),"$names} else name="$1" fi onfail name="$1" }
-  e[^-1] "Index values in image$? by color LUT '"$name"', with dithering level $2."
-  palette $1 index[^-1] .,$2,$3 rm.
+  if ${"is_image_arg $1"} pass$1 e[0--3] "Index values in image$? by LUT $1, with dithering level $2."
+  else
+    names=${-_palette_names} N:=narg($names)
+    l[] { if isint("$1") name=${"arg 1+($1%"$N"),"$names} else name="$1" fi onfail name="$1" }
+    e[0--3] "Index values in image$? by LUT '"$name"', with dithering level $2."
+    palette $1
+  fi
+  index[^-1] .,$2,$3 rm.
 
 #@cli ir : eq. to 'inrange'.
 ir : check "isbool(${3=1}) && isbool(${4=$3})"
@@ -12107,26 +11959,183 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
     c 0,255
   }
 
-#@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_Lab_command"
-#@cli : Compute the CIE DeltaE color difference between selected images and specified [image].
-#@cli : Argument 'to_Lab_command' is a command able to convert colors of [image] into a Lab representation.
-#@cli : Default values: 'metric=1' and 'to_Lab_command="srgb2lab"'.
-#@cli : $ image.jpg +blur 2 +deltaE[0] [1],1,srgb2lab
-deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
-  e[^-1] "Compute the CIE DeltaE_"${"s0,s1=1976,2000 u $s$2"}" color difference between image$? and image$1, "\
-         "with to_Lab command '$3'."
-  pass$1 1
-  needs_to_lab:="s = ['$3']; s!=0 && s!=' '"
-  if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
-  repeat $!-1 { l[$>,-1] {
-    nm={0,n}
-    if $needs_to_lab _deltaE_to_lab[0] fi
-    if !$2 -.. . norm..                                                # DeltaE_1976
-    else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
+#@cli clut : "clut_name",_resolution>0,_cut_and_round={ 0=no | 1=yes }
+#@cli : Insert one of the 971 pre-defined CLUTs at the end of the image list.\n
+#@cli : 'clut_name' can be { 2-strip-process | 60s | 60s_faded | 60s_faded_alt | 7drk_21 | action_magenta_01 | \
+# action_red_01 | adventure_1453 | agfa_apx_100 | agfa_apx_25 | agfa_precisa_100 | agfa_ultra_color_100 | \
+# agfa_vista_200 | agressive_highligjtes_recovery_5 | alberto_street | alien_green | amstragram | amstragram+ | \
+# analog_film_1 | analogfx_anno_1870_color | analogfx_old_style_i | analogfx_old_style_ii | analogfx_old_style_iii | \
+# analogfx_sepia_color | analogfx_soft_sepia_i | analogfx_soft_sepia_ii | anime | apocalypse_this_very_moment | \
+# aqua | aqua_and_orange_dark | arabica_12 | atomic_pink | autumn | ava_614 | avalanche | azrael_93 | bboyz_2 | \
+# bc_darkum | beach_aqua_orange | beach_faded_analog | berlin_sky | black_and_white | black_star | black_white_01 | \
+# black_white_02 | black_white_03 | black_white_04 | black_white_05 | black_white_06 | blade_runner | bleach_bypass | \
+# bleachbypass_1 | bleachbypass_2 | bleachbypass_3 | bleachbypass_4 | bleech_bypass_green | bleech_bypass_yellow_01 | \
+# blue_cold_fade | blue_dark | blue_house | blue_ice | blue_mono | blue_shadows_01 | bluearchitecture | bluehour | \
+# blues | bob_ford | bourbon_64 | bright_green_01 | bright_teal_orange | bright_warm | brightgreen | brown_mobster | \
+# brownbm | brownish | bw_1 | bw_10 | bw_2 | bw_3 | bw_4 | bw_5 | bw_6 | bw_7 | bw_8 | bw_9 | bw_but_yellow | \
+# byers_11 | candlelight | caribe | chemical_168 | chrome_01 | cineblue | cinebm_4k | cinema | cinema_2 | cinema_3 | \
+# cinema_4 | cinema_5 | cinema_noir | cinematic-1 | cinematic-10 | cinematic-2 | cinematic-3 | cinematic-4 | \
+# cinematic-5 | cinematic-6 | cinematic-7 | cinematic-8 | cinematic-9 | cinematic_01 | cinematic_02 | cinematic_03 | \
+# cinematic_for_flog | cinematic_forest | cinematic_lady_bird | cinematic_mexico | city | city_7 | city_dust | \
+# classic_films_01 | classic_films_02 | classic_films_03 | classic_films_04 | classic_films_05 | \
+# classic_teal_and_orange | clayton_33 | clear_teal_fade | clouseau_54 | cobi_3 | coffee_44 | cold_clear_blue | \
+# cold_clear_blue_1 | cold_ice | cold_simplicity_2 | coldchrome | color_rich | colorful_0209 | colornegative | \
+# conflict_01 | contrail_35 | contrast_with_highlights_protection | contrasty_afternoon | contrasty_green | \
+# crispautumn | crispromance | crispwarm | crispwinter | cross_process_cp_130 | cross_process_cp_14 | \
+# cross_process_cp_15 | cross_process_cp_16 | cross_process_cp_18 | cross_process_cp_3 | cross_process_cp_4 | \
+# cross_process_cp_6 | crushin | cubicle_99 | d_o_1 | dark_blues_in_sunlight | dark_green_02 | dark_green_1 | \
+# dark_man_x | dark_orange_teal | dark_place_01 | darkandsomber | darkness | date_39 | day_4nite | day_for_night | \
+# day_to_night_kings_blue | deep | deep_blue | deep_dark_warm | deep_high_contrast | deep_teal_fade | \
+# deep_warm_fade | deepskintones_2 | deepskintones_3 | delicatessen | denoiser_simple_40 | desert_gold_37 | \
+# dimension | directions_23 | django_25 | domingo_145 | dream_1 | dream_85 | drop_green_tint_14 | dropblues | \
+# duotone_blue_red | earth_tone_boost | edgyember | elegance_38 | enchanted | eterna_for_flog | expired_69 | \
+# expired_fade | expired_polaroid | extreme | fade | fade_to_green | faded | faded_47 | faded_alt | faded_analog | \
+# faded_extreme | faded_green | faded_pink-ish | faded_print | faded_retro_01 | faded_retro_02 | faded_vivid | \
+# fadedlook | fallcolors | faux_infrared | faux_infrared_bw_1 | faux_infrared_color_p_2 | faux_infrared_color_p_3 | \
+# faux_infrared_color_r_0a | faux_infrared_color_r_0b | faux_infrared_color_yp_1 | fgcinebasic | fgcinebright | \
+# fgcinecold | fgcinedrama | fgcinetealorange_1 | fgcinetealorange_2 | fgcinevibrant | fgcinewarm | film_0987 | \
+# film_9879 | film_gb-19 | film_high_contrast | film_print_01 | film_print_02 | filmic | flat_30 | flat_blue_moon | \
+# flavin | foggynight | folger_50 | formula_b | french_comedy | frosted | frostedbeachpicnic | fuji_160c | \
+# fuji_160c_+ | fuji_160c_++ | fuji_160c_- | fuji_3510_constlclip | fuji_3510_constlmap | fuji_3510_cuspclip | \
+# fuji_3513_constlclip | fuji_3513_constlmap | fuji_3513_cuspclip | fuji_400h | fuji_400h_+ | fuji_400h_++ | \
+# fuji_400h_- | fuji_800z | fuji_800z_+ | fuji_800z_++ | fuji_800z_- | fuji_astia_100_generic | fuji_astia_100f | \
+# fuji_fp-100c | fuji_fp-100c_+ | fuji_fp-100c_++ | fuji_fp-100c_+++ | fuji_fp-100c_++_alt | fuji_fp-100c_- | \
+# fuji_fp-100c_-- | fuji_fp-100c_alt | fuji_fp-100c_cool | fuji_fp-100c_cool_+ | fuji_fp-100c_cool_++ | \
+# fuji_fp-100c_cool_- | fuji_fp-100c_cool_-- | fuji_fp-100c_negative | fuji_fp-100c_negative_+ | \
+# fuji_fp-100c_negative_++ | fuji_fp-100c_negative_+++ | fuji_fp-100c_negative_++_alt | fuji_fp-100c_negative_- | \
+# fuji_fp-100c_negative_-- | fuji_fp-3000b | fuji_fp-3000b_+ | fuji_fp-3000b_++ | fuji_fp-3000b_+++ | \
+# fuji_fp-3000b_- | fuji_fp-3000b_-- | fuji_fp-3000b_hc | fuji_fp-3000b_negative | fuji_fp-3000b_negative_+ | \
+# fuji_fp-3000b_negative_++ | fuji_fp-3000b_negative_+++ | fuji_fp-3000b_negative_- | fuji_fp-3000b_negative_-- | \
+# fuji_fp-3000b_negative_early | fuji_fp_100c | fuji_hdr | fuji_neopan_1600 | fuji_neopan_1600_+ | \
+# fuji_neopan_1600_++ | fuji_neopan_1600_- | fuji_neopan_acros_100 | fuji_provia_100_generic | fuji_provia_100f | \
+# fuji_provia_400f | fuji_provia_400x | fuji_sensia_100 | fuji_superia_100 | fuji_superia_100_+ | \
+# fuji_superia_100_++ | fuji_superia_100_- | fuji_superia_1600 | fuji_superia_1600_+ | fuji_superia_1600_++ | \
+# fuji_superia_1600_- | fuji_superia_200 | fuji_superia_200_xpro | fuji_superia_400 | fuji_superia_400_+ | \
+# fuji_superia_400_++ | fuji_superia_400_- | fuji_superia_800 | fuji_superia_800_+ | fuji_superia_800_++ | \
+# fuji_superia_800_- | fuji_superia_hg_1600 | fuji_superia_reala_100 | fuji_superia_x-tra_800 | \
+# fuji_velvia_100_generic | fuji_velvia_50 | fuji_xtrans_iii_acros | fuji_xtrans_iii_acros+g | \
+# fuji_xtrans_iii_acros+r | fuji_xtrans_iii_acros+ye | fuji_xtrans_iii_astia | fuji_xtrans_iii_classic_chrome | \
+# fuji_xtrans_iii_mono | fuji_xtrans_iii_mono+g | fuji_xtrans_iii_mono+r | fuji_xtrans_iii_mono+ye | \
+# fuji_xtrans_iii_pro_neg_hi | fuji_xtrans_iii_pro_neg_std | fuji_xtrans_iii_provia | fuji_xtrans_iii_sepia | \
+# fuji_xtrans_iii_velvia | fusion_88 | futuristicbleak_1 | futuristicbleak_2 | futuristicbleak_3 | \
+# futuristicbleak_4 | going_for_a_walk | golden | golden_bright | golden_fade | golden_mono | \
+# golden_night_softner_43 | golden_sony_37 | golden_vibrant | goldengate | goldentime | goldfx_bright_spring_breeze | \
+# goldfx_bright_summer_heat | goldfx_hot_summer_heat | goldfx_perfect_sunset_01min | goldfx_perfect_sunset_05min | \
+# goldfx_perfect_sunset_10min | goldfx_spring_breeze | goldfx_summer_heat | good_morning | green_15 | green_2025 | \
+# green_action | green_afternoon | green_and_orange | green_blues | green_conflict | green_day_01 | green_day_02 | \
+# green_g_09 | green_indoor | green_light | green_mono | green_yellow | greenish_contrasty | greenish_fade | \
+# greenish_fade_1 | gremerta | hackmanite | hallowen_dark | happyness_133 | hard_teal_orange | hardboost | \
+# harsh_day | harsh_sunset | helios | herderite | heulandite | hiddenite | highlights_protection | hilutite | \
+# hitman | hlg_1_1 | honey_light | hong_kong | horrorblue | howlite | hydracore | hyla_68 | hypersthene | hypnosis | \
+# hypressen | ilford_delta_100 | ilford_delta_3200 | ilford_delta_3200_+ | ilford_delta_3200_++ | \
+# ilford_delta_3200_- | ilford_delta_400 | ilford_fp_4_plus_125 | ilford_hp_5 | ilford_hp_5_+ | ilford_hp_5_++ | \
+# ilford_hp_5_- | ilford_hp_5_plus_400 | ilford_hps_800 | ilford_pan_f_plus_50 | ilford_xp_2 | indoor_blue | \
+# industrial_33 | infrared_-_dust_pink | instantc | justpeachy | jwick_21 | k_tone_vintage_kodachrome | kh_1 | \
+# kh_10 | kh_2 | kh_3 | kh_4 | kh_5 | kh_6 | kh_7 | kh_8 | kh_9 | killstreak | kodak_2383_constlclip | \
+# kodak_2383_constlmap | kodak_2383_cuspclip | kodak_2393_constlclip | kodak_2393_constlmap | kodak_2393_cuspclip | \
+# kodak_bw_400_cn | kodak_e-100_gx_ektachrome_100 | kodak_ektachrome_100_vs | kodak_ektachrome_100_vs_generic | \
+# kodak_ektar_100 | kodak_elite_100_xpro | kodak_elite_chrome_200 | kodak_elite_chrome_400 | kodak_elite_color_200 | \
+# kodak_elite_color_400 | kodak_elite_extracolor_100 | kodak_hie_hs_infra | kodak_kodachrome_200 | \
+# kodak_kodachrome_25 | kodak_kodachrome_64 | kodak_kodachrome_64_generic | kodak_portra_160 | kodak_portra_160_+ | \
+# kodak_portra_160_++ | kodak_portra_160_- | kodak_portra_160_nc | kodak_portra_160_nc_+ | kodak_portra_160_nc_++ | \
+# kodak_portra_160_nc_- | kodak_portra_160_vc | kodak_portra_160_vc_+ | kodak_portra_160_vc_++ | \
+# kodak_portra_160_vc_- | kodak_portra_400 | kodak_portra_400_+ | kodak_portra_400_++ | kodak_portra_400_- | \
+# kodak_portra_400_nc | kodak_portra_400_nc_+ | kodak_portra_400_nc_++ | kodak_portra_400_nc_- | \
+# kodak_portra_400_uc | kodak_portra_400_uc_+ | kodak_portra_400_uc_++ | kodak_portra_400_uc_- | \
+# kodak_portra_400_vc | kodak_portra_400_vc_+ | kodak_portra_400_vc_++ | kodak_portra_400_vc_- | kodak_portra_800 | \
+# kodak_portra_800_+ | kodak_portra_800_++ | kodak_portra_800_- | kodak_portra_800_hc | kodak_t-max_100 | \
+# kodak_t-max_3200 | kodak_t-max_400 | kodak_tmax_3200 | kodak_tmax_3200_+ | kodak_tmax_3200_++ | kodak_tmax_3200_- | \
+# kodak_tmax_3200_alt | kodak_tri-x_400 | kodak_tri-x_400_+ | kodak_tri-x_400_++ | kodak_tri-x_400_- | \
+# kodak_tri-x_400_alt | korben_214 | landscape_01 | landscape_02 | landscape_03 | landscape_04 | landscape_05 | \
+# landscape_1 | landscape_10 | landscape_2 | landscape_3 | landscape_4 | landscape_5 | landscape_6 | landscape_7 | \
+# landscape_8 | landscape_9 | lateafternoonwanderlust | latesunset | lc_1 | lc_10 | lc_2 | lc_3 | lc_4 | lc_5 | \
+# lc_6 | lc_7 | lc_8 | lc_9 | lenox_340 | life_giving_tree | light_blown | lomo | lomography_redscale_100 | \
+# lomography_x-pro_slide_200 | london_nights | longbeachmorning | louetta | low_contrast_blue | low_key_01 | \
+# lucky_64 | lushgreen | lushgreensummer | magenta_day | magenta_day_01 | magenta_dream | magenta_yellow | \
+# magentacoffee | magichour | matrix | mckinnon_75 | memories | metropolis | milo_5 | minimalistcaffeination | \
+# modern_film | modern_films_01 | modern_films_02 | modern_films_03 | modern_films_04 | modern_films_05 | \
+# modern_films_06 | modern_films_07 | mono_tinted | monochrome | monochrome_1 | monochrome_2 | moody_1 | moody_10 | \
+# moody_2 | moody_3 | moody_4 | moody_5 | moody_6 | moody_7 | moody_8 | moody_9 | moonlight | moonlight_01 | \
+# moonrise | morning_6 | morroco_16 | mostly_blue | moviz_1 | moviz_10 | moviz_11 | moviz_12 | moviz_13 | moviz_14 | \
+# moviz_15 | moviz_16 | moviz_17 | moviz_18 | moviz_19 | moviz_2 | moviz_20 | moviz_21 | moviz_22 | moviz_23 | \
+# moviz_24 | moviz_25 | moviz_26 | moviz_27 | moviz_28 | moviz_29 | moviz_3 | moviz_30 | moviz_31 | moviz_32 | \
+# moviz_33 | moviz_34 | moviz_35 | moviz_36 | moviz_37 | moviz_38 | moviz_39 | moviz_4 | moviz_40 | moviz_41 | \
+# moviz_42 | moviz_43 | moviz_44 | moviz_45 | moviz_46 | moviz_47 | moviz_48 | moviz_5 | moviz_6 | moviz_7 | \
+# moviz_8 | moviz_9 | mute_shift | muted_01 | muted_fade | mysticpurplesunset | nah | natural_vivid | naturalboost | \
+# nemesis | neon_770 | neutral_pump | neutral_teal_orange | neutral_warm_fade | newspaper | night_01 | \
+# night_blade_4 | night_king_141 | night_spy | nightfromday | nightlife | nostalgiahoney | nostalgic | nw-1 | nw-10 | \
+# nw-2 | nw-3 | nw-4 | nw-5 | nw-6 | nw-7 | nw-8 | nw-9 | old_west | once_upon_a_time | only_red | \
+# only_red_and_blue | operation_yellow | orange_dark_4 | orange_dark_7 | orange_dark_look | orange_tone | \
+# orange_underexposed | orangeandblue | oranges | paladin | paladin_1875 | pasadena_21 | passing_by | pink_fade | \
+# pitaya_15 | pmcinematic_01 | pmcinematic_02 | pmcinematic_03 | pmcinematic_04 | pmcinematic_05 | pmcinematic_06 | \
+# pmcinematic_07 | pmnight_01 | pmnight_02 | pmnight_03 | pmnight_04 | pmnight_05 | polaroid_664 | polaroid_665 | \
+# polaroid_665_+ | polaroid_665_++ | polaroid_665_- | polaroid_665_-- | polaroid_665_negative | \
+# polaroid_665_negative_+ | polaroid_665_negative_- | polaroid_665_negative_hc | polaroid_667 | polaroid_669 | \
+# polaroid_669_+ | polaroid_669_++ | polaroid_669_+++ | polaroid_669_- | polaroid_669_-- | polaroid_669_cold | \
+# polaroid_669_cold_+ | polaroid_669_cold_- | polaroid_669_cold_-- | polaroid_672 | polaroid_690 | polaroid_690_+ | \
+# polaroid_690_++ | polaroid_690_- | polaroid_690_-- | polaroid_690_cold | polaroid_690_cold_+ | \
+# polaroid_690_cold_++ | polaroid_690_cold_- | polaroid_690_cold_-- | polaroid_690_warm | polaroid_690_warm_+ | \
+# polaroid_690_warm_++ | polaroid_690_warm_- | polaroid_690_warm_-- | polaroid_polachrome | polaroid_px-100uv+_cold | \
+# polaroid_px-100uv+_cold_+ | polaroid_px-100uv+_cold_++ | polaroid_px-100uv+_cold_+++ | polaroid_px-100uv+_cold_- | \
+# polaroid_px-100uv+_cold_-- | polaroid_px-100uv+_warm | polaroid_px-100uv+_warm_+ | polaroid_px-100uv+_warm_++ | \
+# polaroid_px-100uv+_warm_+++ | polaroid_px-100uv+_warm_- | polaroid_px-100uv+_warm_-- | polaroid_px-680 | \
+# polaroid_px-680_+ | polaroid_px-680_++ | polaroid_px-680_- | polaroid_px-680_-- | polaroid_px-680_cold | \
+# polaroid_px-680_cold_+ | polaroid_px-680_cold_++ | polaroid_px-680_cold_++_alt | polaroid_px-680_cold_- | \
+# polaroid_px-680_cold_-- | polaroid_px-680_warm | polaroid_px-680_warm_+ | polaroid_px-680_warm_++ | \
+# polaroid_px-680_warm_- | polaroid_px-680_warm_-- | polaroid_px-70 | polaroid_px-70_+ | polaroid_px-70_++ | \
+# polaroid_px-70_+++ | polaroid_px-70_- | polaroid_px-70_-- | polaroid_px-70_cold | polaroid_px-70_cold_+ | \
+# polaroid_px-70_cold_++ | polaroid_px-70_cold_- | polaroid_px-70_cold_-- | polaroid_px-70_warm | \
+# polaroid_px-70_warm_+ | polaroid_px-70_warm_++ | polaroid_px-70_warm_- | polaroid_px-70_warm_-- | \
+# polaroid_time_zero_expired | polaroid_time_zero_expired_+ | polaroid_time_zero_expired_++ | \
+# polaroid_time_zero_expired_- | polaroid_time_zero_expired_-- | polaroid_time_zero_expired_--- | \
+# polaroid_time_zero_expired_cold | polaroid_time_zero_expired_cold_- | polaroid_time_zero_expired_cold_-- | \
+# polaroid_time_zero_expired_cold_--- | portrait_1 | portrait_10 | portrait_2 | portrait_3 | portrait_4 | \
+# portrait_5 | portrait_6 | portrait_7 | portrait_8 | portrait_9 | progressen | protect_highlights_01 | \
+# prussian_blue | pseudogrey | purple | purple_2 | red_afternoon_01 | red_day_01 | red_dream_01 | redblueyellow | \
+# reds | reds_oranges_yellows | reeve_38 | remy_24 | rest_33 | retro | retro_brown_01 | retro_magenta_01 | \
+# retro_summer_3 | retro_yellow_01 | rollei_ir_400 | rollei_ortho_25 | rollei_retro_100_tonal | rollei_retro_80s | \
+# rotate_muted | rotate_vibrant | rotated | rotated_crush | saturated_blue | saving_private_damon | science_fiction | \
+# sea | serenity | seringe_4 | serpent | seventies_magazine | sevsuz | shade_kings_ink | shadow_king_39 | shine | \
+# skin_tones | smart_contrast | smokey | smooth_clear | smooth_cromeish | smooth_fade | smooth_green_orange | \
+# smooth_sailing | smooth_teal_orange | soft_fade | softblackandwhite | softwarming | solarized_color | \
+# solarized_color_2 | springmorning | sprocket_231 | spy_29 | street | studio_skin_tone_shaper | subtle_blue | \
+# subtle_green | subtle_yellow | summer | summer_alt | sunlightlove | sunny | sunny_alt | sunny_rich | sunny_warm | \
+# sunset_aqua_orange | sunset_intense_violet_blue | sunset_violet_mood | super_warm | super_warm_rich | sutro_fx | \
+# sweet_bubblegum | sweet_gelatto | taiga | tarraco | teal_fade | teal_moonlight | tealmagentagold | tealorange | \
+# tealorange_1 | tealorange_2 | tealorange_3 | technicalfx_backlight_filter | teigen_28 | tensiongreen_1 | \
+# tensiongreen_2 | tensiongreen_3 | tensiongreen_4 | terra_4 | the_matrices | thriller_2 | toastedgarden | trent_18 | \
+# true_colors_8 | turkiest_42 | tweed_71 | ultra_water | undeniable | undeniable_2 | unknown | urban_01 | urban_02 | \
+# urban_03 | urban_04 | urban_05 | urban_cowboy | uzbek_bukhara | uzbek_marriage | uzbek_samarcande | velvetia | \
+# very_warm_greenish | vfb_21 | vibrant | vibrant_alien | vibrant_contrast | vibrant_cromeish | victory | vintage | \
+# vintage_01 | vintage_02 | vintage_03 | vintage_04 | vintage_05 | vintage_163 | vintage_alt | vintage_brighter | \
+# vintage_chrome | vintage_mob | vintage_warmth_1 | violet_taste | vireo_37 | warm | warm_dark_contrasty | \
+# warm_fade | warm_fade_1 | warm_highlight | warm_neutral | warm_sunset_red | warm_teal | warm_vintage | \
+# warm_yellow | waves | well_see | western | westernlut_2 | whiter_whites | winterlighthouse | wipe | \
+# wooden_gold_20 | yellow_55b | yellow_film_01 | yellowstone | you_can_do_it | zed_32 | zeke_39 | \
+# zilverfx_bw_solarization | zilverfx_infrared | zilverfx_vintage_bw }
+#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.
+#@cli : $ clut summer clut alien_green,17 clut orange_dark4,48
++clut : check "isnum(${2=33}) && $2>0 && isbool(${3=1})"
+  strclut "$1" name=${} l[] {
+  e[^-1] "Input CLUT '"$name"' with resolution $2."
+    path_clut=${-path_cache}
+    if isfile(['{/${path_clut}clut_$name.cimgz}']) i ${path_clut}clut_$name.cimgz fi
+    if $!"!=1 || w<$2 || h<$2 || d<$2" # Decompression needed
+      rm input_cached gmic_cluts.gmz k[${"nmd 1,"$name}]
+      if $!!=1
+        rm i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz # Try getting newest version of the CLUTs file
+        repeat $! { if ['{$>,n}']==['$name'] k[$>] break fi }
+        if $!!=1
+          error[0--5] "Command '$0': Unknown CLUT name '"$name"'."
+        fi
+      fi
+      decompress_clut $2,$2,$2
+      if $3 round c 0,255 to_rgb fi
+      o. ${path_clut}clut_$name.cimgz
+    elif "w>$2 || h>$2 || d>$2" r $2,$2,$2,3,2 # Downsize from higher resolution
     fi
-    =>[0] $nm
-  } }
-  rm. um _deltaE_to_lab
+    k. => $name
+  }
 
 #@cli cmy2rgb
 #@cli : Convert color representation of selected images from CMY to RGB.
@@ -12266,6 +12275,27 @@ compose_channels : skip ${1="+"}
     repeat s { sh[0] $> }
     $1[^0] r[0] 100%,100%,100%,1,-1 k[0]
   }
+
+#@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_Lab_command"
+#@cli : Compute the CIE DeltaE color difference between selected images and specified [image].
+#@cli : Argument 'to_Lab_command' is a command able to convert colors of [image] into a Lab representation.
+#@cli : Default values: 'metric=1' and 'to_Lab_command="srgb2lab"'.
+#@cli : $ image.jpg +blur 2 +deltaE[0] [1],1,srgb2lab
+deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
+  e[^-1] "Compute the CIE DeltaE_"${"s0,s1=1976,2000 u $s$2"}" color difference between image$? and image$1, "\
+         "with to_Lab command '$3'."
+  pass$1 1
+  needs_to_lab:="s = ['$3']; s!=0 && s!=' '"
+  if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
+  repeat $!-1 { l[$>,-1] {
+    nm={0,n}
+    if $needs_to_lab _deltaE_to_lab[0] fi
+    if !$2 -.. . norm..                                                # DeltaE_1976
+    else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
+    fi
+    =>[0] $nm
+  } }
+  rm. um _deltaE_to_lab
 
 #@cli direction2rgb
 #@cli : Compute RGB representation of selected 2D direction fields.
@@ -12676,6 +12706,308 @@ map_clut :
     +warp. [0],0,1,1
     rm[0] mv. 0 a[^-1] c =>[0] $nm
   } } rm.
+
+#@cli match_histogram : [reference_image],_nb_levels>0,_color_channels
+#@cli : Transfer histogram of the specified reference image to selected images.
+#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
+#@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
+#@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +match_histogram[0] [1]
+match_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
+  channels=${"_ac_list \"$3\""}
+  e[^-1] "Transfer histogram from image ["${"pass$1 -1"}"] to image$?, "\
+         "with $2 levels, for channels '"$channels"'."
+  pass$1 1 sref:=s rm.
+  to_colormode $sref
+  if ['$channels']!='all'
+    pass$1 {$sref==3?2:0}
+    to_color
+    ac. "+store _match_histogram_reference",$channels rm.
+    ac "_match_histogram $2",$channels,1
+  else
+    pass$1
+    store. _match_histogram_reference
+    repeat $! { _match_histogram[$>] $2 }
+  fi
+  _match_histogram_reference=
+
+_match_histogram :
+  $_match_histogram_reference
+  repeat min(s#0,s#1) {
+    sh $>
+    +histogram[-2,-1] $1 cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
+    f.. "*
+      const w1 = w -1;
+      val = i; X = x;
+      val<i[#-1,X]?(
+        step = int(X/2);
+        while (X && step>=1, nX = max(0,X - step); val<i[#-1,nX]?(X = nX):(step = int(step/2)));
+        X?(vc = i[#-1,X]; vp = i[#-1,X - 1]; (vc - val)>(val - vp)?--X); # Rounding
+      ):(
+        step = int((w1 - X)/2);
+        while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-1,nX]?(X = nX):(step = int(step/2)));
+        X<w1?(vc = i[#-1,X]; vn = i[#-1,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
+      );
+      im#-3 + (iM#-3 - im#-3)*X/w1"
+    n[-4] 0,{w-1} round[-4] map[-4] ..
+    k[0,1]
+  }
+  rm.
+
+#@cli match_icp : [reference_image],_precision>0,_transformation_variable
+#@cli : Transform selected set of d-dimensional vectors to match specified set of reference vectors, \
+# using ICP (*Iterative Closest Point*) algorithm.
+#@cli : A description of ICP is available at <https://en.wikipedia.org/wiki/Iterative_closest_point>.
+#@cli : Return the L2 alignment error.
+#@cli : Default values: 'transformation_type=0', 'precision=1e-2' and 'transformation_variable=(undefined)'.
+#@cli : sample lena,earth +match_icp[0] [1]
+match_icp : check ${"is_image_arg $1"}" && ${2=1e-2}>0" skip "${3=}"
+  e[^-1] "Match vector set$? with reference vector set $1, using ICP with precision $2.\n"
+  pass$1
+  foreach[^-1] {
+    w,h,d,s:=w,h,d,s
+    pass. mv. 0 # [0]: reference set, [1]: current set
+    if "['$3']!=0" +store. img fi
+    match_pca. .. # Pre-normalize for better initial estimate
+
+    # Iterate ICP steps.
+    old_err=inf
+    repeat inf {
+
+      # For each vector, find nearest reference vector.
+      100%,100%,100%,4,"*
+        P = I(#1);
+        distmin = pmin = qmin = rmin = inf;
+        repeat (d#0,r,
+          repeat (h#0,q,
+            repeat (w#0,p,
+              dist = norm(I(#0,p,q,r) - P);
+              dist<distmin?(distmin = dist; pmin = p; qmin = q; rmin = r);
+            );
+          );
+        );
+        [ pmin,qmin,rmin,distmin ]"
+
+      s. c,-3
+      err:=is/whd rm. # Mean error
+      e "\r  > Iteration "$>": Error = "{_$err}
+      if !$err" || "abs($err-$old_err)<1e-3 rm. break fi
+      old_err=$err
+      +warp[0] .,0,0 rm..
+      _match_icp[-2,-1]
+      mmul[-2,-1] r. $s,{h/$s},1,1,-1 permute. yzcx r. $w,$h,$d,$s,-1
+    }
+    k.
+    if "['$3']!=0" $img rv +_match_icp $3={^} rm[0,-2,-1] fi # Output linear transformation
+    u $err
+  }
+  rm.
+
+# Compute linear transformation between two sets of paired vectors.
+# [-2] : Set of vectors.
+# [-1] : Corresponding set of reference vectors.
+_match_icp :
+  N,s:=whd,s
+  permute. cxyz y. # Unrolled (i0_ref_k,i1_ref_k,...)
+  l.. { # Generate matrix for the linear system
+    r 1,{whd},1,100%,-1 permute cyxz 1,100%,1,1,1 a x
+    r 100%,{$s*$N},1,1 r {($s+1)^2},100%,1,1,0 r {$s*($s+1)},{($s+1)*$N},1,1,-1
+    s y rm[$s--1:{$s+1}] a y
+  }
+  solve. ..
+
+#@cli match_pca : [reference_image],_color_channels
+#@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
+#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
+#@cli : Default value: 'color_channels=all'.
+#@cli : $ sample lena,earth +match_pca[0] [1]
+match_pca : check ${"is_image_arg $1"} skip "${2=all}"
+  channels=${"_ac_list \"$2\""}
+  e[^-1] "Transfer mean vector and covariance matrix from image ["${"pass$1 -1"}"] to image$?, "\
+         "for channels '"$channels"'."
+  pass$1 1 sref:=s rm.
+  if $sref<=4 to_colormode[^-1] $sref fi
+  if $sref==1 # Scalar case can to be solved more easily
+    pass$1
+    var_ref,avg_ref:=[iv,ia] rm.
+    foreach { - {ia} * {sqrt($var_ref/max(1e-8,iv))} + $avg_ref }
+  elif ['$channels']!='all'
+    pass$1 {$sref==3?2:0}
+    to_color
+    ac. "+store _match_pca_reference",$channels rm.
+    ac "_match_pca",$channels,1
+  else
+    pass$1
+    store. _match_pca_reference
+    foreach { _match_pca }
+  fi
+  _match_pca_reference=
+
+_match_pca :
+  $_match_pca_reference
+  f.. "*begin(
+         cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
+         cov = [ "${"covariance_vectors[0] _avg"}" ];
+         avg_ref = [ "$_avg_ref" ];
+         avg = [ "$_avg" ];
+         eig_ref = eig(cov_ref);
+         eig = eig(cov);
+         lambda_ref = sqrt(eig_ref[0,s]);
+         lambda = 1/sqrt(1e-6 + eig[0,s]);
+         repeat(s,k, # Align eigenvectors.
+           sks = s + k*s;
+           Uref = eig_ref[sks,s];
+           U = eig[sks,s];
+           dot(Uref,U)<0?copy(eig[sks],U*=-1);
+         );
+         rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
+         rot = mul(diag(lambda),eig[s,s*s],s);
+         M = mul(rot_ref,rot,s);
+       );
+       avg_ref + M*(I - avg)"
+  rm.
+
+#@cli match_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
+# _is_constraints={ 0 | 1 }
+#@cli : Transfer colors from selected source images to selected reference image (given as argument).
+#@cli : 'gamma' determines the importance of color occurrences in the matching process (0=none to 1=huge).
+#@cli : 'regularization' determines the number of guided filter iterations to remove quantization effects.
+#@cli : 'luminosity_constraints' tells if luminosity constraints must be applied on non-confident matched colors.
+#@cli : 'is_constraints' tells if additional hard color constraints must be set (opens an interactive window).
+#@cli : Default values: 'gamma=0.3','regularization=8', 'luminosity_constraints=0.1', 'rgb_resolution=64' and \
+# 'is_constraints=0'.
+#@cli : $ sample pencils,wall +match_rgb[0] [1],0,0.01
+match_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && isint(${6=0})"
+  e[^-1] "Transfer colors of image $1 to image$?."
+  sigma=1.5
+  repeat $! { pass$1 0 l[$>,-1] {
+    nm_source={0,b} nm_target={1,b}
+    => source,target
+
+    # Generate matching functions from 3D RGB features.
+    +_match_rgb[source,target] $2,$sigma,$5 => fsource,ftarget
+    n[fsource,ftarget] 0,255
+
+    # Manage color constraints.
+    if $6
+      h0:=2*{*,v}/3 ws0={source,max(1,w*$h0/h)} wt0={target,max(1,w*$h0/h)}
+      w1:=2*{*,u}/3 hs1={source,max(1,h*$w1/w)} ht1={target,max(1,h*$w1/w)}
+      if abs($ws0+$wt0-$w1)<abs($hs1+$ht1-$h0) # Append along X.
+        +r2dy[source,target] $h0 +b[-2,-1] 0.5% a[-4,-3] x a[-2,-1] x
+      else # Append along Y.
+        +r2dx[source,target] $w1 +b[-2,-1] 0.5% a[-4,-3] y a[-2,-1] y
+      fi
+      if w>$w1 r2dx[-2,-1] $w1 fi
+      if h>$h0 r2dy[-2,-1] $h0 fi
+      => visu,both
+
+      w[visu] -1,-1
+      N=0 do
+        w[] -1,-1,"[G'MIC] Add Color Guide (Constraint ""#"{1+$N}")"
+        +select[$visu] 1 if i==-1 rm. break fi
+        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0xF0F0F0F0,0
+        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0x0F0F0F0F,255
+        circle[$visu] {i[0]},{i[1]},5,1,0,0,0 circle[$visu] {i[0]},{i[1]},3,1,255,0,0
+        circle[$visu] {i[3]},{i[4]},5,1,0,0,0 circle[$visu] {i[3]},{i[4]},3,1,0,255,0
+        s. y,2 rows[-2,-1] 0,1 a[-2,-1] x permute. xczy
+        +warp[$both] .,0,0,1 rm..
+        *. {($5-1)/255} s. x,2
+        -. .. *. -1 a[-2,-1] c
+        N+=1
+      while {*}
+      if $N a[-$N--1] x permute. xczy => constraints fi
+      rm[$visu,$both] w 0
+    fi
+
+    # Estimate warping field.
+    if $constraints
+      +pointcloud. 0 r. ...,...,...,3,0 +compose_channels. + a[-2,-1] c
+      displacement[fsource] [ftarget],0.001,5,0,10000,1,. rm[ftarget,constraints,-1]
+    else
+      displacement[fsource] [ftarget],0.005 rm[ftarget]
+    fi
+    =>[fsource] displacement
+
+    # Generate video of matching.
+    # if videos
+    #   N=$!
+    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
+    #   +_match_rgb[source] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
+    #   +_match_rgb[source] 0,$sigma,{w} a[-2,-1] c
+
+    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
+    #   +_match_rgb[target] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
+    #   +_match_rgb[target] 0,$sigma,{w} a[-2,-1] c
+    #   warp. [displacement],1,1,1,48
+
+    #   l[$N--1] {
+    #     f3d 1200
+    #     ap "s. c,-3 view_func. 6,.. rm.."
+    #     ap "makefig"
+    #     append[^0] [0],x rm[0]
+    #     r2dx 1024
+    #     [-1]x20
+    #     o videos/video_${nm_source}_to_${nm_target}.mp4,10
+    #     rm
+    #   }
+    # fi
+
+    # Estimate confidence of the color mapping.
+    +_match_rgb[target] 0,$sigma,{displacement,w}
+    warp. [displacement],1,1,1 c. 0,100% => fconfidence
+    +map_clut[source] . => confidence
+
+    # Generate transfer CLUT.
+    [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
+    +_match_rgb[target] 0,0,{w} *.. .
+    warp[-2,-1] [displacement],1,0,1
+    distance. 1 *. -1 watershed.. . rm. -. 1
+    => clut
+    b[clut] $sigma%
+
+    # Enforce luminosity constraint for non-confident colors.
+    if $4>0
+      ^[fconfidence] {$4/10} *[fconfidence] -1 +[fconfidence] 1
+      +f[fconfidence] x +f. y +f. z a[-3--1] c *. {255/(w-1)}
+      rgb2hsv[clut,-1] channels. 100%
+      j[clut] .,0,0,0,2,1,[fconfidence] rm.
+      hsv2rgb[clut]
+    fi
+
+    # Map CLUT to get result.
+    +map_clut[source] [clut] => res_noregul
+
+    # Apply guided smoothing to remove quantization artifacts.
+    if !$3
+      =>[res_noregul] res
+    else
+      l[source,res_noregul] {
+        rgb2ycbcr  # Perform regularization in YCbCr to avoid creation of false colors.
+        +-[1] [0] repeat $3 { guided. [0],5,5 } +. [0] c. 0,255
+        ycbcr2rgb
+      }
+      => res
+      j[res] [res_noregul],0,0,0,0,1,[confidence]
+      rm[res_noregul]
+    fi
+
+    k[res]
+  } }
+
+# _match_rgb : _gamma>=0,_smoothness>=0,_resolution>0
+# Convert selected images into 3D volumetric scalar function for color matching.
+_match_rgb :
+  l[] {
+    check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
+    onfail noarg gamma=0 smoothness=1.5 res=128
+  }
+  e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
+          smoothness "$smoothness" and resolution "$res"."
+  to_rgb
+  foreach {
+    b 0.3%
+    r {w*h},3,1,1,-1 * {($res-1)/255}
+    pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
+  }
 
 #@cli mix_rgb : a11,a12,a13,a21,a22,a23,a31,a32,a33
 #@cli : Apply 3x3 specified matrix to RGB colors of selected images.
@@ -13160,6 +13492,49 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
     transpose.
   fi
   => pseudogray$1
+
+#@cli random_clut
+#@cli : Generate a 33x33x33 random 3D color LUT.
+#@cli : $ image.jpg random_clut +map_clut.. .
+#@cli random_clut : _seed = { >=0 | -1 }
+#@cli : Generate a 33x33x33 random 3D color LUT.
+#@cli : If specified 'seed' is positive, it is used as a seed for the random number generator \
+#@cli : (so that using the same seed will return the same CLUT).
+#@cli : $ image.jpg random_clut +map_clut.. .
++random_clut : l[] { check "isint(${1=-1}) && $1>=-1" seed=$1 onfail seed=-1 noarg }
+  e[^-1] "Generate a random 3D color LUT."
+  if $seed>=0 srand $seed fi
+
+  # Determine a set of random color keypoint.
+  1,1,1,3
+  1,8,1,1,"u<0.75 || !y?da_push(255*[ y&1, (y>>1)&1, (y>>2)&1 ])" rm. # Add some of the cube corners
+  1,{round(u(2,12))},1,1,"
+    do (
+      RGB = u([255,255,255]);
+      dmin = inf;
+      for (p = 0, p<da_size(), ++p, dmin = min(dmin,norm(I[#-1,p] - RGB)));
+      dmin>70?(da_push(RGB); break());
+    1)" rm.
+  da_freeze.
+
+  # Randomly modify keypoint colors.
+  rgb2hsl. mirror. c sort. +,y mirror. c
+  +f. "begin(Lmax = 0);
+    H = i0; S = i1; L = i2;
+    u<0.5?(
+      do (
+        nH = (H + 30*g)%360;
+        nS = cut(S + g/4,0,1);
+        nL = cut(L + g/8,0,1),
+      _(while) nL<Lmax);
+      H = nH; S = nS; L = nL;
+    );
+    Lmax = max(Lmax,L);
+    [ H,S,L ]"
+  hsl2rgb[-2,-1] a[-2,-1] c
+
+  # Generate CLUT.
+  decompress_clut_pde. 33,33,33 n. 0,255
 
 #@cli replace_color : tolerance[%]>=0,smoothness[%]>=0,src1,src2,...,dest1,dest2,...
 #@cli : Replace pixels from/to specified colors in selected images.
@@ -13770,246 +14145,6 @@ to_automode :
              end(merge(is_gray,&&); set('is_gray',is_gray))"
       if $is_gray s c,-3 channels[0] 0 a c fi
     fi
-  }
-
-#@cli transfer_histogram : [reference_image],_nb_levels>0,_color_channels
-#@cli : Transfer histogram of the specified reference image to selected images.
-#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
-#@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
-#@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +transfer_histogram[0] [1]
-transfer_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
-  channels=${"_ac_list \"$3\""}
-  e[^-1] "Transfer histogram from image ["${"pass$1 -1"}"] to image$?, "\
-         "with $2 levels, for channels '"$channels"'."
-  pass$1 1 sref:=s rm.
-  to_colormode $sref
-  if ['$channels']!='all'
-    pass$1 {$sref==3?2:0}
-    to_color
-    ac. "+store _transfer_histogram_reference",$channels rm.
-    ac "_transfer_histogram $2",$channels,1
-  else
-    pass$1
-    store. _transfer_histogram_reference
-    repeat $! { _transfer_histogram[$>] $2 }
-  fi
-  _transfer_histogram_reference=
-
-_transfer_histogram :
-  $_transfer_histogram_reference
-  repeat min(s#0,s#1) {
-    sh $>
-    +histogram[-2,-1] $1 cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
-    f.. "*
-      const w1 = w -1;
-      val = i; X = x;
-      val<i[#-1,X]?(
-        step = int(X/2);
-        while (X && step>=1, nX = max(0,X - step); val<i[#-1,nX]?(X = nX):(step = int(step/2)));
-        X?(vc = i[#-1,X]; vp = i[#-1,X - 1]; (vc - val)>(val - vp)?--X); # Rounding
-      ):(
-        step = int((w1 - X)/2);
-        while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-1,nX]?(X = nX):(step = int(step/2)));
-        X<w1?(vc = i[#-1,X]; vn = i[#-1,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
-      );
-      im#-3 + (iM#-3 - im#-3)*X/w1"
-    n[-4] 0,{w-1} round[-4] map[-4] ..
-    k[0,1]
-  }
-  rm.
-
-#@cli transfer_pca : [reference_image],_color_channels
-#@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
-#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
-#@cli : Default value: 'color_channels=all'.
-#@cli : $ sample lena,earth +transfer_pca[0] [1]
-transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
-  channels=${"_ac_list \"$2\""}
-  e[^-1] "Transfer mean vector and covariance matrix from image ["${"pass$1 -1"}"] to image$?, "\
-         "for channels '"$channels"'."
-  pass$1 1 sref:=s rm.
-  to_colormode[^-1] $sref
-  if $sref==1 # Scalar case can to be solved more easily
-    pass$1
-    var_ref,avg_ref:=[iv,ia] rm.
-    foreach { - {ia} * {sqrt($var_ref/iv)} + $avg_ref }
-  elif ['$channels']!='all'
-    pass$1 {$sref==3?2:0}
-    to_color
-    ac. "+store _transfer_pca_reference",$channels rm.
-    ac "_transfer_pca",$channels,1
-  else
-    pass$1
-    store. _transfer_pca_reference
-    repeat $! { _transfer_pca[$>] }
-  fi
-  _transfer_pca_reference=
-
-_transfer_pca :
-  $_transfer_pca_reference
-  f.. "*begin(
-         cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
-         cov = [ "${"covariance_vectors[0] _avg"}" ];
-         avg_ref = [ "$_avg_ref" ];
-         avg = [ "$_avg" ];
-         eig_ref = eig(cov_ref);
-         eig = eig(cov);
-         lambda_ref = sqrt(eig_ref[0,s]);
-         lambda = 1/sqrt(1e-6 + eig[0,s]);
-         repeat(s,k, # Align eigenvectors.
-           sks = s + k*s;
-           Uref = eig_ref[sks,s];
-           U = eig[sks,s];
-           dot(Uref,U)<0?copy(eig[sks],U*=-1);
-         );
-         rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
-         rot = mul(diag(lambda),eig[s,s*s],s);
-         M = mul(rot_ref,rot,s);
-       );
-       avg_ref + M*(I - avg)"
-  rm.
-
-#@cli transfer_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
-# _is_constraints={ 0 | 1 }
-#@cli : Transfer colors from selected source images to selected reference image (given as argument).
-#@cli : 'gamma' determines the importance of color occurrences in the matching process (0=none to 1=huge).
-#@cli : 'regularization' determines the number of guided filter iterations to remove quantization effects.
-#@cli : 'luminosity_constraints' tells if luminosity constraints must be applied on non-confident matched colors.
-#@cli : 'is_constraints' tells if additional hard color constraints must be set (opens an interactive window).
-#@cli : Default values: 'gamma=0.3','regularization=8', 'luminosity_constraints=0.1', 'rgb_resolution=64' and \
-# 'is_constraints=0'.
-#@cli : $ sample pencils,wall +transfer_rgb[0] [1],0,0.01
-transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && isint(${6=0})"
-  e[^-1] "Transfer colors of image $1 to image$?."
-  sigma=1.5
-  repeat $! { pass$1 0 l[$>,-1] {
-    nm_source={0,b} nm_target={1,b}
-    => source,target
-
-    # Generate matching functions from 3D RGB features.
-    +_transfer_rgb[source,target] $2,$sigma,$5 => fsource,ftarget
-    n[fsource,ftarget] 0,255
-
-    # Manage color constraints.
-    if $6
-      h0:=2*{*,v}/3 ws0={source,max(1,w*$h0/h)} wt0={target,max(1,w*$h0/h)}
-      w1:=2*{*,u}/3 hs1={source,max(1,h*$w1/w)} ht1={target,max(1,h*$w1/w)}
-      if abs($ws0+$wt0-$w1)<abs($hs1+$ht1-$h0) # Append along X.
-        +r2dy[source,target] $h0 +b[-2,-1] 0.5% a[-4,-3] x a[-2,-1] x
-      else # Append along Y.
-        +r2dx[source,target] $w1 +b[-2,-1] 0.5% a[-4,-3] y a[-2,-1] y
-      fi
-      if w>$w1 r2dx[-2,-1] $w1 fi
-      if h>$h0 r2dy[-2,-1] $h0 fi
-      => visu,both
-
-      w[visu] -1,-1
-      N=0 do
-        w[] -1,-1,"[G'MIC] Add Color Guide (Constraint ""#"{1+$N}")"
-        +select[$visu] 1 if i==-1 rm. break fi
-        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0xF0F0F0F0,0
-        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0x0F0F0F0F,255
-        circle[$visu] {i[0]},{i[1]},5,1,0,0,0 circle[$visu] {i[0]},{i[1]},3,1,255,0,0
-        circle[$visu] {i[3]},{i[4]},5,1,0,0,0 circle[$visu] {i[3]},{i[4]},3,1,0,255,0
-        s. y,2 rows[-2,-1] 0,1 a[-2,-1] x permute. xczy
-        +warp[$both] .,0,0,1 rm..
-        *. {($5-1)/255} s. x,2
-        -. .. *. -1 a[-2,-1] c
-        N+=1
-      while {*}
-      if $N a[-$N--1] x permute. xczy => constraints fi
-      rm[$visu,$both] w 0
-    fi
-
-    # Estimate warping field.
-    if $constraints
-      +pointcloud. 0 r. ...,...,...,3,0 +compose_channels. + a[-2,-1] c
-      displacement[fsource] [ftarget],0.001,5,0,10000,1,. rm[ftarget,constraints,-1]
-    else
-      displacement[fsource] [ftarget],0.005 rm[ftarget]
-    fi
-    =>[fsource] displacement
-
-    # Generate video of matching.
-    # if videos
-    #   N=$!
-    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
-    #   +_transfer_rgb[source] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
-    #   +_transfer_rgb[source] 0,$sigma,{w} a[-2,-1] c
-
-    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
-    #   +_transfer_rgb[target] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
-    #   +_transfer_rgb[target] 0,$sigma,{w} a[-2,-1] c
-    #   warp. [displacement],1,1,1,48
-
-    #   l[$N--1] {
-    #     f3d 1200
-    #     ap "s. c,-3 view_func. 6,.. rm.."
-    #     ap "makefig"
-    #     append[^0] [0],x rm[0]
-    #     r2dx 1024
-    #     [-1]x20
-    #     o videos/video_${nm_source}_to_${nm_target}.mp4,10
-    #     rm
-    #   }
-    # fi
-
-    # Estimate confidence of the color mapping.
-    +_transfer_rgb[target] 0,$sigma,{displacement,w}
-    warp. [displacement],1,1,1 c. 0,100% => fconfidence
-    +map_clut[source] . => confidence
-
-    # Generate transfer CLUT.
-    [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
-    +_transfer_rgb[target] 0,0,{w} *.. .
-    warp[-2,-1] [displacement],1,0,1
-    distance. 1 *. -1 watershed.. . rm. -. 1
-    => clut
-    b[clut] $sigma%
-
-    # Enforce luminosity constraint for non-confident colors.
-    if $4>0
-      ^[fconfidence] {$4/10} *[fconfidence] -1 +[fconfidence] 1
-      +f[fconfidence] x +f. y +f. z a[-3--1] c *. {255/(w-1)}
-      rgb2hsv[clut,-1] channels. 100%
-      j[clut] .,0,0,0,2,1,[fconfidence] rm.
-      hsv2rgb[clut]
-    fi
-
-    # Map CLUT to get result.
-    +map_clut[source] [clut] => res_noregul
-
-    # Apply guided smoothing to remove quantization artifacts.
-    if !$3
-      =>[res_noregul] res
-    else
-      l[source,res_noregul] {
-        rgb2ycbcr  # Perform regularization in YCbCr to avoid creation of false colors.
-        +-[1] [0] repeat $3 { guided. [0],5,5 } +. [0] c. 0,255
-        ycbcr2rgb
-      }
-      => res
-      j[res] [res_noregul],0,0,0,0,1,[confidence]
-      rm[res_noregul]
-    fi
-
-    k[res]
-  } }
-
-# _transfer_rgb : _gamma>=0,_smoothness>=0,_resolution>0
-# Convert selected images into 3D volumetric scalar function for color matching.
-_transfer_rgb :
-  l[] {
-    check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
-    onfail noarg gamma=0 smoothness=1.5 res=128
-  }
-  e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
-          smoothness "$smoothness" and resolution "$res"."
-  to_rgb
-  foreach {
-    b 0.3%
-    r {w*h},3,1,1,-1 * {($res-1)/255}
-    pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
   }
 
 #@cli xyz2jzazbz
@@ -15190,7 +15325,7 @@ _seamcarve :
     100%,100% +rows[1] 0
     => grad,low,seam,top
 
-    repeat h#0-1 nr:=$>+1 {
+    repeat h#0-1 { nr:=$>+1
       +rows[low] $nr
 
       # Find optimum matches between two 1D matrices.
@@ -17199,7 +17334,7 @@ normalize_local :
 #@cli : $ image.jpg +shift -30,-20 +normalized_cross_correlation[0] [1]
 normalized_cross_correlation : check ${is_image_arg\ $1}
   e[^-1] "Compute normalized cross-correlation of image$? with mask $1."
-  pass$1 0 norm repeat $!-1 . { l[$>,-1] {
+  pass$1 0 norm repeat $!-1 { . l[$>,-1] {
     fft.. fft. [-2,-1] *.. [-5] *. [-6]
     -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] [-2,-1] a[-2,-1] c norm.
     /... . /[-2,-1] ifft rm.
@@ -17564,7 +17699,7 @@ remove_pixels : check "$1>=0"
 rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
   e[^-1] "Apply rolling guidance filter on image$?, with standard deviations ($1,$2) and precision $3."
   precision:=2^-$3
-  foreach {
+  foreach { nm={n}
     +b $1
     repeat 100 {
       if c>1 +norm. +bilateral... .,$1,$2 rm..
@@ -17573,7 +17708,7 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
       -.. . std={-2,id} rm..
       if $std<$precision break fi
     }
-    k.
+    k. => $nm
   }
 
 #@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha[%],_sigma[%]
@@ -21028,7 +21163,7 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
       e "\r  * Object '"$bn"': "{1+$>}"/$1"
       +r3d[0] 0,0,1,{$>*$4} r3d. 0,1,0,{$>*$3} r3d. 1,0,0,{$>*$2}
       {1,[w,h,d,4]},-1 j3d. ..,50%,50%,0,1
-      sh. 0,{s-2} sh.. 100% !=. -1 mul.. . mul. 255 rm[-2,-1]
+      sh. 0,{s-2} +l.. { s c max } !=. -1 mul.. . mul. 255 j... .,0,0,0,{-2,s} rm[-2,-1]
       if $6 sh. 100% +b. 2% shift. {m=min(w,h)*2%;[m,m]} -. {255-$6*255%} c. 0,255 max[-2,-1] rm. fi # Add fake shadow
       +blend[1,-1] alpha rm[-3,-2]
       if {*} w. -1,-1,0 fi
@@ -21217,6 +21352,24 @@ _center3d :
     fi
   }
 
+#@cli chainring3d : _nb_links>=3,_x_scale>0,_y_scale>0,_z_scale>0
+#@cli : Input 3D chain ring with specified geometry.
+#@cli : 'nb_links' should be preferably even.
+#@cli : Default values: 'nb_links=16', 'x_scale=0.5', 'y_scale=1' and 'z_scale=1'.
+chainring3d : check "isint(${1=16}) && $1>=3 && ${2=0.5}>0 && ${3=1}>0 && ${4=1}>0"
+  e[^-1] "Input 3D chain ring, with $1 links and scales (${2-4})."
+  l[] {
+    torus3d 1,0.1 *3d ${2-4} shift:=0.75*$1/pi
+    repeat $1 {
+    ang:=$>*360/$1
+      ($ang^1^0.784) hsv2rgb. +col3d[0] {^} rm..
+      if $>%2 r3d. 0,1,0,90 fi
+      +3d. $shift r3d. 0,0,1,$ang
+    }
+    rm[0] +3d /3d $shift
+    => [3D\ chainring]
+  }
+
 #@cli circle3d : _x0,_y0,_z0,_radius>=0
 #@cli : Input 3D circle at specified coordinates.
 #@cli : Default values: 'x0=y0=z0=0' and 'radius=1'.
@@ -21274,35 +21427,43 @@ _color3d :
     k[0]
   }
 
-#@cli colorcube3d
+#@cli colorcube3d : _is_wireframe={ 0 | 1 }
 #@cli : Input 3D color cube.
+#@cli : Default value: 'is_wireframe=0'.
 #@cli : $ colorcube3d mode3d 2 +primitives3d 1
-+colorcube3d :
-  e[^-1] "Input 3D RGB-color cube."
-  (67.5;73.5;109.5;103.5;51.5;100.5;8;6)
-  (0;0;0;\
-   255;0;0;\
-   255;255;0;\
-   0;255;0;\
-   0;0;255;\
-   255;0;255;\
-   255;255;255;\
-   0;255;255)
-  (12;0;3;2;1;0;0;0;63;63;63;63;0;\
-   12;1;2;6;5;0;0;0;63;63;63;63;0;\
-   12;0;4;7;3;0;0;63;0;63;63;0;63;\
-   12;4;5;6;7;0;0;63;0;63;63;0;63;\
-   12;0;1;5;4;0;0;63;0;63;63;0;63;\
-   12;3;7;6;2;0;0;0;63;63;63;63;0)
-  (0,255;0,255^0,0;255,255^0,0;0,0)
-  (255,255;255,255^0,0;255,255^0,255;0,255)
-  (0,0;0,0^0,0;255,255^0,255;0,255)
-  (0,255;0,255^0,0;255,255^255,255;255,255)
-  (0,255;0,255^0,0;0,0^0,0;255,255)
-  (0,255;0,255^255,255;255,255^0,0;255,255)
-  r[-6--1] 64,64,1,3,3 round[-6--1] y[-6--1] i[-7--2] (-128;64;64;3)
-  (1;1;1;1;1;1)
-  a[-16--1] y => [3D\ colorcube]
++colorcube3d : l[] { check "isbool(${1=0})" is_wireframe=$1 onfail is_wireframe=1 noarg }
+  s0,s1="face","wireframe"
+  e[^-1] "Input 3D RGB-color "$s$1" cube."
+  if $is_wireframe l[] { # Wireframe version
+    ({'CImg3d'},8,12) # Header
+    (0,0,0;255,0,0;255,255,0;0,255,0;0,0,255;255,0,255;255,255,255;0,255,255) # Vertices
+    (6,0,1,0,0,63,0;6,1,2,0,1,63,1;6,2,3,0,2,63,2;6,3,0,0,3,63,3;\ # Primitives
+     6,0,4,0,4,63,4;6,1,5,0,5,63,5;6,2,6,0,6,63,6;6,3,7,0,7,63,7;\
+     6,4,5,0,8,63,8;6,5,6,0,9,63,9;6,6,7,0,10,63,10;6,7,4,0,11,63,11)
+    (-128,64,12,3) (0,0,0;255,0,0/255,0,0;255,255,0/255,255,0;0,255,0/0,255,0;0,0,0/\ # First texture
+     0,0,0;0,0,255/255,0,0;255,0,255/255,255,0;255,255,255/0,255,0;0,255,255/\
+     0,0,255;255,0,255/255,0,255;255,255,255/255,255,255;0,255,255/0,255,255;0,0,255)
+    permute. yzcx r. 64,100%,1,3,3
+    (-128,0,0,0)x11 # 11 other shared textures
+    1,12,1,1,1 # Opacities
+    y a y
+  } else l[] { # Face version
+    ({'CImg3d'},8,6) # Header
+    (0,0,0;255,0,0;255,255,0;0,255,0;0,0,255;255,0,255;255,255,255;0,255,255) # Vertices
+    (12,0,3,2,1,0,0,0,63,63,63,63,0;12,1,2,6,5,0,0,0,63,63,63,63,0;\ # Primitives
+     12,0,4,7,3,0,0,63,0,63,63,0,63;12,4,5,6,7,0,0,63,0,63,63,0,63;\
+     12,0,1,5,4,0,0,63,0,63,63,0,63;12,3,7,6,2,0,0,0,63,63,63,63,0)
+    (0,255;0,255^0,0;255,255^0,0;0,0) # Generate 6 textures
+    (255,255;255,255^0,0;255,255^0,255;0,255)
+    (0,0;0,0^0,0;255,255^0,255;0,255)
+    (0,255;0,255^0,0;255,255^255,255;255,255)
+    (0,255;0,255^0,0;0,0^0,0;255,255)
+    (0,255;0,255^255,255;255,255^0,0;255,255)
+    r[-6--1] 64,64,1,3,3 round[-6--1] y[-6--1] i[-7--2] (-128;64;64;3)
+    1,6,1,1,1 # Opacities
+    y a y
+  } fi
+  => [3D\ colorcube]
 
 #@cli cone3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cone at (0,0,0), with specified geometry.
@@ -21371,6 +21532,68 @@ cubes3d : check ${1=1}>=0
   ellipse. 0%,100%,30%,10%,0,1,1 b. 0.1%
   lathe3d. $1,2
   => [3D\ cup]
+
+#@cli curve3d : _"x(t)",_"y(t)",_"z(t)",_"r(t)",_resolution>1,_tmin,_tmax,_nb_sides>=0,_is_closed_curve={ 0 | 1 }
+#@cli : Input 3D curve with specified parameterization.
+#@cli : If 'r(t)==0' or 'nb_sides<3', the generated 3D object is composed of segments only.
+#@cli : Default values: 'x(t)=cos(2*pi*t)', 'y(t)=sin(2*pi*t)', 'z(t)=t', 'r(t)=0.025', 'resolution=128', \
+# 'tmin=0', 'tmax=1', 'nb_sides=16' and 'is_closed_curve=0'.
+#@cli : $ curve3d ,
++curve3d : check "isint(${5=128}) && $5>1 && isbool(${9=0}) && isint(${8=16}) && $8>=0"
+           skip "${1=0.25*cos(4*pi*t)},${2=0.25*sin(4*pi*t)},${3=t},${4=0.025},${6=0},${7=1}"
+  xt,yt,zt,rt,resolution,tmin,tmax,nb_sides,is_closed=$"*"
+  nb_sides:="$nb_sides<3 || ['"$rt"']=='0'?1:$nb_sides"
+  s0,s1="open","closed"
+  e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), radius '"$rt"', "\
+         "resolution "$resolution", t-range ["$tmin,$tmax"], radius and "$nb_sides" sides."
+  ('CImg3d') (0,0)
+  1,$resolution,1,4,"t = lerp($tmin,$tmax,y/(h - ($is_closed?0:1))); [ ("$xt"),("$yt"),("$zt"),("$rt") ]" s. c,-3
+  if $nb_sides==1 # Curve made of segments
+    rm. 1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv=$resolution nbp:=h permute[-2,-1] cyzx
+  else # Curve made of quadrangles
+    +g.. y,0,{$is_closed?2:1} orientation. # Unit tangent vector
+    0 $nb_sides,$resolution,1,1,"
+      !x?(
+        P = I(#-4,0,y);
+        R = i(#-3,0,y);
+        W = I(#-2,0,y);
+        norm(W)==0?(W = [ 0,0,1 ]);
+        !y?(
+          P0 = P;
+          do (ref = [ v,v,v ]; ref/=norm(v); crossWref = cross(W,ref), norm(crossWref)<1e-5);
+        );
+        U = cross(W,ref); U/=norm(U);
+        V = cross(W,U); V/=norm(V);
+        M = transpose([ U,V,W ],3);
+        ref = -V;
+      );
+      ang = x*2*pi/w;
+      Q = P + R*mul(M,[ cos(ang),sin(ang),0 ]);
+      da_push(Q[0],Q[1],Q[2]);
+      end(
+        !$is_closed?da_push(P0[0],P0[1],P0[2],P[0],P[1],P[2]);
+        da_freeze();
+      )" rm[-5--3,-1]
+    nbv:={h/3}
+
+    0 $nb_sides,{$resolution-1+$is_closed},1,1,"begin(nbp = 0);
+      b0 = y*$nb_sides; b1 = ((y + 1)%$resolution)*$nb_sides; nx = (x+1)%$nb_sides;
+      da_push(4,b0 + x,b0 + nx,b1 + nx,b1 + x);
+      ++nbp;
+      end(
+        const indmin = $nb_sides*$resolution;
+        const indmax = indmin + 1;
+        const last = indmin - $nb_sides;
+        !$is_closed?(
+          repeat($nb_sides,k,da_push(3,indmin,(k + 1)%$nb_sides,k); ++nbp);
+          repeat($nb_sides,k,da_push(3,indmax,last + k,last + ((k + 1)%$nb_sides)); ++nbp);
+        );
+        da_freeze();
+        set('nbp',nbp);
+      )" rm.
+  fi
+  eval "i[#-3,0] = ui2f($nbv); i[#-3,1] = ui2f($nbp)"
+  3,$nbp,1,1,200 1,$nbp,1,1,1 y[-6--1] a[-6--1] y => [3D\ Curve]
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
@@ -21766,17 +21989,18 @@ imageplane3d :
   e[^-1] "Generate 3D mapped planes from image$?."
   slices 50% to_color
   foreach {
+    w,h,s,w1,h1:=w,h,s,w-1,h-1
     nm={n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\   # Magick number for CImg3d.
          4;1;\                                # Number of vertices and primitives.
          0;0;0;\                              # Vertex coordinates.
-         {w};0;0;\
-         {w};{h};0;\
-         {0};{h};0;\
-         12;0;3;2;1;0;0;0;{h};{w};{h};{w};0;\ # Primitives description.
-         -128;{w};{h};{s})                    # Texture map.
+         $w;0;0;\
+         $w;$h;0;\
+         0;$h;0;\
+         12;0;3;2;1;0;0;0;$h1;$w1;$h1;$w1;0;\ # Primitives description.
+         -128;$w;$h;$s)                       # Texture map.
     y.
-    (1)  # Opacity.
+    (1) # Opacity.
     a y => $nm
   }
 
@@ -21958,22 +22182,13 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 => [3D\ line]
 
 #@cli lissajous3d : resolution>1,a,A,b,B,c,C
-#@cli : Input 3D lissajous curves __(x(t)=sin(a*t+A*2*pi), y(t)=sin(b*t+B*2*pi), z(t)=sin(c*t+C*2*pi))__.
+#@cli : Input 3D lissajous curves `x(t)=sin(a*t+A*2*pi)`, `y(t)=sin(b*t+B*2*pi)`, `z(t)=sin(c*t+C*2*pi)`.
 #@cli : Default values: 'resolution=1024', 'a=2', 'A=0', 'b=1', 'B=0', 'c=0' and 'C=0'.
 #@cli : $ lissajous3d ,
-+lissajous3d : check ${1=1024}>1 skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
++lissajous3d : check "isint(${1=1024}) && $1>1" skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
   e[^-1] "Input 3D lissajous curve, with resolution $1, (a,A)=($2,$3), (b,B)=($4,$5) and (c,C)=($6,$7)."
-  res={round($1)}
-
-  # Define object header and vertices.
-  (67.5;73.5;109.5;103.5;51.5;100.5;$res;{$res-1})
-  (0,{2*pi}) r. $res,1,1,1,3 [-1]x2
-  *... $2 +... {$3*2*pi} *.. $4 +.. {$5*2*pi} *. $6 +. {$7*2*pi}
-  a[-3--1] y sin. transpose. r. 1,{w*h},1,1,-1
-
-  # Define object primitives, colors and opacities.
-  1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
-  1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y => [3D\ lissajou]
+  curve3d[] "const pi2 = 2*pi; sin($2*t + $3*pi2)","sin($4*t + $5*pi2)","sin($6*t + $7*pi2)",0,$1,0,{2*pi}
+  => [3D\ lissajou]
 
 #@cli m3d : eq. to 'mode3d'.
 m3d :
@@ -22278,7 +22493,7 @@ _primitives3d :
           );
         );
 
-        add_textured_segment(i0,i1) = ( # Add textured segment to object primitives
+        add_textured_segment(i0,i1,tx0,ty0,tx1,ty1) = ( # Add textured segment to object primitives
           vname = string(#24,'seg',min(i0,i1),'_',max(i0,i1));
           isnan(get(vname))?( # If segment does not already exist
             da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1);
@@ -22306,6 +22521,7 @@ _primitives3d :
       R==-128?(
         wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
         is_shared_texture = whsc?0:1; vname = string(#24,'tx',whsc?M:wc); ind_texture = get(vname); pc+=whsc;
+        wt1 = w#ind_texture - 1; ht1 = h#ind_texture - 1;
         R = G = B = 200;
       ):(G = i[#4,pc++]; B = i[#4,pc++]);
 
@@ -22352,13 +22568,14 @@ _primitives3d :
 
       ):n==6?( # Textured segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
-          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O)):
-        mode==1?add_textured_segment(i0,i1):(
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
+        ):mode==1?add_textured_segment(i0,i1,tx0,ty0,tx1,ty1):(
           da_push(#$prims,2,ui2f(i0),ui2f(i1));
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22370,16 +22587,21 @@ _primitives3d :
 
       ):n==9?( # Textured triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
+        tx2 = cut(i[#3,pp++],0,wt1); ty2 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB2,i(#ind_texture,tx2,ty2,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
           add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
-          add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O)):
-        mode==1?(add_textured_segment(i0,i1); add_textured_segment(i1,i2); add_textured_segment(i2,i0)):
-        (
+          add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
+        ):mode==1?(
+          add_textured_segment(i0,i1,tx0,ty0,tx1,ty1);
+          add_textured_segment(i1,i2,tx0,ty0,tx2,ty2);
+          add_textured_segment(i2,i0,tx2,ty2,tx0,ty0);
+        ):(
           da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2));
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22392,8 +22614,10 @@ _primitives3d :
 
       ):n==12?( # Textured quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
-        tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
+        tx2 = cut(i[#3,pp++],0,wt1); ty2 = cut(i[#3,pp++],0,ht1);
+        tx3 = cut(i[#3,pp++],0,wt1); ty3 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22402,10 +22626,13 @@ _primitives3d :
           add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
           add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
           add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
-          add_colored_point(i3,RGB3[0],RGB3[1],RGB3[2],O)):
-        mode==1?(add_textured_segment(i0,i1); add_textured_segment(i1,i2);
-                 add_textured_segment(i2,i3); add_textured_segment(i3,i0)):
-        (
+          add_colored_point(i3,RGB3[0],RGB3[1],RGB3[2],O)
+        ):mode==1?(
+          add_textured_segment(i0,i1,tx0,ty0,tx1,ty1);
+          add_textured_segment(i1,i2,tx1,ty1,tx2,ty2);
+          add_textured_segment(i2,i3,tx2,ty2,tx3,ty3);
+          add_textured_segment(i3,i0,tx3,ty3,tx0,ty0);
+        ):(
           da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3));
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22659,7 +22886,7 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
     (${3--1}) y. c r. $1,$1 to_color.
   else # Default background color.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and default background."
-    1,2,1,3,32,64,32,116,64,96 r. $1,$1,1,3,3
+    3,3,1,1,"0,0,0,0,0,100,100,0,50" permute. cyzx r. $1,$1,1,3,3 round.
   fi
   repeat $!-1 { . l[$>,-1] {
     if $2!=0 c3d[0] n3d[0] *3d[0] {3*min(w,h)*$2/4} fi
@@ -23845,7 +24072,9 @@ check_opencv : skip "${1=check_opencv}"
 #@cli : Start a 'do...while' block.
 #@cli : $ image.jpg luminance i={ia+2} do set 255,{u(100)}%,{u(100)}% while ia<$i
 
-#@cli } : eq. to 'done'. : (+)
+#@cli } : (+)
+#@cli : Equivalent to 'done' if it ends a 'for { .. }', 'foreach { .. }', 'local { .. }' or a 'repeat { .. }' block.
+#@cli : Otherwise, close the corresponding '{ .. }' code block.
 
 #@cli done : (+)
 #@cli : End a 'for/foreach/local/repeat...done' block, and go to associated 'for/foreach/repeat' if iterations remain.
@@ -28567,14 +28796,14 @@ stencilbw : skip ${1=15},${2=10}
 # 'init_max_gradient=0', 'patch_size_analysis=5', 'patch_size_synthesis=5', 'patch_size_synthesis_final=5', \
 # 'nb_matches_finest=2', 'nb_matchesc_coarsest=30', 'penalize_repetitions=2', 'matching_precision=2', \
 # 'scale_factor=1.85', 'skip_finest_scales=0' and \
-# 'image_matching_command'="s c,-3 transfer_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 \
+# 'image_matching_command'="s c,-3 match_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 \
 # a[0,1] c a[1,2] c"'.
 stylize :
   check ${"is_image_arg $1"}" && isnum(${2=0.5}) && isnum(${3=2}) && ${4=3}>=0 && ${5=0.5}>=0 && ${6=0.1}>=0 && "\
         "$6<=1 && isint(${7=0}) && $7>=0 && $7<=3 && isint(${8=16}) && $8>=0 && ${9=0}>=0 && isint(${10=5}) && "\
         "$10>0 && isint(${11=5}) && $11>0 && isint(${12=$11}) && $12>0 && isint(${13=2}) && isint(${14=30}) && "\
         "${15=2}>=0 && ${16=2}>=0 && ${17=1.85}>1 && isint(${18=0})>=0"
-  skip "${19=s c,-3 transfer_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 a[0,1] c a[1,2] c}"
+  skip "${19=s c,-3 match_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 a[0,1] c a[1,2] c}"
   e[^-1] "Stylize image$? with style image $1."
   fidelity_finest,\ # $2
   fidelity_coarsest,\ # $3
@@ -29332,7 +29561,7 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #@cli : multiply | negation | or | overlay | pinlight | red | reflect | saturation |
 #@cli : screen | seamless | seamless_mixed | shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 |
 #@cli : shapeaverage | shapeaverage0 | shapemedian | shapemedian0 | shapemin | shapemin0 | shapemax | shapemax0 |
-#@cli : softburn | softdodge | softlight | stamp | subtract | value | vividlight | xor }.
+#@cli : shapeprevalent | softburn | softdodge | softlight | stamp | subtract | value | vividlight | xor }.
 #@cli : 'opacity' must be in range '[0,1]' (or '[0%,100%]').
 #@cli : Default values: 'blending_mode=alpha', 'opacity=1' and 'selection_is=0'.
 #@cli : $ image.jpg +drop_shadow , resize2dy[-1] 200 rotate[-1] 20 +blend alpha display_rgba[-2]
@@ -29355,8 +29584,6 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
 # text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
 # ex softdodge,softlight,stamp,subtract,value,vividlight,xor
-#@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : \
-# blending_mode,_opacity[%]
 blend : skip "${1=},${2=},${3=},${4=}"
   if !${"is_image_arg $1"}
     if ['$1']!=0 mode=$1 else mode=alpha fi
@@ -29555,9 +29782,40 @@ _blend_shapemax0 :
   f[1] "begin(A = resize([ 0,(s-1)/s ],s,3));I!=0?I+A:I" norm[1] round[1] 0.01 label_fg[1] 0 {iM+1},1,1,{0,s},-inf
   f[0] ">i(#2,i(#1,x,y,z,0),0,0,c) = max(i(#2,i(#1,x,y,z,0),0,0,c),i);i"
   point. 0,0,0,1,0 map[1] [2] rm.
+
+_blend_shapeprevalent :
+  # Retrieve occurence of each color for each distinct region.
+  label. 0,0 nb_labels:=iM+1 a c
+  +n. 0,255 100%,100%,1,1,"H = 0; repeat (s#-1,p,(H*=31)+=j(#-1,0,0,0,p)); int(H)%2048" rm.. # Compute color hashcodes
+  1,1,1,{0,s+1}x2048
+  eval[1] "begin(_color = tmp = vector(#s#0));
+    color = I(#0);
+    ind = i + 2;
+    whdind = whd(#ind);
+    found = 0;
+    repeat (da_size(#ind),k,
+      copy(_color,i(#ind,0,k,0,1),s#0,1,whdind);
+      _color==color?(
+        found = 1;
+        copy(tmp,i[#ind,0],s#ind,1,whdind);
+        copy(i[#ind,0],i[#ind,k],s#ind,whdind,whdind);
+        copy(i[#ind,k],tmp,s#ind,whdind,1);
+        break();
+      );
+    );
+    found?++i[#ind,k]:da_push(#ind,[ 1,color ])"
+  da_freeze[2--1] a[2--1] y rm..
+
+  # Extract most frequent occurence for each distinct region.
+  1,$nb_labels,1,{0,s}
+  eval.. "P = I; region = P[size(P) - 1]; i[#-1,region]<P[0]?(I[#-1,region] = P[0,size(P) - 1]); I"
+  channels. 1,100% +channels[0] 100%
+  map. .. rm[-3,-2] channels.. 0,{0,s-2}
+
 _blend_softburn :
   +-[0] 255.1 ^[2] -1 *[2] [1] *[2] -127.5 +-[0] 255 ++[1] 0.1 /[3,4] *[3] 127.5 +[3] 255 +[1] [0] >[1] 255
   j[2] [3],0,0,0,0,1,[1] rm[1,3] c[1] 0,255
+
 _blend_softdodge :
   +-[1] 255.1 ^[2] -1 *[2] [0] *[2] -127.5 +-[1] 255 ++[0] 0.1 /[3,4] *[3] 127.5 +[3] 255 +[1] [0] >[1] 255
   j[2] [3],0,0,0,0,1,[1] rm[1,3] c[1] 0,255
@@ -30810,6 +31068,101 @@ check120 :
   }
   e " - Total scanned : "${_total_lines}" lines"
 
+#@cli color2name : R,G,B
+#@cli : Return the name (as a string, in English) that most matches the specified color.
+color2name :
+  _color2name ($1^$2^$3) r. {-2,w},1,1,3 -[-2,-1] norm. arg0 {xm},${"u "{n}}
+  ('${}') replace. {'~'},{'" "'} u {t} rm[-2,-1]
+
+_color2name :
+  if ['$__color2name']==0
+    base642img "\
+      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\
+      5z/QUEYKkStf/sfIaI+Kg=="
+    +store. __color2name
+  else $__color2name
+  fi
+
 #@cli covariance_vectors : _avg_outvarname
 #@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
 #@cli : (for arbitrary number of channels).
@@ -31190,7 +31543,19 @@ is_pattern : skip "${1=;}"
 is_percent :
   u {"s=['$1'];s[size(s)-1]==_'%'"}
 
-#@cli is_videofilename
+#@cli is_varname : string
+#@cli : Return 1 if specified string can be considered as a valid variable name.
+is_varname : skip "${1=}"
+  u {"
+    S = ['$1']; is_varname = 1;
+    inrange(S[0],_'0',_'9')?(is_varname = 0):
+    repeat(size(S),k, c = S[k];
+      is_varname&=inrange(c,_'0',_'9') || inrange(c,_'a',_'z') || inrange(c,_'A',_'Z') || c=='_';
+      !is_varname?break();
+    );
+    is_varname"}
+
+#@cli is_videofilename : filename
 #@cli : Return 1 if extension of specified filename is typical from video files.
 is_videofilename : skip "${1=}"
   0 => "_$1" u {"
@@ -31879,6 +32244,16 @@ _minmax_whds :
     );
     ([mw,mh,md,ms])[$2,$3]"}
 
+#@cli name2color : name
+#@cli : Return the R,G,B color that matches the specified color name.
+name2color :
+  strvar "$1" name=${}
+  _color2name
+  names={`"s = ['"{n}"']; m = !(s-_'~')*(_'_'-_'~'); s+=m; lowercase(s)"`}
+  l. {
+    s x => $names u {$name,^} rm
+    onfail rm error[0--3] "Command 'name2color': Unknown color '$1'."
+  }
 
 #@cli nmd : eq. to 'named' : (+)
 
@@ -32445,6 +32820,23 @@ strcapitalize :
 strcontains :
   u {"find(['$1'],['$2'])>=0"}
 
+#@cli strclut : "string"
+#@cli : Return simplified version of the specified string that can be used as a CLUT name.
+strclut :
+  0 => "$1" nm={b} rm.
+  u {`"ss = lowercase([['"{/$nm}"'],0]);
+       const N = 2*size(ss);
+       sd = vectorN();
+       for (ps = pd = 0, ss[ps], ++ps,
+         ss[ps]<=_' '?(sd[pd++] = _'_'):
+         (ss[ps]==_'(' || ss[ps]==_')' ||
+          ss[ps]==_'{' || ss[ps]==_'}' ||
+          ss[ps]==_'[' || ss[ps]==_']' ||
+          ss[ps]==_'\'' || ss[ps]==_'\"')?0:
+         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
+         (sd[pd++] = ss[ps]);
+       ); sd[pd] = 0; sd"`}
+
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
 strlen : skip "${1=}"
@@ -32519,23 +32911,6 @@ tic :
 toc :
   v=$^ _ticpos-=1 u {_$|-${_tic$_ticpos}}
   v 0 e[^-1] "Elapsed time: "${}" s". v $v
-
-#@cli to_clutname : "string"
-#@cli : Return simplified name that can be used as a CLUT name, from specified input string.
-to_clutname :
-  0 => "$1" nm={b} rm.
-  u {`"ss = lowercase([['"{/$nm}"'],0]);
-       const N = 2*size(ss);
-       sd = vectorN();
-       for (ps = pd = 0, ss[ps], ++ps,
-         ss[ps]<=_' '?(sd[pd++] = _'_'):
-         (ss[ps]==_'(' || ss[ps]==_')' ||
-          ss[ps]==_'{' || ss[ps]==_'}' ||
-          ss[ps]==_'[' || ss[ps]==_']' ||
-          ss[ps]==_'\'' || ss[ps]==_'\"')?0:
-         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
-         (sd[pd++] = ss[ps]);
-       ); sd[pd] = 0; sd"`}
 
 #@cli uint82base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode the values of the latest of the selected images as a base64-encoded string.
@@ -36157,7 +36532,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
  _x_quantize_rgb_3d :
   if $obj3d rm[obj3d] fi
   +distribution3d[centroids] circles3d. 5 col3d. 255      # Pre-compute 3D object.
-  colorcube3d p3d. 1
+  colorcube3d 1
   +&[colors] 255 distribution3d. circles3d. 5 o3d. 0.2 +3d[-3--1]
   -3d. 128,128,128 => obj3d _N={i[7]}
 
@@ -37691,38 +38066,6 @@ gui_resize_preview_area :
 gui_crop_resize_preview :
   gui_crop_preview gui_resize_preview
 
-# Function that returns the list of external sources to be included in the plug-in.
-# This command can be superseded on the user '.gmic' file to add sources for the plug-in.
-# $1 = try network update
-# $2 = try 'gui_filter_sources' defined in local update file.
-gui_filter_sources : skip ${1=0},${2=1}
-
-  # Try to update the command 'gui_filter_sources' itself.
-  if $2
-    local=${_path_rc}update$_version.gmic
-    if isfile(['{/$local}']) m $local fi
-    if isfile(['{/$_path_user}']) m $_path_user fi
-    gui_filter_sources $1,0
-    return
-  fi
-
-  # Try to clean older update files to save disk space.
-  if u>0.95 l[] {
-    files=${"files "$_path_rc"/update*.gmic"}
-    repeat narg($files) {
-      file=${arg\ 1+$>,$files}
-      ('$file') z. {[w-8,w-6]} ver={t} rm.
-      if isnum($ver)" && "$ver<$_version delete $file rm. fi
-    }
-    onfail
-  } fi
-
-  # Build list of filter sources.
-  ({'https://gmic.eu/update$_version.gmic'},1) # Include stdlib update (last 1 -> Override default filters).
-  l[] { _gui_filter_sources $1 onfail rm } # Invoke custom command to include other filter sources.
-  l[] { cimgz:${_path_rc}gui_filter_sources onfail } # Include other user-defined filters sources.
-  ('{/$_path_user}') # Include local '.gmic' (or 'user.gmic') file.
-
 # Function that always returns a valid preview size.
 gui_preview_wh :
   u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:\
@@ -38579,7 +38922,7 @@ fx_support_us :
 #@gui : url = link{"https://gmic.eu/gmic_all_data.zip"}
 #@gui : note = note{"You must then decompress all files contained in this archive at the following location:\n
 #@gui : - for <b>Unix</b>-like systems : <span color="blue"><samp>$HOME/.cache/gmic/</samp></span>\n
-#@gui : - for <b>Windows</b> systems : <span color="blue"><samp>%APPDATA/gmic/</samp></span>
+#@gui : - for <b>Windows</b> systems : <span color="blue"><samp>%APPDATA%/gmic/</samp></span>
 #@gui : "}
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/16/04</i>.</small>")
@@ -38984,8 +39327,8 @@ fx_gmicky_preview :
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
 #@gui : - <b>2023/01/16</b> : version <i>3.2.0</i>.\n
-#@gui : - <span foreground="purple"><b>2023/02/15</b> : version <i>3.2.1</i> (Current stable).</span>\n
-##@gui : - <b>2023/03/XX</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2023/03/17</b> : version <i>3.2.2</i> (Current stable).</span>\n
+##@gui : - <b>2023/02/27</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.3)","https://discuss.pixls.us/t/on-the-road-to-3-3"}
@@ -41427,11 +41770,11 @@ fx_stylize :
     match_colors=$match_colors" ac[0,1] \"balance_gamma ,\","$colorspace$luma
     if narg($chroma) match_colors=$match_colors" ac[0,1] \"balance_gamma ,\","$colorspace$chroma fi
   elif $10==2
-    match_colors=$match_colors" transfer_histogram[0] [1],256,"$colorspace$luma
-    if narg($chroma) match_colors=$match_colors" transfer_histogram[0] [1],256,"$colorspace$chroma fi
+    match_colors=$match_colors" match_histogram[0] [1],256,"$colorspace$luma
+    if narg($chroma) match_colors=$match_colors" match_histogram[0] [1],256,"$colorspace$chroma fi
   elif $10==3
-    match_colors=$match_colors" transfer_pca[0] [1],"$colorspace$luma" c[0] 0,255"
-    if narg($chroma) match_colors=$match_colors" transfer_pca[0] [1],"$colorspace$chroma" c[0] 0,255" fi
+    match_colors=$match_colors" match_pca[0] [1],"$colorspace$luma" c[0] 0,255"
+    if narg($chroma) match_colors=$match_colors" match_pca[0] [1],"$colorspace$chroma" c[0] 0,255" fi
   fi
   if $12==1 match_colors=$match_colors" rgb2ycbcr[0,1] sh[0,1] 1,2 f[-2,-1] 128 rm[-2,-1] ycbcr2rgb[0,1]"
   elif $12==2 match_colors=$match_colors" srgb2lab[0,1] sh[0,1] 1,2 f[-2,-1] 0 rm[-2,-1] lab2srgb[0,1]"
@@ -42640,7 +42983,7 @@ fx_boost_fade :
   foreach {
     100%,100%,1,3 rand. 0,1 b. {10-10*($1/10)^0.5} n. 0,255
     to_colormode 0 a z
-    ac "s z transfer_histogram.. . rm.",${"arg 1+$2,ycbcr_cbcr,lab_ab"}
+    ac "s z match_histogram.. . rm.",${"arg 1+$2,ycbcr_cbcr,lab_ab"}
   }
 
 fx_boost_fade_preview :
@@ -43776,6 +44119,100 @@ _fx_cluts_toddblankenship :
 _fx_cluts_youssefhossam :
   u cinematic_forest,city,darkness,hallowen_dark,sea
 
+#@gui CLUT from After - Before Layers : fx_clut_from_ab, fx_clut_from_ab_preview
+#@gui : Output Mode = choice("Replace Layer with CLUT","Insert New CLUT Layer","Save CLUT as .cube or .png File")
+#@gui : Output CLUT Resolution = choice{4,16,25,36,49,64,81,100,121,144,169,225,256}_2
+#@gui : sep = separator()
+#@gui : Output Folder = _folder()_1-
+#@gui : Output Filename = _text("output.cube")_1+
+#@gui : sep = separator()
+#@gui : Influence of Color Samples (%) = float(50,0,100)_2
+#@gui : sep = separator()
+#@gui : note = note{"<b>What is this filter for?</b>\n\n
+#@gui : This filter requires at least two input layers to work properly.\n
+#@gui : It assumes you have an input top layer <b>A</b> and a base layer <b>B</b> such that <b>A</b> and
+#@gui : <b>B</b> both represent the same image but with only color variations
+#@gui : (typically <b>A</b> has been obtained from <b>B</b> using the color curves tool).\n\n
+#@gui : This filter is then able to estimate and outputs a color HaldCLUT <b>H</b> so that applying <b>H</b>
+#@gui : on the base layer <b>B</b> gives back <b>A</b>.\n\n
+#@gui : This is useful when you have a color transformation between two images, that you want to recover and
+#@gui : re-apply on a bunch of other images.
+#@gui : "}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      
+#@gui : Latest Update: <i>2019/08/27</i>.</small>")
+fx_clut_from_ab : skip "${3=},${4=}"
+  if $!<2 error "At least two input layers are needed to run this filter." fi
+  repeat $!-1 { l[$<,-1] {
+    nm=${gui_layer_name..}
+    i[0] {a=0$_is_preview?32:64;[a,a,a]},4 f[1] ">I(#0,round(I(#2)*(w#0-1)/255))+=[R,G,B,1]; I"
+    l[0] {
+      s c,-3 +max. 1 /[-3,-1] ==. 0 inpaint_pde.. .,75%,1 distance. 0 *. {-1/(1+$5)} exp.
+      f.. "f = i(#-1); f*I + (1-f)*[x,y,z]*255/(w-1)" rm.
+      S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w r. $S,$S,$S,3,3 fi
+      c 0,255
+    }
+
+    if $1==2 # Output as a file
+      is_png={str=lowercase(['"$4"']);find(str,'.png')==size(str)-4}
+      is_cube={str=lowercase(['"$4"']);find(str,'.cube')==size(str)-5}
+      if !$is_png" && "!$is_cube $!is_ciube error "Filename extension must be '.cube' or '.png'." fi
+      if $is_png r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1 o[0] "$3/$4"
+      else
+        if {0,w>32} r3dx[0] 32 fi
+        output_cube[0] "$3/$4"
+      fi
+      rm[0]
+    else
+      r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1
+      if !$1 rm[1] fi # Replace Layer with CLUT
+      =>[0] "name(CLUT to '"$nm"')"
+    fi
+  if 0$_output_mode k[0] fi
+  } }
+
+fx_clut_from_ab_preview : skip "${3=},${4=}"
+  if $!<2 gui_warning_preview "At least two input layers are needed to run this filter." return fi
+  _is_preview,_output_mode=1 fx_clut_from_ab 0,4,0,0,$5
+  foreach {
+    r {a=round(cbrt(wh));[a,a,a]},3,-1
+    +r3dx. 24 _fx_clut_from_ab_preview.
+    S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w#0 r[0] $S,$S,$S,3,3 fi
+    r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1
+    rr2d[0] $_preview_area_width,$_preview_area_height,2,1 r2dx. 70%
+    sh. 100% b. 1% n. 0,255 rm.
+    blend alpha
+  }
+
+  file_attr={$1==2?2:1}
+  u "{$1}{$2}{$3}_"$file_attr"{$4}_"$file_attr"{$5}"
+
+# Render 3D visualization of a CLUT.
+_fx_clut_from_ab_preview :
+  foreach {
+    fact={256/w}
+
+    # Color data, as a point cloud.
+    pointcloud3d +3d 0.5,0.5,0.5 *3d $fact circles3d {1.25*$fact} o3d {0.004*$fact}
+
+    # Add cube edges.
+    colorcube3d[]
+    l. { s3d l.. { s y,6 repeat $! { sh[$>] 4,100%,0,0 /. 1.25 rm. } } a y } # Darken colors of edges
+    p3d. 1
+    l. { repeat 8 { o={a=$>;0.5*[a&1,(a>>1)&1,(a>>2)&1]} ++3d[0] $o +-3d[0] $o } +3d } # Increase thickness of edges
+
+    # Add 3D axes, without the 'O'.
+    axes3d 64,64,64,24,R,G,B,0
+    +3d
+
+    # Render 3D snapshot.
+    pose3d 1.2451,0.120715,-0.893986,-58.3864,-0.572953,1.28275,-0.62477,-11.6557,\
+           0.696784,0.839071,1.08374,-333.008,0,0,217,1
+    snapshot3d {max(512,0$_preview_area_width,0$_preview_area_height)},1.22,255,255,255
+    autocrop frame 10,10,255
+    to_rgba flood 0,0,0,20,1,1,255,255,255,0
+  }
+
 #@gui Colorful Blobs : fx_colorful_blobs, fx_colorful_blobs_preview
 #@gui : Colorspace = choice(1,"sRGB","Linear RGB","Lab")
 #@gui : Background Color = color(200,200,200,0)
@@ -44872,99 +45309,39 @@ fx_mix_ycbcr :
 fx_mix_ycbcr_preview :
   gui_split_preview "fx_mix_ycbcr $*",${-3--1}
 
-#@gui CLUT from After - Before Layers : fx_clut_from_ab, fx_clut_from_ab_preview
-#@gui : Output Mode = choice("Replace Layer with CLUT","Insert New CLUT Layer","Save CLUT as .cube or .png File")
-#@gui : Output CLUT Resolution = choice{4,16,25,36,49,64,81,100,121,144,169,225,256}_2
+#@gui Random Color Transformation : fx_random_color_transformation, fx_random_color_transformation_preview(1)+
+#@gui : Seed = float(0,0,100000)
+#@gui : Randomize Seed = button()
+#@gui : First time = value(1)
 #@gui : sep = separator()
-#@gui : Output Folder = _folder()_1-
-#@gui : Output Filename = _text("output.cube")_1+
+#@gui : Amplitude (%) = float(100,0,100)
+#@gui : Brightness (%) = float(0,-100,100)
+#@gui : Contrast (%) = float(0,-100,100)
+#@gui : Gamma (%) = float(0,-100,100)
+#@gui : Hue (%) = float(0,-100,100)
+#@gui : Saturation (%) = float(0,-100,100)
 #@gui : sep = separator()
-#@gui : Influence of Color Samples (%) = float(50,0,100)_2
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
-#@gui : note = note{"<b>What is this filter for?</b>\n\n
-#@gui : This filter requires at least two input layers to work properly.\n
-#@gui : It assumes you have an input top layer <b>A</b> and a base layer <b>B</b> such that <b>A</b> and
-#@gui : <b>B</b> both represent the same image but with only color variations
-#@gui : (typically <b>A</b> has been obtained from <b>B</b> using the color curves tool).\n\n
-#@gui : This filter is then able to estimate and outputs a color HaldCLUT <b>H</b> so that applying <b>H</b>
-#@gui : on the base layer <b>B</b> gives back <b>A</b>.\n\n
-#@gui : This is useful when you have a color transformation between two images, that you want to recover and
-#@gui : re-apply on a bunch of other images.
-#@gui : "}
-#@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      
-#@gui : Latest Update: <i>2019/08/27</i>.</small>")
-fx_clut_from_ab : skip "${3=},${4=}"
-  if $!<2 error "At least two input layers are needed to run this filter." fi
-  repeat $!-1 { l[$<,-1] {
-    nm=${gui_layer_name..}
-    i[0] {a=0$_is_preview?32:64;[a,a,a]},4 f[1] ">I(#0,round(I(#2)*(w#0-1)/255))+=[R,G,B,1]; I"
-    l[0] {
-      s c,-3 +max. 1 /[-3,-1] ==. 0 inpaint_pde.. .,75%,1 distance. 0 *. {-1/(1+$5)} exp.
-      f.. "f = i(#-1); f*I + (1-f)*[x,y,z]*255/(w-1)" rm.
-      S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w r. $S,$S,$S,3,3 fi
-      c 0,255
-    }
-
-    if $1==2 # Output as a file
-      is_png={str=lowercase(['"$4"']);find(str,'.png')==size(str)-4}
-      is_cube={str=lowercase(['"$4"']);find(str,'.cube')==size(str)-5}
-      if !$is_png" && "!$is_cube $!is_ciube error "Filename extension must be '.cube' or '.png'." fi
-      if $is_png r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1 o[0] "$3/$4"
-      else
-        if {0,w>32} r3dx[0] 32 fi
-        output_cube[0] "$3/$4"
-      fi
-      rm[0]
-    else
-      r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1
-      if !$1 rm[1] fi # Replace Layer with CLUT
-      =>[0] "name(CLUT to '"$nm"')"
-    fi
-  if 0$_output_mode k[0] fi
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2023/03/10</i>.</small>")
+fx_random_color_transformation :
+  if $2" || "$3 srand __seed:=_round(u(100000)) else __seed=$1 fi
+  random_clut $__seed
+  amplitude:=$4%
+  repeat $!-1 { l[$>,-1] {
+    +map_clut.. .
+    j... .,0,0,0,0,$amplitude rm.
   } }
+  rm.
+  adjust_colors ${5-9}
 
-fx_clut_from_ab_preview : skip "${3=},${4=}"
-  if $!<2 gui_warning_preview "At least two input layers are needed to run this filter." return fi
-  _is_preview,_output_mode=1 fx_clut_from_ab 0,4,0,0,$5
-  foreach {
-    r {a=round(cbrt(wh));[a,a,a]},3,-1
-    +r3dx. 24 _fx_clut_from_ab_preview.
-    S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w#0 r[0] $S,$S,$S,3,3 fi
-    r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1
-    rr2d[0] $_preview_area_width,$_preview_area_height,2,1 r2dx. 70%
-    sh. 100% b. 1% n. 0,255 rm.
-    blend alpha
-  }
-
-  file_attr={$1==2?2:1}
-  u "{$1}{$2}{$3}_"$file_attr"{$4}_"$file_attr"{$5}"
-
-# Render 3D visualization of a CLUT.
-_fx_clut_from_ab_preview :
-  foreach {
-    fact={256/w}
-
-    # Color data, as a point cloud.
-    pointcloud3d +3d 0.5,0.5,0.5 *3d $fact circles3d {1.25*$fact} o3d {0.004*$fact}
-
-    # Add cube edges.
-    colorcube3d[]
-    l. { s3d l.. { s y,6 repeat $! { sh[$>] 4,100%,0,0 /. 1.25 rm. } } a y } # Darken colors of edges
-    p3d. 1
-    l. { repeat 8 { o={a=$>;0.5*[a&1,(a>>1)&1,(a>>2)&1]} ++3d[0] $o +-3d[0] $o } +3d } # Increase thickness of edges
-
-    # Add 3D axes, without the 'O'.
-    axes3d 64,64,64,24,R,G,B,0
-    +3d
-
-    # Render 3D snapshot.
-    pose3d 1.2451,0.120715,-0.893986,-58.3864,-0.572953,1.28275,-0.62477,-11.6557,\
-           0.696784,0.839071,1.08374,-333.008,0,0,217,1
-    snapshot3d {max(512,0$_preview_area_width,0$_preview_area_height)},1.22,255,255,255
-    autocrop frame 10,10,255
-    to_rgba flood 0,0,0,20,1,1,255,255,255,0
-  }
+fx_random_color_transformation_preview :
+  gui_split_preview "fx_random_color_transformation ${1--2}",${-3--1}
+  to "Seed: \#"$__seed,5,5,5%,2
+  u "{"$__seed"}{0}{0}{$4}{$5}{$6}{$7}{$8}{$9}{$10}{$11,$12}"
 
 #@gui Retinex : fx_retinex, fx_retinex_preview(0)+
 #@gui : Strength (%) = float(75,0,100)
@@ -45440,7 +45817,7 @@ _fx_cluts_colorslide :
 fx_transfer_rgb :
   to_rgb
   ref={$4?0:-1}
-  transfer_rgb[^$ref] [$ref],0.25,$1,$2,{2^(4+$3)},$5,0
+  match_rgb[^$ref] [$ref],0.25,$1,$2,{2^(4+$3)},$5,0
   c 0,255
 
 fx_transfer_rgb_preview :
@@ -45483,7 +45860,7 @@ fx_transfer_rgb_preview :
 fx_transfer_histogram :
   to_rgb
   ref={$2?0:-1}
-  transfer_histogram[^$ref] [$ref],256,$1
+  match_histogram[^$ref] [$ref],256,$1
   c 0,255
 
 fx_transfer_histogram_preview :
@@ -45526,7 +45903,7 @@ fx_transfer_histogram_preview :
 fx_transfer_pca :
   to_rgb
   ref={$2?0:-1}
-  transfer_pca[^$ref] [$ref],$1
+  match_pca[^$ref] [$ref],$1
   c 0,255
 
 fx_transfer_pca_preview :
@@ -49950,7 +50327,7 @@ fx_blend_seamless_preview :
 #@gui : "Hard Mix","Hue","Interpolation","Lighten","Lightness","Linear Burn","Linear Light","Luminance",
 #@gui : "Multiply","Negation","Or","Overlay","Pin Light","Red","Reflect","Saturation",
 #@gui : "Shape Area Max","Shape Area Max0","Shape Area Min","Shape Area Min0","Shape Average","Shape Average0",
-#@gui : "Shape Median","Shape Median0","Shape Min","Shape Min0","Shape Max","Shape Max0",
+#@gui : "Shape Median","Shape Median0","Shape Min","Shape Min0","Shape Max","Shape Max0","Shape Prevalent",
 #@gui : "Soft Burn","Soft Dodge","Soft Light","Screen","Stamp","Subtract","Value","Vivid Light","Xor"}
 #@gui : Process As = choice("Two-by-Two","Upper Layer is the Top Layer for All Blends",
 #@gui : "Lower Layer is the Bottom Layer for All Blends")
@@ -49977,7 +50354,7 @@ fx_blend :
        multiply,negation,or,overlay,pinlight,red,reflect,saturation,\
        shapeareamax,shapeareamax0,shapeareamin,shapeareamin0,\
        shapeaverage,shapeaverage0,shapemedian,shapemedian0,\
-       shapemin,shapemin0,shapemax,shapemax0,\
+       shapemin,shapemin0,shapemax,shapemax0,shapeprevalent,\
        softburn,softdodge,softlight,screen,stamp,subtract,value,\
        vividlight,xor}
   m "_blend_custom_formula : f. \"a = i#0/255; b = i#1/255; 255*cut(($5),0,1)\""
@@ -50400,7 +50777,7 @@ _fx_equalize_light :
   foreach {
     split_opacity l[0] {
       . +b. {max(0.1,100-$1)}% -[-2,-1]
-      if $2 transfer_pca. .. else n. ..,.. fi
+      if $2 match_pca. .. else n. ..,.. fi
       rm..
     }
     a c
@@ -53693,29 +54070,29 @@ fx_equation_plot :
     dg $w,$h,$6,$7,$2,$3
   }
 
-#@gui Generate Random Portrait : fx_generate_random_portrait, fx_generate_random_portrait_preview(1)+
-#@gui : Resolution (px) = _int(800,0,2048)
-#@gui : Update Portrait = button()
-#@gui : sep = separator()
-#@gui : note = note("<small>This filter loads data from the website:</small>")
-#@gui : url = link("https://thispersondoesnotexist.com/")
-#@gui : note = note("<small>It means it doesn't perform any calculations on your machine and it requires an active
-#@gui : Internet connection.</small>")
-#@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.
-#@gui :       Latest Update: <i>2022/04/14</i>.</small>")
-fx_generate_random_portrait :
-  file_tmp=${-path_tmp}fx_random_portrait.png
-  if $! rm[0] fi
-  if isfile(['{/$file_tmp}']) $file_tmp r2dx. $1 delete $file_tmp
-  else +portrait[] $1
-  fi
-  mv. 0
+# #@gui Generate Random Portrait : fx_generate_random_portrait, fx_generate_random_portrait_preview(1)+
+# #@gui : Resolution (px) = _int(800,0,2048)
+# #@gui : Update Portrait = button()
+# #@gui : sep = separator()
+# #@gui : note = note("<small>This filter loads data from the website:</small>")
+# #@gui : url = link("https://thispersondoesnotexist.com/")
+# #@gui : note = note("<small>It means it doesn't perform any calculations on your machine and it requires an active
+# #@gui : Internet connection.</small>")
+# #@gui : sep = separator()
+# #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.
+# #@gui :       Latest Update: <i>2022/04/14</i>.</small>")
+# fx_generate_random_portrait :
+#   file_tmp=${-path_tmp}fx_random_portrait.png
+#   if $! rm[0] fi
+#   if isfile(['{/$file_tmp}']) $file_tmp r2dx. $1 delete $file_tmp
+#   else +portrait[] $1
+#   fi
+#   mv. 0
 
-fx_generate_random_portrait_preview :
-  file_tmp=${-path_tmp}fx_random_portrait.png
-  if $! rm[0] fi
-  +portrait[] $1 o. $file_tmp mv. 0
+# fx_generate_random_portrait_preview :
+#   file_tmp=${-path_tmp}fx_random_portrait.png
+#   if $! rm[0] fi
+#   +portrait[] $1 o. $file_tmp mv. 0
 
 #@gui Gradient [Corners] : fx_corner_gradient, fx_corner_gradient
 #@gui : Color 1 (Up/Left Corner) = color(255,255,255,128)

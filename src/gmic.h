@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 321
+#define gmic_version 322
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -205,6 +205,10 @@ namespace gmic_library {
 
 #ifndef cimg_appname
 #define cimg_appname "gmic"
+#endif
+
+#ifdef gmic_is_parallel
+#define cimg_use_pthread
 #endif
 
 #define cimg_library gmic_library
@@ -475,13 +479,14 @@ struct gmic {
                       const unsigned int start, const unsigned int end);
 
   template<typename T>
-  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names);
+  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
+             const bool push_new_run);
 
   template<typename T>
   gmic& _run(const gmic_list<char>& commands_line, unsigned int& position, gmic_list<T>& images,
              gmic_list<char>&images_names, gmic_list<T>& parent_images, gmic_list<char>& parent_images_names,
              const unsigned int *const variables_sizes, bool *const is_noargs, const char *const parent_arguments,
-             const gmic_image<unsigned int> *const command_selection);
+             const gmic_image<unsigned int> *const command_selection, const bool push_new_run);
 
   // Class attributes.
   static const char *builtin_commands_names[];
@@ -502,7 +507,7 @@ struct gmic {
     debug_filename, debug_line, cimg_exception_mode;
   int verbosity, network_timeout;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_debug_info,
-    _is_abort, *is_abort, is_abort_thread;
+    _is_abort, *is_abort, is_abort_thread, is_lbrace_command;
   const char *starting_commands_line;
 };
 

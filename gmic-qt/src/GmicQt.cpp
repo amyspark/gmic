@@ -42,7 +42,6 @@
 #include "MainWindow.h"
 #include "Misc.h"
 #include "Settings.h"
-#include "Updater.h"
 #include "Widgets/InOutPanel.h"
 #include "Widgets/ProgressInfoWindow.h"
 #include "gmic.h"
@@ -76,6 +75,7 @@ namespace GmicQt
 InputMode DefaultInputMode = InputMode::Active;
 OutputMode DefaultOutputMode = OutputMode::InPlace;
 const OutputMessageMode DefaultOutputMessageMode = OutputMessageMode::Quiet;
+const int GmicVersion = gmic_version;
 
 const QString & gmicVersionString()
 {
@@ -549,9 +549,11 @@ void configureApplication()
   QCoreApplication::setOrganizationDomain(GMIC_QT_ORGANISATION_DOMAIN);
   QCoreApplication::setApplicationName(GMIC_QT_APPLICATION_NAME);
   QCoreApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
+#if !QT_VERSION_GTE(6, 0, 0)
   if (QSettings().value(HIGHDPI_KEY, false).toBool()) {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   }
+#endif
 }
 
 void disableModes(const std::list<GmicQt::InputMode> & disabledInputModes, //

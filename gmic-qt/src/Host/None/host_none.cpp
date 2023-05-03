@@ -25,7 +25,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
-#include <QDesktopWidget>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFont>
@@ -41,6 +40,7 @@
 #include "GmicQt.h"
 #include "Host/GmicQtHost.h"
 #include "Host/None/ImageDialog.h"
+#include "Settings.h"
 #include "gmic.h"
 
 #define STRINGIFY(X) #X
@@ -72,7 +72,8 @@ void askForInputImageFilename()
   QStringList extensions;
   QString filters;
   gmic_qt_standalone::ImageDialog::supportedImageFormats(extensions, filters);
-  QString filename = QFileDialog::getOpenFileName(mainWidget, QObject::tr("Select an image to open..."), ".", filters, nullptr);
+  const QFileDialog::Options options = GmicQt::Settings::nativeFileDialogs() ? QFileDialog::Options() : QFileDialog::DontUseNativeDialog;
+  QString filename = QFileDialog::getOpenFileName(mainWidget, QObject::tr("Select an image to open..."), ".", filters, nullptr, options);
   input_images.resize(1);
   current_image_filenames.resize(1);
   if (!filename.isEmpty() && QFileInfo(filename).isReadable() && input_images.first().load(filename)) {
@@ -115,9 +116,9 @@ QString imageName(const char * text)
       result = QString::fromUtf8(start + 5, (unsigned int)(ps - start - 5));
       result.chop(1);
       for (QChar & c : result) {
-        if (c == 21) {
+        if (c == char(21)) {
           c = '(';
-        } else if (c == 22) {
+        } else if (c == char(22)) {
           c = ')';
         }
       }

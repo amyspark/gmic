@@ -29,6 +29,14 @@
 # For debugging purpose
 !defined(TIMING,var) { TIMING = off }
 
+# DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+greaterThan(QT_MAJOR_VERSION, 5) {
+ message("Qt version >= 6.0.0")
+ QMAKE_CXXFLAGS += -fPIE
+ QMAKE_LFLAGS += -fPIE
+}
+
 #
 # Check Qt version (>= 5.2)
 #
@@ -47,7 +55,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 TEMPLATE = app
 QT += widgets network
-CONFIG	+= qt c++11
+CONFIG	+= qt c++17
 CONFIG	+= warn_on
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
@@ -291,6 +299,8 @@ HEADERS +=  \
   src/FilterParameters/TextParameter.h \
   src/FilterSelector/FiltersModel.h \
   src/FilterSelector/FiltersModelReader.h \
+  src/FilterSelector/FiltersModelBinaryReader.h \
+  src/FilterSelector/FiltersModelBinaryWriter.h \
   src/FilterSelector/FiltersPresenter.h \
   src/FilterSelector/FiltersView/FiltersView.h \
   src/FilterSelector/FiltersView/TreeView.h \
@@ -318,6 +328,7 @@ HEADERS +=  \
   src/ParametersCache.h \
   src/PersistentMemory.h \
   src/Settings.h \
+  src/SourcesWidget.h \
   src/Tags.h \
   src/TimeLogger.h \
   src/Updater.h \
@@ -368,6 +379,8 @@ SOURCES += \
   src/FilterParameters/TextParameter.cpp \
   src/FilterSelector/FiltersModel.cpp \
   src/FilterSelector/FiltersModelReader.cpp \
+  src/FilterSelector/FiltersModelBinaryReader.cpp \
+  src/FilterSelector/FiltersModelBinaryWriter.cpp \
   src/FilterSelector/FiltersPresenter.cpp \
   src/FilterSelector/FiltersView/FiltersView.cpp \
   src/FilterSelector/FiltersView/TreeView.cpp \
@@ -394,6 +407,7 @@ SOURCES += \
   src/ParametersCache.cpp \
   src/PersistentMemory.cpp \
   src/Settings.cpp \
+  src/SourcesWidget.cpp \
   src/Tags.cpp \
   src/TimeLogger.cpp \
   src/Updater.cpp \
@@ -426,6 +440,7 @@ equals(GMIC_DYNAMIC_LINKING, "off" )|equals(GMIC_DYNAMIC_LINKING, "OFF" ) {
 
 # ALL_FORMS
 FORMS +=  ui/inoutpanel.ui \
+          ui/sourceswidget.ui \
           ui/multilinetextparameterwidget.ui \
           ui/progressinfowindow.ui \
           ui/dialogsettings.ui \

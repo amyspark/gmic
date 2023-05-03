@@ -134,6 +134,8 @@ private:
   void setZoomConstraint();
   bool filtersSelectionMode();
   void clearMessage();
+  void clearRightMessage();
+  void showRightMessage(const QString & text);
   void showMessage(const QString & text, int ms = 2000);
   void setIcons();
   bool confirmAbortProcessingOnCloseRequest();
@@ -142,6 +144,7 @@ private:
   void buildFiltersTree();
   void retrieveFilterAndParametersFromPluginParameters(QString & hash, QList<QString> & parameters);
   static QString screenGeometries();
+  void updateFilters(bool internet);
   enum class ProcessingAction
   {
     NoAction,

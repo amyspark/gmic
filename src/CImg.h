@@ -54,7 +54,7 @@
 
 // Set version number of the library.
 #ifndef cimg_version
-#define cimg_version 321
+#define cimg_version 322
 
 /*-----------------------------------------------------------
  #
@@ -2878,6 +2878,41 @@ namespace cimg_library {
       static long format(const long val) { return (long)val; }
     };
 
+#if !(UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX)))
+    template<> struct type<unsigned long long> {
+      static const char* string() { static const char *const s = "uint64"; return s; }
+      static bool is_float() { return false; }
+      static bool is_inf(const cimg_uint64) { return false; }
+      static bool is_nan(const cimg_uint64) { return false; }
+      static bool is_finite(const cimg_uint64) { return true; }
+      static cimg_uint64 min() { return 0; }
+      static cimg_uint64 max() { return (cimg_uint64)-1; }
+      static cimg_uint64 inf() { return max(); }
+      static cimg_uint64 cut(const double val) {
+        return val<(double)min()?min():val>(double)max()?max():(cimg_uint64)val; }
+      static const char* format() { return cimg_fuint64; }
+      static const char* format_s() { return cimg_fuint64; }
+      static cimg_uint64 format(const cimg_uint64 val) { return val; }
+    };
+
+    template<> struct type<long long> {
+      static const char* string() { static const char *const s = "int64"; return s; }
+      static bool is_float() { return false; }
+      static bool is_inf(const cimg_int64) { return false; }
+      static bool is_nan(const cimg_int64) { return false; }
+      static bool is_finite(const cimg_int64) { return true; }
+      static cimg_int64 min() { return ~max(); }
+      static cimg_int64 max() { return (cimg_int64)((cimg_uint64)-1>>1); }
+      static cimg_int64 inf() { return max(); }
+      static cimg_int64 cut(const double val) {
+        return val<(double)min()?min():val>(double)max()?max():(cimg_int64)val;
+      }
+      static const char* format() { return cimg_fint64; }
+      static const char* format_s() { return cimg_fint64; }
+      static long format(const long val) { return (long)val; }
+    };
+#endif
+
     template<> struct type<double> {
       static const char* string() { static const char *const s = "float64"; return s; }
       static bool is_float() { return true; }
@@ -3120,6 +3155,17 @@ namespace cimg_library {
     template<> struct superset<cimg_uint64,double> { typedef double type; };
     template<> struct superset<cimg_int64,float> { typedef double type; };
     template<> struct superset<cimg_int64,double> { typedef double type; };
+#if !(UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX)))
+    template<> struct superset<unsigned long long,char> { typedef cimg_int64 type; };
+    template<> struct superset<unsigned long long,signed char> { typedef cimg_int64 type; };
+    template<> struct superset<unsigned long long,short> { typedef cimg_int64 type; };
+    template<> struct superset<unsigned long long,int> { typedef cimg_int64 type; };
+    template<> struct superset<unsigned long long,cimg_int64> { typedef cimg_int64 type; };
+    template<> struct superset<unsigned long long,float> { typedef double type; };
+    template<> struct superset<unsigned long long,double> { typedef double type; };
+    template<> struct superset<long long,float> { typedef double type; };
+    template<> struct superset<long long,double> { typedef double type; };
+#endif
     template<> struct superset<float,cimg_uint64> { typedef double type; };
     template<> struct superset<float,cimg_int64> { typedef double type; };
     template<> struct superset<float,double> { typedef double type; };
@@ -53505,7 +53551,7 @@ namespace cimg_library {
       return res;
     }
 
-    // Return a visualizable uchar8 image for display routines.
+    // Return a visualizable 'uchar8' image for display routines.
     CImg<ucharT> _get_select(const CImgDisplay& disp, const int normalization,
                              const int x, const int y, const int z) const {
       if (is_empty()) return CImg<ucharT>(1,1,1,1,0);
@@ -57359,7 +57405,7 @@ namespace cimg_library {
       else std::fprintf(cimg::output()," (%s) = [ ",_is_shared?"shared":"non-shared");
 
       if (!is_empty()) cimg_foroff(*this,off) {
-        std::fprintf(cimg::output(),"%g",(double)_data[off]);
+        std::fprintf(cimg::output(),cimg::type<T>::format_s(),cimg::type<T>::format(_data[off]));
         if (off!=siz1) std::fprintf(cimg::output(),"%s",off%_width==width1?" ; ":" ");
         if (off==7 && siz>16) { off = siz1 - 8; std::fprintf(cimg::output(),"... "); }
       }
