@@ -770,8 +770,12 @@ reference : skip "${2=}"
 "'sort(X,_is_increasing,_nb_elts,_size_elt)' (sorted values), 'reverse(A)' (reverse order of components), "\
 "'map(X,P,_nb_channelsX,_nb_channelsP,_boundary_conditions)', "\
 "'shift(A,_length,_boundary_conditions)' and 'same(A,B,_nb_vals,_is_case_sensitive)' (vector equality test)."\n\
-"* Function 'normP(u1,...,un)' computes the LP-norm of the specified vector ('P' being an `unsigned integer` constant "\
-"or 'inf'). If 'P' is omitted, the L2 norm is calculated."\n\
+"* Function 'normP(u1,...,un)' computes the LP-norm of the specified vector "\
+"('P' being a constant or 'inf', as in e.g. 'norm1()')."\n\
+"* Function 'normp(V,_p)' computes the Lp-norm of the specified vector 'V'. Here, 'p' can be variable. "\
+"Default value for 'p' is 2."\n\
+"* Function 'unitnorm(V,_p)' returns a normalized version 'V/normp(V)' of specified vector 'V'. "\
+"Default value for 'p' is 2."\n\
 "* Function 'resize(A,size,_interpolation,_boundary_conditions)' returns a resized version of a vector 'A' with "\
 "specified interpolation mode. 'interpolation' can be "\
 "{ -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic | 6=lanczos }, and "\
@@ -1532,9 +1536,6 @@ version :
   reference_header_ascii[]
   if !0$_cli_noarg +e "\n" fi
 
-v : # Allow 'gmic +v' to get the version number.
-  version
-
 #-------------------------------
 #
 #@cli :: Input / Output
@@ -1713,6 +1714,7 @@ clean_cluts :
 #@cli : Import G'MIC custom commands from specified file, URL or string.
 #@cli : (eq. to 'm').\n
 #@cli : Imported commands are available directly after the 'command' invocation.
+#@cli : Specified filename is not allowed to contain colons ':'.
 #@cli : Default value: 'add_debug_info=1' (except for a "string" argument, in which case 'add_debug_info=0').
 #@cli : $ image.jpg command "foo : mirror y deform $""1" +foo[0] 5 +foo[0] 15
 
@@ -3270,7 +3272,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
     eval.. "
       begin(ref(resize([255],s#1,1),C));
       "${-math_lib}"
-      len = norm2(I(x,y));
+      len = norm(I(x,y));
       ang = atan2(i(x,y,0,1),i(x,y,0,0))*180/pi;
       P = [ -0.5,-0.05, 0.3,-0.05, 0.2,-0.25, 0.5,0, 0.2,0.25, 0.3,0.05, -0.5,0.05 ];
       P*=$1*$2*len;
@@ -3454,7 +3456,7 @@ echo_file : skip "${2='\n'}"
     a x
 
     # Compute slopes for splines.
-    +f '0.5*(j(0,1,0,0,0,1)-j(0,-1,0,0,0,1))' s. x max.. 0.01 /. .. rm.. a x
+    +f '(j(0,1,0,0,0,1)-j(0,-1,0,0,0,1))/2' s. x max.. 0.01 /. .. rm.. a x
 
     # Determine spline coefficients for each part of the curve.
     $size,1,1,1,-1
@@ -3474,7 +3476,7 @@ echo_file : skip "${2='\n'}"
          0,1,{2*$x0},{3*($x0)^2};\
          0,1,{2*$x1},{3*($x1)^2})
         ($y0;$y1;$yp0;$yp1)
-        invert.. mmul[-2,-1] y. c
+        invert.. 1 mmul[-2,-1] y. c
       fi
     }
     a[2--1] x map.. . rm.
@@ -3526,6 +3528,20 @@ echo_file : skip "${2='\n'}"
     raw:"$1",uint16 if $4 endian uint16 fi
     r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c
   }
+
+#@cli ib : eq. to 'input_bytes'.
++ib :
+  v + _input_bytes "$*"
+
+#@cli input_bytes : filename
+#@cli : Input specified filename as a 1D array of bytes.
+#@cli : (eq. to 'ib').
++input_bytes :
+  v + _$0 "$*"
+
+_input_bytes :
+  e[0--3] "Input file '"{/"$*"}"' as a 1D array of bytes."
+  i raw:"$*",uint8
 
 #@cli input_csv : "filename",_read_data_as={ 0=numbers | 1=strings | _variable_name }
 #@cli : Insert number of string array from specified .csv file.
@@ -8169,8 +8185,6 @@ _sample :
   => "[2D test image]"
 
 #@cli um : eq. to 'uncommand'.
-um :
-  v + uncommand $* v -
 
 #@cli uncommand : command_name[,_command_name2,...] : * : (+)
 #@cli : Discard definition of specified custom commands.
@@ -8276,7 +8290,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.2.3').
+# $1 = version number (e.g. '3.2.4').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9978,7 +9992,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (320,321,322,323,$_version) sort. discard. store. compat
+  (320,321,322,323,324,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -9993,7 +10007,7 @@ upload_filters :
       rm 0
     fi
   } }
-  i[1--2] ('"#@gui _________________\n"') y a y
+  i[1--2] ('"\n#@gui _________________\n"') y a y
 
   # Create update file.
   +l. {
@@ -10005,8 +10019,8 @@ upload_filters :
     # Upload filter files on G'MIC server.
     e "** Upload filter update."
     ot ${_path_rc}update$_version.gmic
-    if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
-    else url=https://bit.ly/33lRzX4 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
+    if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2uaBRMB # url=http://bit.ly/2CmhX65
+    else url=http://bit.ly/2uaBRMB # https://bit.ly/33lRzX4 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
     fi
     replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
     o cimgz:/tmp/update$_version.gmic,uint8
@@ -10983,6 +10997,87 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
     rm
   }
 
+#@cli compress_huffman : [huffman_tree],_max_leaf_value
+#@cli : Compress selected images with Huffman coding.
+#@cli : See also: ''decompress_huffman'', ''huffman_tree''.
+compress_huffman : check ${"is_image_arg $1"} skip "${2=}"
+  e[^-1] "Compress image$? with Huffman coding, using tree $1."
+  pass$1
+
+  # Transform Huffman tree to codebook to speed up encoding.
+  if ['$2']==0 # Retrieve max integer value of all tree leafs
+    eval. ">begin(Mlv = -inf); i2<0 && i3<0?Mlv = max(Mlv,i0); end(set('Mlv',Mlv)); I"
+  else
+    Mlv=$2
+  fi
+  1,{$Mlv+1},1,2 # codebook -> [ code,nb_bits ] for each tree leaf
+  eval.. ":i2<0?( # Leaf
+    ind = y;
+    code = nb_bits = 0;
+    while (ind>=0, # Iteratively go up to root node
+      par = i(0,ind,0,1);
+      par>=0?((code<<=1)|=(i(0,par,0,2)!=ind); ++nb_bits);
+      ind = par;
+    );
+    ncode = 0; repeat (nb_bits,(ncode<<=1)|=(code&1); code>>=1); # Reverse bit order
+    I[#-1,i0] = [ ncode,nb_bits ];
+  ); I"
+  rm..
+
+  # Encode input data.
+  foreach[^-1] {
+    nm={n} pass. 2
+    0 eval... ">begin(da_push(w,h,d,s); out_stream = nb_bits = 0);
+      C = I[#-2,int(i),1];
+      (out_stream<<=C[1])|=C[0];
+      nb_bits+=C[1];
+      while (nb_bits>=8, # Write completed bytes
+        da_push(out_stream>>(nb_bits-=8));
+        out_stream%=1<<nb_bits;
+      );
+      end(nb_bits?da_push(out_stream<<(8 - nb_bits)); da_freeze())"
+    k. => $nm
+  }
+  rm.
+
+#@cli huffman_tree
+#@cli : Generate Huffman coding tree from the statistics of all selected images.
+#@cli : Huffman tree is returned as a 1xN image inserted at the end of the image list, \
+# representing the 'N' vector-valued leafs/nodes of the tree, encoded as `[ value,parent,child0,child1 ]`.
+#@cli : Last row of the returned image corresponds to the tree root.
+#@cli : Selected images must contain only positive integer values.
+#@cli : Return maximal value of the input data in the status.
+#@cli : See also: ''compress_huffman'', ''decompress_huffman''.
++huffman_tree :
+  e[^-1] "Generate Huffman coding tree from the statistic of image$?."
+  Mlv:="val=-inf;for(k=0,k<l,++k,val=max(val,iM#k));floor(val)"
+  l:=l +foreach { round 1,-1 histogram {$Mlv+1},0,$Mlv } +[-$l--1] # Histogram of all selected images
+  1,1,1,6 eval.. "begin(id = 0); i?da_push([id++,i,x,-1,-1,-1])" rm..
+  # -> list of active leafs/nodes ( id,occurence,value,parent,child0,child1 )
+  eval "
+    id = da_size();
+    active = 0;
+    do (
+      # Find the two minimal occurrences in active nodes.
+      omin1 = omin2 = inf; oind1 = oind2 = 0;
+      for (k = da_size() - 1, k>=active, --k,
+        occ = i(0,k,0,1);
+        occ<=omin1?(oind2 = oind1; omin2 = omin1; oind1 = k; omin1 = occ):
+        occ<=omin2?(oind2 = k; omin2 = occ);
+      );
+      oind1>oind2?swap(oind1,oind2);
+
+      # Merge them as a new active node.
+      i(0,oind1,0,3) = i(0,oind2,0,3) = id;
+      da_push([ id++,omin1 + omin2,-1,-1,i[oind1],i[oind2] ]);
+      swap(I[oind1],I[active++]); # Move children in set of inactive nodes
+      swap(I[oind2],I[active++]);
+
+    ,_(while) active<da_size() - 1);
+    da_freeze()"
+  sort. +,y channels. 2,5 => "[Huffman Tree]"
+  u $Mlv
+
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
 #@cli : Set 'maximum_sequence_length=0' to disable maximum length constraint.
@@ -11089,6 +11184,42 @@ decompress_clut_pde : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 &&
     => $nm
   }
   um srgb2srgb
+
+#@cli decompress_huffman : [huffman_tree]
+#@cli : Decompress selected images with Huffman decoding.
+#@cli : See also: ''compress_huffman'', ''huffman_tree''.
+#@cli : $ image.jpg huffman_tree compress_huffman.. . +decompress_huffman.. .
+decompress_huffman : check ${"is_image_arg $1"}
+  e[^-1] "Decompress image$? with Huffman decoding, using tree $1."
+  pass$1
+  foreach[^-1] {
+    nm={n} pass. 2
+
+    # Decode compressed data.
+    0 eval "
+      hvalues = crop(#-2,0,0,0,0,1,h#-2,1,1);
+      hparent = crop(#-2,0,0,0,1,1,h#-2,1,1);
+      hchild0 = crop(#-2,0,0,0,2,1,h#-2,1,1);
+      hchild1 = crop(#-2,0,0,0,3,1,h#-2,1,1);
+      const root = size(hvalues) - 1;
+      siz = prod(crop(#-3,0,0,1,4));
+      off = 4; mask = byte = bytes_written = 0;
+      ind = root;
+      while (bytes_written<siz,
+        !mask?(byte = i[#-3,off++]; mask = 128);
+        bit = byte&mask;
+        mask>>=1;
+        child = bit?hchild1[ind]:hchild0[ind];
+        val = hvalues[child];
+        val>=0?( # Leaf
+          da_push(val);
+          ind = root;
+          ++bytes_written;
+        ):(ind = child);
+      ); da_freeze()"
+    r. {"crop(#-3,0,0,1,4)"},-1 k. => $nm
+  }
+  rm.
 
 #@cli decompress_rle
 #@cli : Decompress selected data vectors, using RLE algorithm.
@@ -19493,7 +19624,7 @@ arrow : check "${5=1%}>=0 && ${6=10%}>=0 && ${7=3%}" skip ${8=1}
       y1 = "${"is_percent $4"}"?(h-1)*$4:$4;
       p0 = [x0,y0];
       dp = [x1,y1]-=p0;
-      l = norm2(dp);                       # arrow length
+      l = norm(dp);                       # arrow length
       t = "${"is_percent $5"}"?l*$5:$5;   # thickness
       hl = "${"is_percent $6"}"?l*$6:$6;  # head length
       ht = "${"is_percent $7"}"?l*$7:$7;  # head thickness
@@ -21852,6 +21983,15 @@ focale3d :
 _focale3d :
   e[0--3] "Set 3D focale to $1."
   _focale3d=$1
+
+#@cli fov3d : fov_angle>=0
+#@cli : Set 3D focale to match specified field of vision angle (in degree) for the latest of the selected image.
+#@cli : Return corresponding focale in status.
+#@cli : Default value: 'fov_angle=30'
+fov3d : check "${1=45}>=0 && "$!"==1"
+  e[^-1] "Set 3D focale to have FOV angle of $1 for image$?."
+  if !$1 f3d=0 else f3d:=max(w,h)/2/tan($1°/2) fi
+  f3d $f3d u $f3d
 
 #@cli gaussians3d : _size>0,_opacity
 #@cli : Convert selected 3D objects into set of 3D gaussian-shaped sprites.
@@ -29261,7 +29401,7 @@ spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0
       xy = ([x,y] - center)/m2wh1;
       xy = rotf*xy;
       ratio>=1?(xy[1]*=ratio):(xy[0]/=ratio);
-      r = norm2(xy);
+      r = norm(xy);
       z = r<rmax?sign($2)*sqrt(rmax^2 - r^2):0;
       ratio>=1?(xy[1]/=ratio):(xy[0]*=ratio);
       xy = rotb*xy;
@@ -31813,7 +31953,7 @@ math_lib :
     _P1 = P1;
     _P0P1 = _P1;
     _P0P1-=_P0;
-    if (length<0, _P0P1*=-length/100, _P0P1*=length/norm2(_P0P1));
+    if (length<0, _P0P1*=-length/100, _P0P1*=length/norm(_P0P1));
     coords = [ _P0,_P1,_P1,_P1 - rot(angle°)*_P0P1,_P1,_P1 - rot(-angle°)*_P0P1 ];
     repeat (3,_k, polygon(#ind,2,coords[4*_k,2],coords[4*_k+2,2],_opacity,_da_color));
   );
@@ -39330,7 +39470,7 @@ fx_gmicky_preview :
 #@gui : from the server logs: <i>IP address of the client; date and time of the request;</i>
 #@gui : as well as a short string, supplied through the HTTP protocol <i>"User Agent"</i> header
 #@gui : field, which describes the full plugin version as shown in the window title
-#@gui : (e.g. "<i>G'MIC-Qt for GIMP 2.10 - Linux 64 bits - 3.2.3</i>").\n\n
+#@gui : (e.g. "<i>G'MIC-Qt for GIMP 2.10 - Linux 64 bits - 3.2.4</i>").\n\n
 #@gui : Note that this information may solely be used for purely anonymous
 #@gui : statistical purposes.
 #@gui : "}
@@ -39357,8 +39497,8 @@ fx_gmicky_preview :
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
 #@gui : - <b>2023/01/16</b> : version <i>3.2.0</i>.\n
-#@gui : - <span foreground="purple"><b>2023/04/04</b> : version <i>3.2.3</i> (Current stable).</span>\n
-##@gui : - <b>2023/05/XX</b> : version <i>3.2.4_pre</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2023/04/28</b> : version <i>3.2.4</i> (Current stable).</span>\n
+##@gui : - <b>2023/04/11</b> : version <i>3.2.5_pre</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.3)","https://discuss.pixls.us/t/on-the-road-to-3-3"}
@@ -43915,7 +44055,7 @@ fx_color_presets :
 
 fx_color_presets_preview :
   _is_preview=1
-  index={arg(1+$1,${2-28})}
+  index={arg(1+$1,${2-29})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
   else gui_split_preview "fx_color_presets $*",${38-40}
   fi
@@ -48274,6 +48414,77 @@ _fx_flip_blocks :
 fx_flip_blocks_preview :
   gui_split_preview "fx_flip_blocks $*",${-3--1}
 
+#@gui Huffman Glitches : fx_huffman_glitches,fx_huffman_glitches_preview(1)
+#@gui : Noise Level (%) = float(30,0,100)
+#@gui : Split Mode = choice("None","Horizontal Blocs","Vertical Blocs","Patches")
+#@gui : Bloc Size (%) = int(25,0,100)_1
+#@gui : Patch Overlap (%) = float(0,0,50)_1
+#@gui : Color Space = choice("RGB","CMYK","HCY","HSI","HSL","HSV","Jzazbz","Lab","Lch","OKLab","YCbCr","YIQ")
+#@gui : Quantization = int(0,0,64)
+#@gui : note = note{"<small>(Set to <i>0</i> to turn quantization off)</small>"}
+#@gui : sep = separator()
+#@gui : Random Seed = int(0,0,65536)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small><span color="#EE5500"><b>Beware:</b></span>\n\n\
+# - The preview does not perfectly reflect what the resulting image will be. \
+# It just gives an idea on the kind of effects the filter produces with the specified parameters.\n\n\
+# - The filter is slow to compute on large images.\
+# </small>")
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2023/04/26</i>.</small>")
+fx_huffman_glitches :
+  noise_level,split_mode,split_size,patch_overlap,colorspace,quantization,seed=${1-7}
+
+  foreach {
+    W,H,siz:=w,h,whds
+    cspace=${"arg0 "$colorspace",rgb,cmyk,hcy,hsi,hsl,hsv,jzazbz,lab,lch,oklab,ycbcr,yiq"}
+    if $colorspace rgb2$cspace fi
+    s c foreach { im$>,iM$>:=im,iM } n 0,255 a c round
+    if $quantization +colormap $quantization,0,0 index.. .,0,0 store. colormap fi
+
+    huffman_tree mv. 0
+
+    # Decompose image into blocs.
+    bloc_size:=max(1,round($split_size*max(w,h)%))
+    if $split_mode==1 s. y,{-$bloc_size}
+    elif $split_mode==2 s. x,{-$bloc_size}
+    elif $split_mode==3 img2patches. $bloc_size,$patch_overlap%,2 s. z
+    fi
+    compress_huffman[^0] [0]
+
+    # Add bit-inversion noise in compressed Huffman codes.
+    eval "srand($seed);
+      repeat($siz*($noise_level/100)^6,
+        k = round(u(1,l - 1));
+        off = round(u(4,whds#k - 1));
+        bit = round(u(0,7));
+        val = i[#k,off];
+        mask = 1<<(int(u(8))%8);
+        i[#k,off] = xor(val,mask);
+      )"
+
+    # Decompress image data.
+    store[0] _tree ap "$_tree decompress_huffman[^-1] . rm." # Multi-threaded decompression
+    if $split_mode==1 a y
+    elif $split_mode==2 a x
+    elif $split_mode==3 a z patches2img. $W,$H,$patch_overlap%
+    fi
+
+    k.
+    if $quantization $colormap map.. . rm. fi
+    s c foreach { n ${im$>},${iM$>} } a c
+    if $colorspace ${cspace}2rgb c 0,255 fi
+  }
+
+fx_huffman_glitches_preview :
+  gui_split_preview "fx_huffman_glitches $*",${-3--1}
+  u "{$1}{$2}{$3}_"{$2?2:1}"{$4}_"{$2==3?2:1}"{$5}{$6}{$7}{$8}{$9,$10}"
+
 #@gui JPEG Artefacts : fx_jpeg_artefacts, fx_jpeg_artefacts_preview(0)
 #@gui : note = note("<small>This filter simulates the JPEG compression artifacts,
 #@gui : using DCT quantization on 8x8 blocks.</small>")
@@ -48935,7 +49146,7 @@ fx_warp_by_intensity :
   ac "_fx_warp_by_intensity ${1-7}",$8
 
 _fx_warp_by_intensity :
-  if $5 f "ni = norm2(R,G,B); J((ni-$3)*$1,(ni-$4)*$2,0,$6,$7)"
+  if $5 f "ni = norm(R,G,B); J((ni-$3)*$1,(ni-$4)*$2,0,$6,$7)"
   else f "j((i-$3)*$1,(i-$4)*$2,0,0,$6,$7)"
   fi
 

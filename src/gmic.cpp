@@ -2205,7 +2205,11 @@ inline void* get_tid() {
 #if defined(__MACOSX__) || defined(__APPLE__)
   void* tid = (void*)(cimg_ulong)getpid();
 #elif cimg_OS==1
+#if defined(__NetBSD__) || defined(cimg_use_pthread) || cimg_display==1
+  void* tid = (void*)(cimg_ulong)pthread_self();
+#else
   void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
+#endif
 #elif cimg_OS==2
   void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
 #else
@@ -2587,36 +2591,47 @@ static void *gmic_parallel(void *arg) {
 
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
-  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
-  "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
-  "b","bilateral","blur","boxfilter","break","bsl","bsr",
-  "c","camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
-    "cumulate","cursor","cut",
-  "d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance",
-    "div","div3d","do","done",
-  "e","echo","eigen","eikonal","elif","ellipse","else","endian","eq","equalize","erf","erode","error","eval","exec",
-    "exp",
-  "f","fft","fi","files","fill","flood","for","foreach",
-  "ge","graph","gt","guided",
-  "h","histogram",
-  "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
-  "j","j3d",
-  "k","keep",
-  "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
-  "m","m*","m/","mandelbrot","map","matchpatch","max","maxabs","mdiv","median","min","minabs","mirror",
-    "mmul","mod","move","mproj","mul","mul3d","mutex","mv",
-  "n","name","named","neq","network","nmd","noarg","noise","normalize",
-  "o","object3d","onfail","or","output",
-  "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
-  "q","quit",
-  "r","r3d","rand","remove","repeat","resize","return","reverse","rm","rol","ror","rotate","rotate3d","round","rv",
-  "s","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
-    "smooth","solve","sort","split","sqr","sqrt","srand","status","store","streamline3d","sub","sub3d","svd",
-  "t","tan","tanh","text","trisolve",
-  "u","um","uncommand","unroll","unserialize",
-  "v","vanvliet","verbose",
-  "w","w0","w1","w2","w3","w4","w5","w6","w7","w8","w9","wait","warn","warp","watershed","while","window",
-  "x","xor","y","z","^","{","|","}" };
+
+  // Commands of length>3.
+  "acos","acosh","add3d","append","asin","asinh","atan","atan2","atanh","autocrop",
+  "bilateral","blur","boxfilter","break",
+  "camera","check","check3d","command","continue","convolve","correlate","cosh","crop","cumulate","cursor",
+  "debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance","div3d","done",
+  "echo","eigen","eikonal","elif","ellipse","else","endian","equalize","erode","error","eval","exec",
+  "files","fill","flood","foreach",
+  "graph","guided",
+  "histogram",
+  "ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
+  "keep",
+  "label","light3d","line","local","log10","log2",
+  "mandelbrot","matchpatch","maxabs","mdiv","median","minabs","mirror","mmul","move","mproj","mul3d","mutex",
+  "name","named","network","noarg","noise","normalize",
+  "object3d","onfail","output",
+  "parallel","pass","permute","plasma","plot","point","polygon","print","progress",
+  "quit",
+  "rand","remove","repeat","resize","return","reverse","rotate","rotate3d","round",
+  "screen","select","serialize","shared","shift","sign","sinc","sinh","skip",
+    "smooth","solve","sort","split","sqrt","srand","status","store","streamline3d","sub3d",
+  "tanh","text","trisolve",
+  "uncommand","unroll","unserialize",
+  "vanvliet","verbose",
+  "wait","warn","warp","watershed","while","window",
+  0,
+
+  // Commands of length 3.
+  "*3d","+3d","-3d","/3d","abs","add","and","bsl","bsr","cos","cut","div","erf","exp","fft","for","j3d","l3d","log",
+  "map","max","min","mod","mul","neq","nmd","pow","r3d","rol","ror","set","sin","sqr","sub","svd","tan","xor",
+
+  // Commands of length 2.
+  "!=","<<","<=","==","=>",">=",">>",
+  "do","eq","fi","ge","gt","if","le","lt","m*","m/","mv","nm","or","rm","rv","sh","um",
+  "w0","w1","w2","w3","w4","w5","w6","w7","w8","w9",
+
+  // Commands of length 1.
+  "%","&","*","+","-","/","<","=",">",
+  "a","b","c","d","e","f","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+  "y","z","^","{","|","}"
+};
 
 CImg<int> gmic::builtin_commands_inds = CImg<int>::empty();
 
@@ -2877,7 +2892,7 @@ const char* gmic::path_user(const char *const custom_path) {
   cimg_snprintf(path_user,path_user.width(),"%s%c.gmic",
                 _path_user,cimg_file_separator);
 #else
-  cimg_snprintf(path_user,path_user.width(),"%s%cgmic",
+  cimg_snprintf(path_user,path_user.width(),"%s%cuser.gmic",
                 _path_user,cimg_file_separator);
 #endif
   CImg<char>::string(path_user).move_to(path_user); // Optimize length
@@ -3500,8 +3515,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
 // Add custom commands from a char* buffer.
 //------------------------------------------
 gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file, const bool add_debug_info,
-                         unsigned int *count_new, unsigned int *count_replaced,
-                         bool *const is_entrypoint) {
+                         unsigned int *count_new, unsigned int *count_replaced, bool *const is_main_) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(257), debug_info(32);
@@ -3511,7 +3525,6 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   char sep = 0;
   if (commands_file) {
     CImg<char>::string(commands_file).move_to(commands_files);
-
     CImgList<unsigned char> ltmp(commands_files.size()); // Update global variable '$_path_commands'.
     CImg<unsigned char> tmp;
     (commands_files>'x').move_to(tmp);
@@ -3525,8 +3538,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   }
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
-  if (is_entrypoint) *is_entrypoint = false;
-  if (*data_commands) line_number = 1;
+  if (is_main_) *is_main_ = false;
+  line_number = 1;
 
   for (const char *data = data_commands; *data; is_last_slash = _is_last_slash,
          line_number+=is_newline?1:0) {
@@ -3569,9 +3582,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
       const char *_s_body = s_body;
       if (sep==':') while (*_s_body && cimg::is_blank(*_s_body)) ++_s_body;
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:_s_body);
-
       if (hash<0 && !*s_name) std::strcpy(s_name,"_main_");
-      if (is_entrypoint && !std::strcmp(s_name,"_main_")) *is_entrypoint = true;
+      if (is_main_ && !std::strcmp(s_name,"_main_")) *is_main_ = true;
       hash = (int)hashcode(s_name,false);
 
       if (add_debug_info) { // Insert debug info code in body
@@ -3632,8 +3644,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 // Add commands from a file.
 //---------------------------
 gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file, const bool add_debug_info,
-                         unsigned int *count_new, unsigned int *count_replaced,
-                         bool *const is_entrypoint) {
+                         unsigned int *count_new, unsigned int *count_replaced, bool *const is_main_) {
   if (!file) return *this;
 
   // Try reading it first as a .cimg file.
@@ -3641,7 +3652,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
     CImg<char> buffer;
     buffer.load_cimg(file).unroll('x');
     buffer.resize(buffer.width() + 1,1,1,1,0);
-    add_commands(buffer.data(),commands_file,add_debug_info,count_new,count_replaced,is_entrypoint);
+    add_commands(buffer.data(),commands_file,add_debug_info,count_new,count_replaced,is_main_);
   } catch (...) { // If failed, read as a text file
     std::rewind(file);
     std::fseek(file,0,SEEK_END);
@@ -3651,7 +3662,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
       CImg<char> buffer((unsigned int)siz + 1);
       if (std::fread(buffer.data(),sizeof(char),siz,file)) {
         buffer[siz] = 0;
-        add_commands(buffer.data(),commands_file,add_debug_info,count_new,count_replaced,is_entrypoint);
+        add_commands(buffer.data(),commands_file,add_debug_info,count_new,count_replaced,is_main_);
       }
     }
   }
@@ -4155,7 +4166,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   cimg::mutex(22);
   if (!builtin_commands_inds) {
     builtin_commands_inds.assign(128,2,1,1,-1);
-    for (unsigned int i = 0; i<sizeof(builtin_commands_names)/sizeof(char*); ++i) {
+    for (unsigned int i = 0; builtin_commands_names[i]; ++i) {
       const int c = *builtin_commands_names[i];
       if (builtin_commands_inds[c]<0) builtin_commands_inds[c] = (int)i;
       builtin_commands_inds(c,1) = (int)i;
@@ -4230,7 +4241,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   verbosity = 0;
   network_timeout = 0;
 
-  allow_entrypoint = false;
+  allow_main_ = false;
   is_change = false;
   is_debug = false;
   is_running = false;
@@ -5306,20 +5317,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   unsigned int ind_run = ~0U;
-  CImg<void*> gr(8);
-  gr[0] = (void*)this;
-  gr[1] = (void*)&images;
-  gr[2] = (void*)&images_names;
-  gr[3] = (void*)&parent_images;
-  gr[4] = (void*)&parent_images_names;
-  gr[5] = (void*)variables_sizes;
-  gr[6] = (void*)command_selection;
+  CImg<void*> curr_gr(8), prev_gr;
+  curr_gr[0] = (void*)this;
+  curr_gr[1] = (void*)&images;
+  curr_gr[2] = (void*)&images_names;
+  curr_gr[3] = (void*)&parent_images;
+  curr_gr[4] = (void*)&parent_images_names;
+  curr_gr[5] = (void*)variables_sizes;
+  curr_gr[6] = (void*)command_selection;
   if (!push_new_run) // Modify data for existing run
     for (int k = grl.width() - 1; k>=0; --k) {
-      CImg<void*> &_gr = grl[k];
-      if (_gr && _gr[0]==this) { ind_run = k; gr[7] = _gr[7]; gr.swap(_gr); break; }
+      CImg<void*> &gr = grl[k];
+      if (gr && gr[0]==this) { ind_run = k; curr_gr[7] = gr[7]; prev_gr = gr; gr = curr_gr; break; }
     }
-  if (ind_run==~0U) { ind_run = grl._width; gr[7] = get_tid(); gr.move_to(grl); } // Insert new run
+  if (ind_run==~0U) { ind_run = grl._width; curr_gr[7] = get_tid(); grl.insert(curr_gr); } // Insert new run
   cimg::mutex(24,0);
 
   typedef typename cimg::superset<T,float>::type Tfloat;
@@ -5383,7 +5394,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, _is_get = false, is_end_local = false, check_elif = false, run_entrypoint = false;
+  bool is_cond, _is_get = false, is_end_local = false, check_elif = false, run_main_ = false;
   float opacity = 0;
   int err;
 
@@ -5397,7 +5408,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
     if (is_debug) {
       if (is_start) {
-        print(images,0,"Start G'MIC interpreter (in debug mode).");
+        print(images,0,"Start G'MIC interpreter (debug mode, version %s).\n",cimg_str2(gmic_version));
         debug(images,"Initial command line: '%s'.",starting_commands_line);
         commands_line_to_CImgList(starting_commands_line); // Do it twice, when debug enabled
       }
@@ -5439,7 +5450,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Substitute expressions in current item.
       const char
-        *const initial_item = run_entrypoint?"_main_":commands_line[position].data(),
+        *const initial_item = run_main_?"_main_":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
 
@@ -5462,34 +5473,79 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Check if current item is a known command.
       const bool
-        is_hyphen = *item=='-' && item[1] &&
-          item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
-        is_plus = *item=='+' && item[1] &&
-          item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
+        is_hyphen = *item=='-' && item[1] && item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
+        is_plus = *item=='+' && item[1] && item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
       item+=is_hyphen || is_plus?1:0;
       bool is_get = is_plus, is_specialized_get = false;
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
-      const bool
-        is_com1 = *item && _gmic_eok(1),
-        is_com2 = *item && item[1] && _gmic_eok(2),
-        is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
-      bool is_builtin_command =
-        (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
-        ((*item=='{' || *item=='}') && !item[1]) || // Left/right braces
-        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
-        (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
-        (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
-        (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
-        (*item=='=' && item[1]=='>' && is_com2) || // Shortcut '=>'
-        (*item=='n' && item[1]=='m' && is_com2) || // Shortcut 'nm'
-        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
-        ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-         (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
-        ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (is_com1 || ((item[1]==*item || item[1]=='=') && is_com2))),
-        is_command = is_builtin_command;
+      const char item0 = *item, item1 = item0?item[1]:0, item2 = item1?item[2]:0;
+
+      // Determine if specified command is a 'built-in' command (fast check when command length is 1,2 or 3).
+      bool is_builtin_command = false;
+      if (!item1 && (item0=='{' || item0=='}')) // Left/right braces
+        is_builtin_command = true;
+      else if (!is_builtin_command && item0 && _gmic_eok(1)) { switch (item0) { // Command has length 1
+        case 'a': case 'b' : case 'c' : case 'd' : case 'e' : case 'f' : case 'g' : case 'h' : case 'i' : case 'j' :
+        case 'k': case 'l' : case 'm' : case 'n' : case 'o' : case 'p' : case 'q' : case 'r' : case 's' : case 't' :
+        case 'u': case 'v' : case 'w' : case 'x' : case 'y' : case 'z' : case '%' : case '&' : case '*' : case '+' :
+        case '-': case '/' : case '<' : case '=' : case '>' : case '^' : case '|' :
+          is_builtin_command = true; break;
+        }
+      } else if (!is_builtin_command && item0 && item1 && _gmic_eok(2)) { switch(item0) { // Command has length 2
+        case '!' : is_builtin_command = item1=='='; break; // '!='
+        case '<' : is_builtin_command = item1=='<' || item1=='='; break; // '<<' and '<='
+        case '=' : is_builtin_command = item1=='=' || item1=='>'; break; // '==' and '=>'
+        case '>' : is_builtin_command = item1=='=' || item1=='>'; break; // '>=' and '>>'
+        case 'd' : is_builtin_command = item1=='o'; break; // 'do'
+        case 'e' : is_builtin_command = item1=='q'; break; // 'eq'
+        case 'f' : is_builtin_command = item1=='i'; break; // 'fi'
+        case 'g' : is_builtin_command = item1=='e' || item1=='t'; break; // 'ge' and 'gt'
+        case 'i' : is_builtin_command = item1=='f'; break; // 'if'
+        case 'l' : is_builtin_command = item1=='e' || item1=='t'; break; // 'le' and 'lt'
+        case 'm' : is_builtin_command = item1=='*' || item1=='/' || item1=='v'; break; // 'm*', 'm/' and 'mv'
+        case 'n' : is_builtin_command = item1=='m'; break; // 'nm'
+        case 'o' : is_builtin_command = item1=='r'; break; // 'or'
+        case 'r' : is_builtin_command = item1=='m' || item1=='v'; break; // 'rm' and 'rv'
+        case 's' : is_builtin_command = item1=='h'; break; // 'sh'
+        case 'u' : is_builtin_command = item1=='m'; break; // 'um'
+        case 'w' : is_builtin_command = item1>='0' && item1<='9'; break; // 'w0'..'w9'
+        }
+      } else if (!is_builtin_command && item0 && item1 && item2 && _gmic_eok(3)) { // Command has length 3
+        is_builtin_command|= item1=='3' && item2=='d' && // '*3d','+3d','-3d', '/3d', 'j3d', 'l3d' and 'r3d'
+          (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l' || item0=='r');
+        if (!is_builtin_command) switch (item0) {
+          case 'a' : is_builtin_command = (item1=='b' && item2=='s') || // 'abs', 'add' and 'and'
+                                     (item2=='d' && (item1=='d' || item1=='n')); break;
+          case 'b' : is_builtin_command = item1=='s' && (item2=='l' || item2=='r'); break; // 'bsl' and 'bsr'
+          case 'c' : is_builtin_command = (item1=='o' && item2=='s') || // 'cos'
+              (item1=='u' && item2=='t'); break; // 'cut'
+          case 'd' : is_builtin_command = item1=='i' && item2=='v'; break; // 'div'
+          case 'e' : is_builtin_command = (item1=='r' && item2=='f') || // 'erf'
+              (item1=='x' && item2=='p'); break; // 'exp'
+          case 'f' : is_builtin_command = (item1=='f' && item2=='t') || // 'fft'
+              (item1=='o' && item2=='r'); break; // 'for'
+          case 'l' : is_builtin_command = item1=='o' && item2=='g'; break; // 'log'
+          case 'm' : is_builtin_command = (item1=='a' && (item2=='p' || item2=='x')) || // 'map' and 'max'
+              (item1=='i' && item2=='n') || // 'min'
+              (item1=='o' && item2=='d') || // 'mod'
+              (item1=='u' && item2=='l'); break; // 'mul'
+          case 'n' : is_builtin_command = (item1=='e' && item2=='q') || // 'neq'
+              (item1=='m' && item2=='d'); break; // 'nmd'
+          case 'p' : is_builtin_command = item1=='o' && item2=='w'; break; // 'pow'
+          case 'r' : is_builtin_command = item1=='o' && (item2=='l' || item2=='r'); break; // 'rol' and 'ror'
+          case 's' : is_builtin_command = (item1=='e' && item2=='t') || // 'set'
+              (item1=='i' && item2=='n') || // 'sin'
+              (item1=='q' && item2=='r') || // 'sqr'
+              (item1=='u' && item2=='b') || // 'sub'
+              (item1=='v' && item2=='d'); break; // 'svd'
+          case 't' : is_builtin_command = item1=='a' && item2=='n'; break; // 'tan'
+          case 'x' : is_builtin_command = item1=='o' && item2=='r'; break; // 'xor'
+          }
+      }
+
+      bool is_command = is_builtin_command;
 
       if (!is_builtin_command) {
         *command = sep0 = sep1 = sep = 0;
@@ -6518,7 +6574,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             arg_command+=2; arg_command_text+=2; offset_argument_text = 2;
           }
 
-          std::FILE *file = cimg::std_fopen(arg_command,"rb");
+          std::FILE *file = 0;
+          const char *const p_colon = std::strchr(arg_command,':');
+#if cimg_OS!=2
+          if (!p_colon || p_colon - arg_command>256)
+            file = cimg::std_fopen(arg_command,"rb");
+#else
+          if (!p_colon || p_colon - arg_command==1 || p_colon - arg_command>256)
+            file = cimg::std_fopen(arg_command,"rb"); // Allow 'C:\\filename'
+#endif
           if (file) {
             if (!is_debug_arg) add_debug_info = true;
             print(images,0,"Import commands from file '%s'%s",
@@ -8918,6 +8982,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg::swap(exception._command,e._command);
               cimg::swap(exception._message,e._message);
             }
+
+            // Put back the 'curr_gr' run in managed runs (as it has been skipped in
+            // first 'run()' because of exception thrown in 'local' block).
+            cimg::mutex(24);
+            for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
+              const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if defined
+              CImg<void*> &gr = grl[_k];
+              if (gr && gr[0]==this) { gr = curr_gr; break; }
+            }
+            cimg::mutex(24,0);
           }
 
           cimg::mutex(27);
@@ -14123,7 +14197,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
-              if (run_entrypoint) { --verbosity; run_entrypoint = false; }
+              if (run_main_) { --verbosity; run_main_ = false; }
 
               const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
               if (nb>0) {
@@ -15168,7 +15242,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "invalid file options '%s'.",
                   filename0,options.data());
 
-        } else if ((allow_entrypoint && !*uext) || !std::strcmp(uext,"gmic")) {
+        } else if ((allow_main_ && !*uext) || !std::strcmp(uext,"gmic")) {
 
           // G'MIC command file.
           const bool add_debug_info = (*options!='0');
@@ -15177,7 +15251,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int count_new = 0, count_replaced = 0;
           std::FILE *const gfile = cimg::fopen(filename,"rb");
 
-          bool is_entrypoint = false, is_add_error = false;
+          bool is_main_ = false, is_add_error = false;
           status.move_to(o_status); // Save status because 'add_commands' can change it, with error()
           int o_verbosity = verbosity;
           const bool o_is_debug = is_debug;
@@ -15185,9 +15259,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_debug = false;
           try {
             add_commands(gfile,filename,o_is_debug,&count_new,&count_replaced,
-                         allow_entrypoint && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
+                         allow_main_ && callstack.size()==1 && !is_command_input?&is_main_:0);
           } catch (...) {
-            is_add_error = true; is_entrypoint = false;
+            is_add_error = true; is_main_ = false;
           }
           is_debug = o_is_debug;
           verbosity = o_verbosity;
@@ -15219,10 +15293,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
-          if (is_entrypoint) { // Tell parser to run '_main_' in next iteration
+          if (is_main_) { // Tell parser to run '_main_' in next iteration
             verbosity++;
             --position;
-            run_entrypoint = true;
+            run_main_ = true;
           }
           continue;
 
@@ -15307,14 +15381,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   // Look for a built-in command.
                   for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
                     const char *const c = builtin_commands_names[l];
-                    const int d = levenshtein(c,name.data() + foff);
-                    if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
+                    if (c) {
+                      const int d = levenshtein(c,name.data() + foff);
+                      if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
+                    }
                   }
                   // Look for a custom command.
                   for (unsigned int i = 0; i<gmic_comslots; ++i)
                     cimglist_for(commands_names[i],l) {
                       const char *const c = commands_names[i][l].data();
-                      const int d = levenshtein(c,name.data() + foff);
+                      const int d = levenshtein(c + (*c=='+'?1:0),name.data() + foff);
                       if (d<dmin) { dmin = d; misspelled = commands_names[i][l].data(); }
                     }
                   if (misspelled)
@@ -15542,8 +15618,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   cimg::mutex(24);
   for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
     const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if defined
-    CImg<void*> &_gr = grl[_k];
-    if (_gr && _gr[0]==this) { if (push_new_run) grl.remove(_k); else gr.swap(_gr); break; }
+    CImg<void*> &gr = grl[_k];
+    if (gr && gr[0]==this) { if (push_new_run) grl.remove(_k); else gr = prev_gr; break; }
   }
   cimg::mutex(24,0);
 

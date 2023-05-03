@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
   static bool is_abort;
   gmic gmic_instance((char*)0,(char*)0,true,(float*)0,&is_abort,(gmic_pixel_type)0);
   gmic_instance.set_variable("_host",0,"cli");
-  gmic_instance.add_commands("cli_start : ");
+  gmic_instance.add_commands("cli_start:");
 
   // Load startup command files.
   CImg<char> commands_user, commands_update, filename_update;
@@ -176,17 +176,17 @@ int main(int argc, char **argv) {
             }
           }
           if (is_command_file) {
-            bool allow_entrypoint = false;
+            bool allow_main_ = false;
             gmic gi(0,0,false,0,0,(gmic_pixel_type)0);
-            gi.add_commands(gmic_file,argv[1],is_debug,0,0,&allow_entrypoint);
-            if (allow_entrypoint && argc==3) { // Check if command '_main_' has arguments
+            gi.add_commands(gmic_file,argv[1],is_debug,0,0,&allow_main_);
+            if (allow_main_ && argc==3) { // Check if command '_main_' has arguments
               const unsigned int hash = (int)gmic::hashcode("_main_",false);
               unsigned int ind = 0;
               if (gmic::search_sorted("_main_",gi.commands_names[hash],
                                       gi.commands_names[hash].size(),ind)) // Command found
-                allow_entrypoint = (bool)gi.commands_has_arguments[hash](ind,0);
+                allow_main_ = (bool)gi.commands_has_arguments[hash](ind,0);
             }
-            gmic_instance.allow_entrypoint = allow_entrypoint;
+            gmic_instance.allow_main_ = allow_main_;
           }
           std::fclose(gmic_file);
         }
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-      gmic_instance.verbosity = gmic_instance.allow_entrypoint?0:
+      gmic_instance.verbosity = gmic_instance.allow_main_?0:
         (argc==2 || argc==3) && (!std::strcmp(argv[1],"help") || !std::strcmp(argv[1],"-help") ||
                                  !std::strcmp(argv[1],"h") || !std::strcmp(argv[1],"-h"))?0:
         argc==2 && (!std::strcmp(argv[1],"version") || !std::strcmp(argv[1],"-version"))?0:1;
