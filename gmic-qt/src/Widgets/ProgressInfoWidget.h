@@ -55,18 +55,18 @@ public:
   void setGmicProcessor(const GmicProcessor * processor);
 
 public slots:
+  void cancel();
   void onTimeOut();
-  void onCancelClicked();
   void stopAnimationAndHide();
-  void startFilterThreadAnimationAndShow(bool showCancelButton);
+  void startFilterThreadAnimationAndShow();
   void startFiltersUpdateAnimationAndShow();
   void showBusyIndicator();
 signals:
-  void cancel();
+  void canceled();
 
 private:
   void updateThreadInformation();
-  void updateUpdateProgression();
+  void updateFilterUpdateProgression();
 
   Ui::ProgressInfoWidget * ui;
   const GmicProcessor * _gmicProcessor;

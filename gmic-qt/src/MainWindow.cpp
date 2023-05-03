@@ -55,6 +55,7 @@
 #include "LayersExtentProxy.h"
 #include "Logger.h"
 #include "Misc.h"
+#include "OverrideCursor.h"
 #include "ParametersCache.h"
 #include "PersistentMemory.h"
 #include "Settings.h"
@@ -103,9 +104,9 @@ MainWindow::MainWindow(QWidget * parent) : QMainWindow(parent), ui(new Ui::MainW
   tsp.append(QString("/usr/share/icons/gnome"));
   QIcon::setThemeSearchPaths(tsp);
 
-  _filterUpdateWidgets = {ui->previewWidget, ui->zoomLevelSelector, ui->filtersView,       ui->filterParams,   ui->tbUpdateFilters, ui->pbFullscreen, ui->pbSettings,
-                          ui->pbOk,          ui->pbApply,           ui->tbResetParameters, ui->tbCopyCommand,  ui->searchField,     ui->cbPreview,    ui->tbAddFave,
-                          ui->tbRemoveFave,  ui->tbRenameFave,      ui->tbExpandCollapse,  ui->tbSelectionMode};
+  _filterUpdateWidgets = {ui->previewWidget, ui->zoomLevelSelector, ui->filtersView,  ui->filterParams,      ui->tbUpdateFilters, ui->pbFullscreen, ui->pbSettings,
+                          ui->pbOk,          ui->pbApply,           ui->pbClose,      ui->tbResetParameters, ui->tbCopyCommand,   ui->searchField,  ui->cbPreview,
+                          ui->tbAddFave,     ui->tbRemoveFave,      ui->tbRenameFave, ui->tbExpandCollapse,  ui->tbSelectionMode};
 
   ui->tbAddFave->setToolTip(tr("Add fave"));
 
@@ -210,11 +211,8 @@ MainWindow::MainWindow(QWidget * parent) : QMainWindow(parent), ui(new Ui::MainW
 
   ui->progressInfoWidget->setGmicProcessor(&_processor);
 
-  TIMING;
   loadSettings();
-  TIMING;
   ParametersCache::load(!_newSession);
-  TIMING;
   setIcons();
   QAction * escAction = new QAction(this);
   escAction->setShortcut(QKeySequence(Qt::Key_Escape));
@@ -236,17 +234,15 @@ MainWindow::MainWindow(QWidget * parent) : QMainWindow(parent), ui(new Ui::MainW
   _visibleTagSelector->updateColors();
   _filtersPresenter->setVisibleTagSelector(_visibleTagSelector);
 
-  TIMING;
+  _forceQuitText = tr("Force &quit");
+
+  ui->pbCancel->setEnabled(false);
+
   makeConnections();
-  TIMING;
 }
 
 MainWindow::~MainWindow()
 {
-  //  QSet<QString> hashes;
-  //  FiltersTreeAbstractItem::buildHashesList(_filtersTreeModel.invisibleRootItem(),hashes);
-  //  ParametersCache::cleanup(hashes);
-
   saveCurrentParameters();
   ParametersCache::save();
   saveSettings();
@@ -256,21 +252,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::setIcons()
 {
-  ui->tbTags->setIcon(LOAD_ICON("color-wheel"));
-  ui->tbRenameFave->setIcon(LOAD_ICON("rename"));
-  ui->pbSettings->setIcon(LOAD_ICON("package_settings"));
-  ui->pbFullscreen->setIcon(LOAD_ICON("view-fullscreen"));
-  ui->tbUpdateFilters->setIcon(LOAD_ICON_NO_DARKENED("view-refresh"));
-  ui->pbApply->setIcon(LOAD_ICON("system-run"));
-  ui->pbOk->setIcon(LOAD_ICON("insert-image"));
-  ui->tbResetParameters->setIcon(LOAD_ICON("view-refresh"));
-  ui->tbCopyCommand->setIcon(LOAD_ICON("edit-copy"));
-  ui->pbCancel->setIcon(LOAD_ICON("process-stop"));
-  ui->tbAddFave->setIcon(LOAD_ICON("bookmark-add"));
-  ui->tbRemoveFave->setIcon(LOAD_ICON("bookmark-remove"));
-  ui->tbSelectionMode->setIcon(LOAD_ICON("selection_mode"));
-  _expandIcon = LOAD_ICON("draw-arrow-down");
-  _collapseIcon = LOAD_ICON("draw-arrow-up");
+  ui->tbTags->setIcon(IconLoader::load("color-wheel"));
+  ui->tbRenameFave->setIcon(IconLoader::load("rename"));
+  ui->pbSettings->setIcon(IconLoader::load("package_settings"));
+  ui->pbFullscreen->setIcon(IconLoader::load("view-fullscreen"));
+  ui->tbUpdateFilters->setIcon(IconLoader::loadNoDarkened("view-refresh"));
+  ui->pbApply->setIcon(IconLoader::load("system-run"));
+  ui->pbOk->setIcon(IconLoader::load("insert-image"));
+  ui->tbResetParameters->setIcon(IconLoader::load("view-refresh"));
+  ui->tbCopyCommand->setIcon(IconLoader::load("edit-copy"));
+  ui->pbClose->setIcon(IconLoader::load("close"));
+  ui->pbCancel->setIcon(IconLoader::load("cancel"));
+  ui->tbAddFave->setIcon(IconLoader::load("bookmark-add"));
+  ui->tbRemoveFave->setIcon(IconLoader::load("bookmark-remove"));
+  ui->tbSelectionMode->setIcon(IconLoader::load("selection_mode"));
+  _expandIcon = IconLoader::load("draw-arrow-down");
+  _collapseIcon = IconLoader::load("draw-arrow-up");
   _expandCollapseIcon = &_expandIcon;
   ui->tbExpandCollapse->setIcon(_expandIcon);
 }
@@ -363,9 +360,12 @@ void MainWindow::onUpdateDownloadsFinished(int status)
 
   buildFiltersTree();
   ui->tbUpdateFilters->setEnabled(true);
-  if (!_filtersPresenter->currentFilter().hash.isEmpty()) {
-    ui->previewWidget->sendUpdateRequest();
+  if (_filtersPresenter->currentFilter().hash.isEmpty()) {
+    setNoFilter();
+  } else {
+    activateFilter(false);
   }
+  ui->previewWidget->sendUpdateRequest();
 }
 
 void MainWindow::buildFiltersTree()
@@ -373,7 +373,6 @@ void MainWindow::buildFiltersTree()
   saveCurrentParameters();
   GmicStdLib::Array = Updater::getInstance()->buildFullStdlib();
   const bool withVisibility = filtersSelectionMode();
-
   _filtersPresenter->clear();
   _filtersPresenter->readFilters();
   _filtersPresenter->readFaves();
@@ -384,15 +383,7 @@ void MainWindow::buildFiltersTree()
     _gtkFavesShouldBeImported = false;
     QSettings().setValue(FAVES_IMPORT_KEY, true);
   }
-
   _filtersPresenter->toggleSelectionMode(withVisibility);
-
-  if (_filtersPresenter->currentFilter().hash.isEmpty()) {
-    setNoFilter();
-    ui->previewWidget->sendUpdateRequest();
-  } else {
-    activateFilter(false);
-  }
 }
 
 void MainWindow::retrieveFilterAndParametersFromPluginParameters(QString & hash, QList<QString> & parameters)
@@ -503,6 +494,7 @@ void MainWindow::onStartupFiltersUpdateFinished(int status)
   } else {
     _gtkFavesShouldBeImported = askUserForGTKFavesImport();
   }
+
   buildFiltersTree();
   ui->searchField->setFocus();
 
@@ -529,14 +521,13 @@ void MainWindow::onStartupFiltersUpdateFinished(int status)
     _filtersPresenter->expandFaveFolder();
     _filtersPresenter->adjustViewSize();
     ui->previewWidget->setPreviewFactor(PreviewFactorFullImage, true);
+    setNoFilter();
   } else {
     _filtersPresenter->adjustViewSize();
     activateFilter(true, pluginParametersCommandArguments);
-    if (ui->cbPreview->isChecked()) {
-      ui->previewWidget->sendUpdateRequest();
-    }
   }
-  // Preview update is triggered when PreviewWidget receives
+  ui->previewWidget->sendUpdateRequest();
+  // Preview update is also triggered when PreviewWidget receives
   // the WindowActivate Event (while pendingResize is true
   // after the very first resize event).
 }
@@ -576,7 +567,8 @@ void MainWindow::onEscapeKeyPressed()
   ui->searchField->clear();
   if (_processor.isProcessing()) {
     if (_processor.isProcessingFullImage()) {
-      ui->progressInfoWidget->onCancelClicked();
+      ui->progressInfoWidget->cancel();
+      ui->pbCancel->animateClick();
     } else {
       _processor.cancel();
       ui->previewWidget->displayOriginalImage();
@@ -647,7 +639,7 @@ void MainWindow::makeConnections()
   connect(ui->previewWidget, &PreviewWidget::previewVisibleRectIsChanging, &_processor, &GmicProcessor::cancel);
   connect(_filtersPresenter, &FiltersPresenter::filterSelectionChanged, this, &MainWindow::onFilterSelectionChanged);
   connect(ui->pbOk, &QPushButton::clicked, this, &MainWindow::onOkClicked);
-  connect(ui->pbCancel, &QPushButton::clicked, this, &MainWindow::onCancelClicked);
+  connect(ui->pbClose, &QPushButton::clicked, this, &MainWindow::close);
   connect(ui->pbApply, &QPushButton::clicked, this, &MainWindow::onApplyClicked);
   connect(ui->tbResetParameters, &QToolButton::clicked, this, &MainWindow::onReset);
   connect(ui->tbCopyCommand, &QToolButton::clicked, this, &MainWindow::onCopyGMICCommand);
@@ -668,7 +660,8 @@ void MainWindow::makeConnections()
   connect(ui->cbPreview, &QCheckBox::toggled, this, &MainWindow::onPreviewCheckBoxToggled);
   connect(ui->searchField, &SearchFieldWidget::textChanged, this, &MainWindow::search);
   connect(ui->tbExpandCollapse, &QToolButton::clicked, this, &MainWindow::expandOrCollapseFolders);
-  connect(ui->progressInfoWidget, &ProgressInfoWidget::cancel, this, &MainWindow::onProgressionWidgetCancelClicked);
+  connect(ui->pbCancel, &QPushButton::clicked, this, &MainWindow::onCancelClicked);
+  connect(ui->progressInfoWidget, &ProgressInfoWidget::canceled, this, &MainWindow::onProgressionWidgetCancelClicked);
   connect(ui->tbSelectionMode, &QToolButton::toggled, this, &MainWindow::onFiltersSelectionModeToggled);
   connect(&_processor, &GmicProcessor::previewImageAvailable, this, &MainWindow::onPreviewImageAvailable);
   connect(&_processor, &GmicProcessor::previewCommandFailed, this, &MainWindow::onPreviewError);
@@ -760,9 +753,6 @@ void MainWindow::onPreviewImageAvailable()
   ui->previewWidget->setPreviewImage(_processor.previewImage());
   ui->previewWidget->enableRightClick();
   ui->tbUpdateFilters->setEnabled(true);
-  if (_pendingActionAfterCurrentProcessing == ProcessingAction::Close) {
-    close();
-  }
 }
 
 void MainWindow::onPreviewError(const QString & message)
@@ -770,9 +760,6 @@ void MainWindow::onPreviewError(const QString & message)
   ui->previewWidget->setPreviewErrorMessage(message);
   ui->previewWidget->enableRightClick();
   ui->tbUpdateFilters->setEnabled(true);
-  if (_pendingActionAfterCurrentProcessing == ProcessingAction::Close) {
-    close();
-  }
 }
 
 void MainWindow::onParametersChanged()
@@ -802,8 +789,9 @@ void MainWindow::processImage()
     return;
   }
 
-  ui->progressInfoWidget->startFilterThreadAnimationAndShow(true);
+  ui->progressInfoWidget->startFilterThreadAnimationAndShow();
   enableWidgetList(false);
+  ui->pbCancel->setEnabled(true);
 
   GmicProcessor::FilterContext context;
   context.requestType = GmicProcessor::FilterContext::RequestType::FullImage;
@@ -828,7 +816,8 @@ void MainWindow::onFullImageProcessingError(const QString & message)
   ui->progressInfoWidget->stopAnimationAndHide();
   QMessageBox::warning(this, tr("Error"), message, QMessageBox::Close);
   enableWidgetList(true);
-  if ((_pendingActionAfterCurrentProcessing == ProcessingAction::Ok || _pendingActionAfterCurrentProcessing == ProcessingAction::Close)) {
+  ui->pbCancel->setEnabled(false);
+  if ((_pendingActionAfterCurrentProcessing == ProcessingAction::Ok) || (_pendingActionAfterCurrentProcessing == ProcessingAction::Close)) {
     close();
   }
 }
@@ -879,6 +868,7 @@ void MainWindow::onFullImageProcessingDone()
 {
   ui->progressInfoWidget->stopAnimationAndHide();
   enableWidgetList(true);
+  ui->pbCancel->setEnabled(false);
   ui->previewWidget->update();
   ui->filterParams->setValues(_processor.gmicStatus(), false);
   ui->filterParams->setVisibilityStates(_processor.parametersVisibilityStates());
@@ -938,38 +928,6 @@ void MainWindow::onOkClicked()
   } else {
     _isAccepted = _processor.completedFullImageProcessingCount();
     close();
-  }
-}
-
-void MainWindow::onCancelClicked()
-{
-  if (_processor.isProcessing() && confirmAbortProcessingOnCloseRequest()) {
-    if (_processor.isProcessing()) {
-      _pendingActionAfterCurrentProcessing = ProcessingAction::Close;
-      connect(&_processor, &GmicProcessor::noMoreUnfinishedJobs, this, &MainWindow::close);
-      ui->progressInfoWidget->showBusyIndicator();
-      ui->previewWidget->setOverlayMessage(tr("Waiting for cancelled jobs..."));
-      _processor.cancel();
-    } else {
-      close();
-    }
-  } else {
-    close();
-  }
-}
-
-void MainWindow::onProgressionWidgetCancelClicked()
-{
-  if (ui->progressInfoWidget->mode() == ProgressInfoWidget::Mode::GmicProcessing) {
-    if (_processor.isProcessing()) {
-      _pendingActionAfterCurrentProcessing = ProcessingAction::NoAction;
-      _processor.cancel();
-      ui->progressInfoWidget->stopAnimationAndHide();
-      enableWidgetList(true);
-    }
-  }
-  if (ui->progressInfoWidget->mode() == ProgressInfoWidget::Mode::FiltersUpdate) {
-    Updater::getInstance()->cancelAllPendingDownloads();
   }
 }
 
@@ -1217,61 +1175,61 @@ void MainWindow::activateFilter(bool resetZoom, const QList<QString> & values)
 
   if (filter.hash.isEmpty()) {
     setNoFilter();
-  } else {
-    QList<QString> savedValues = values.isEmpty() ? ParametersCache::getValues(filter.hash) : values;
-    if (savedValues.isEmpty() && filter.isAFave) {
-      savedValues = filter.defaultParameterValues;
-    }
-    QList<int> savedVisibilityStates = ParametersCache::getVisibilityStates(filter.hash);
-    if (savedVisibilityStates.isEmpty() && filter.isAFave) {
-      savedVisibilityStates = filter.defaultVisibilityStates;
-    }
-    if (!ui->filterParams->build(filter.name, filter.hash, filter.parameters, savedValues, savedVisibilityStates)) {
-      _filtersPresenter->setInvalidFilter();
-      ui->previewWidget->setKeypoints(KeypointList());
-    } else {
-      ui->previewWidget->setKeypoints(ui->filterParams->keypoints());
-    }
-    setFilterName(FilterTextTranslator::translate(filter.name));
-    ui->inOutSelector->enable();
-    if (ui->inOutSelector->hasActiveControls()) {
-      ui->inOutSelector->show();
-    } else {
-      ui->inOutSelector->hide();
-    }
-
-    InputOutputState inOutState = ParametersCache::getInputOutputState(filter.hash);
-    if (inOutState.inputMode == InputMode::Unspecified) {
-      if ((filter.defaultInputMode != InputMode::Unspecified)) {
-        inOutState.inputMode = filter.defaultInputMode;
-      } else {
-        inOutState.inputMode = DefaultInputMode;
-      }
-    }
-
-    // Take plugin parameters into account
-    if (_pluginParameters.inputMode != InputMode::Unspecified) {
-      inOutState.inputMode = _pluginParameters.inputMode;
-      _pluginParameters.inputMode = InputMode::Unspecified;
-    }
-    if (_pluginParameters.outputMode != OutputMode::Unspecified) {
-      inOutState.outputMode = _pluginParameters.outputMode;
-      _pluginParameters.outputMode = OutputMode::Unspecified;
-    }
-
-    ui->inOutSelector->setState(inOutState, false);
-
-    ui->previewWidget->updateFullImageSizeIfDifferent(LayersExtentProxy::getExtent(ui->inOutSelector->inputMode()));
-    ui->filterName->setVisible(true);
-    ui->tbAddFave->setEnabled(true);
-    ui->previewWidget->setPreviewFactor(filter.previewFactor, resetZoom);
-    setZoomConstraint();
-    _okButtonShouldApply = true;
-    ui->tbResetParameters->setVisible(true);
-    ui->tbCopyCommand->setVisible(true);
-    ui->tbRemoveFave->setEnabled(filter.isAFave);
-    ui->tbRenameFave->setEnabled(filter.isAFave);
+    return;
   }
+
+  QList<QString> savedValues = values.isEmpty() ? ParametersCache::getValues(filter.hash) : values;
+  if (savedValues.isEmpty() && filter.isAFave) {
+    savedValues = filter.defaultParameterValues;
+  }
+  QList<int> savedVisibilityStates = ParametersCache::getVisibilityStates(filter.hash);
+  if (savedVisibilityStates.isEmpty() && filter.isAFave) {
+    savedVisibilityStates = filter.defaultVisibilityStates;
+  }
+  if (!ui->filterParams->build(filter.name, filter.hash, filter.parameters, savedValues, savedVisibilityStates)) {
+    _filtersPresenter->setInvalidFilter();
+    ui->previewWidget->setKeypoints(KeypointList());
+  } else {
+    ui->previewWidget->setKeypoints(ui->filterParams->keypoints());
+  }
+  setFilterName(FilterTextTranslator::translate(filter.name));
+  ui->inOutSelector->enable();
+  if (ui->inOutSelector->hasActiveControls()) {
+    ui->inOutSelector->show();
+  } else {
+    ui->inOutSelector->hide();
+  }
+
+  InputOutputState inOutState = ParametersCache::getInputOutputState(filter.hash);
+  if (inOutState.inputMode == InputMode::Unspecified) {
+    if ((filter.defaultInputMode != InputMode::Unspecified)) {
+      inOutState.inputMode = filter.defaultInputMode;
+    } else {
+      inOutState.inputMode = DefaultInputMode;
+    }
+  }
+
+  // Take plugin parameters into account
+  if (_pluginParameters.inputMode != InputMode::Unspecified) {
+    inOutState.inputMode = _pluginParameters.inputMode;
+    _pluginParameters.inputMode = InputMode::Unspecified;
+  }
+  if (_pluginParameters.outputMode != OutputMode::Unspecified) {
+    inOutState.outputMode = _pluginParameters.outputMode;
+    _pluginParameters.outputMode = OutputMode::Unspecified;
+  }
+
+  ui->inOutSelector->setState(inOutState, false);
+  ui->previewWidget->updateFullImageSizeIfDifferent(LayersExtentProxy::getExtent(ui->inOutSelector->inputMode()));
+  ui->filterName->setVisible(true);
+  ui->tbAddFave->setEnabled(true);
+  ui->previewWidget->setPreviewFactor(filter.previewFactor, resetZoom);
+  setZoomConstraint();
+  _okButtonShouldApply = true;
+  ui->tbResetParameters->setVisible(true);
+  ui->tbCopyCommand->setVisible(true);
+  ui->tbRemoveFave->setEnabled(filter.isAFave);
+  ui->tbRenameFave->setEnabled(filter.isAFave);
 }
 
 void MainWindow::setNoFilter()
@@ -1446,17 +1404,63 @@ void MainWindow::enableWidgetList(bool on)
   ui->inOutSelector->setEnabled(on);
 }
 
+void MainWindow::onProgressionWidgetCancelClicked()
+{
+  if (ui->progressInfoWidget->mode() == ProgressInfoWidget::Mode::FiltersUpdate) {
+    Updater::getInstance()->cancelAllPendingDownloads();
+  }
+}
+
+void MainWindow::abortProcessingOnCloseRequest()
+{
+  _pendingActionAfterCurrentProcessing = ProcessingAction::Close;
+  connect(&_processor, &GmicProcessor::noMoreUnfinishedJobs, this, &MainWindow::close);
+  ui->progressInfoWidget->showBusyIndicator();
+  ui->previewWidget->setOverlayMessage(tr("Waiting for cancelled jobs..."));
+  enableWidgetList(false);
+  ui->pbCancel->setEnabled(false);
+  ui->pbClose->setEnabled(false);
+
+  QTimer::singleShot(2000, [this]() {
+    _pendingActionAfterCurrentProcessing = ProcessingAction::ForceQuit;
+    ui->pbClose->setText(_forceQuitText);
+    ui->pbClose->setEnabled(true);
+  });
+
+  _processor.detachAllUnfinishedAbortedThreads(); // Keep only one thread in list after next line
+  _processor.cancel();
+}
+
+void MainWindow::onCancelClicked()
+{
+  ui->progressInfoWidget->cancel();
+  if (_processor.isProcessing()) {
+    _pendingActionAfterCurrentProcessing = ProcessingAction::NoAction;
+    _processor.cancel();
+    ui->progressInfoWidget->stopAnimationAndHide();
+    enableWidgetList(true);
+    ui->pbCancel->setEnabled(false);
+  }
+}
+
 void MainWindow::closeEvent(QCloseEvent * e)
 {
-  if (_processor.isProcessing() && _pendingActionAfterCurrentProcessing != ProcessingAction::Close) {
+  if (_pendingActionAfterCurrentProcessing == ProcessingAction::ForceQuit) {
+    _processor.disconnect(this);
+    _processor.cancel();
+    _processor.detachAllUnfinishedAbortedThreads();
+    e->accept();
+    return;
+  }
+
+  if (_processor.isProcessing() && (_pendingActionAfterCurrentProcessing != ProcessingAction::Close)) {
     if (confirmAbortProcessingOnCloseRequest()) {
-      _pendingActionAfterCurrentProcessing = ProcessingAction::Close;
-      _processor.cancel();
+      abortProcessingOnCloseRequest();
     }
     e->ignore();
-  } else {
-    e->accept();
+    return;
   }
+  e->accept();
 }
 
 } // namespace GmicQt

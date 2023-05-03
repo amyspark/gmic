@@ -108,8 +108,8 @@ void Settings::load(UserInterfaceMode userInterfaceMode)
   }
 
   if (userInterfaceMode != UserInterfaceMode::Silent) {
-    AddIcon = LOAD_ICON("list-add");
-    RemoveIcon = LOAD_ICON("list-remove");
+    AddIcon = IconLoader::load("list-add");
+    RemoveIcon = IconLoader::load("list-remove");
   }
   QLocale locale;
   GroupSeparator = locale.groupSeparator();
@@ -271,7 +271,6 @@ void Settings::save(QSettings & settings)
 {
   removeObsoleteKeys(settings);
   settings.setValue("LogosAreVisible", _visibleLogos);
-  settings.setValue(DARK_THEME_KEY, _darkThemeEnabled);
   settings.setValue(LANGUAGE_CODE_KEY, _languageCode);
   settings.setValue(ENABLE_FILTER_TRANSLATION, _filterTranslationEnabled);
   settings.setValue("Config/PreviewPosition", (_previewPosition == MainWindow::PreviewPosition::Left) ? "Left" : "Right");

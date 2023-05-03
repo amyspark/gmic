@@ -77,6 +77,7 @@ public:
 public slots:
   void onUpdateDownloadsFinished(int status);
   void onApplyClicked();
+  void onProgressionWidgetCancelClicked();
   void onPreviewUpdateRequested(bool synchronous);
   void onPreviewUpdateRequested();
   void onPreviewKeypointsEvent(unsigned int flags, unsigned long time);
@@ -85,7 +86,6 @@ public slots:
   void search(const QString &);
   void onOkClicked();
   void onCancelClicked();
-  void onProgressionWidgetCancelClicked();
   void onReset();
   void onCopyGMICCommand();
   void onPreviewZoomReset();
@@ -145,12 +145,14 @@ private:
   void retrieveFilterAndParametersFromPluginParameters(QString & hash, QList<QString> & parameters);
   static QString screenGeometries();
   void updateFilters(bool internet);
+  void abortProcessingOnCloseRequest();
   enum class ProcessingAction
   {
     NoAction,
     Ok,
+    Apply,
     Close,
-    Apply
+    ForceQuit
   };
 
   Ui::MainWindow * ui;
@@ -172,6 +174,7 @@ private:
   static bool _isAccepted;
   RunParameters _pluginParameters;
   VisibleTagSelector * _visibleTagSelector;
+  QString _forceQuitText;
 };
 
 } // namespace GmicQt

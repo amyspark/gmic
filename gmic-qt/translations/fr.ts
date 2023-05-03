@@ -294,52 +294,52 @@
 <context>
     <name>GmicQt::FiltersView</name>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="352"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="353"/>
         <source>Remove fave</source>
         <translation>Supprimer le favori</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="679"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="680"/>
         <source>Rename Fave</source>
         <translation>Renommer le favori</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="681"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="682"/>
         <source>Remove Fave</source>
         <translation>Supprimer le favori</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="683"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="684"/>
         <source>Clone Fave</source>
         <translation>Dupliquer le favori</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="687"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="688"/>
         <source>Add Fave</source>
         <translation>Ajouter comme favori</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="706"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="707"/>
         <source>Remove All</source>
         <translation>Supprimer tous les marqueurs</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="713"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="714"/>
         <source>%1 (%2 %3)</source>
         <translation>%1 (%2 %3)</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="713"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="714"/>
         <source>Filters</source>
         <translation>filtres</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="713"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="714"/>
         <source>Filter</source>
         <translation>filtre</translation>
     </message>
     <message>
-        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="353"/>
+        <location filename="../src/FilterSelector/FiltersView/FiltersView.cpp" line="354"/>
         <source>Do you really want to remove the following fave?
 
 %1
@@ -361,12 +361,12 @@
 <context>
     <name>GmicQt::GmicProcessor</name>
     <message>
-        <location filename="../src/GmicProcessor.cpp" line="349"/>
+        <location filename="../src/GmicProcessor.cpp" line="378"/>
         <source>Image #%1 returned by filter has %2 channels (should be at most 4)</source>
         <translation>L&apos;image No%1 retournée par le filtre possède %2 canaux (4 est la limite)</translation>
     </message>
     <message>
-        <location filename="../src/GmicProcessor.cpp" line="385"/>
+        <location filename="../src/GmicProcessor.cpp" line="414"/>
         <source>Image #%1 returned by filter has %2 channels
 (should be at most 4)</source>
         <translation>L&apos;image No%1 retournée par le filtre possède %2 canaux
@@ -522,76 +522,81 @@ Impossible de déterminer les paramètres par défaut.
 <context>
     <name>GmicQt::MainWindow</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="110"/>
+        <location filename="../src/MainWindow.cpp" line="111"/>
         <source>Add fave</source>
         <translation>Ajouter un favori</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="112"/>
+        <location filename="../src/MainWindow.cpp" line="113"/>
         <source>Reset parameters to default values</source>
         <translation>Réinitialiser les paramètres du filtre</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="118"/>
+        <location filename="../src/MainWindow.cpp" line="119"/>
         <source>Copy G&apos;MIC command to clipboard</source>
         <translation>Copier la commande G&apos;MIC dans le presse-papier</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="125"/>
+        <location filename="../src/MainWindow.cpp" line="126"/>
         <source>Rename fave</source>
         <translation>Renommer un favori</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="127"/>
+        <location filename="../src/MainWindow.cpp" line="128"/>
         <source>Remove fave</source>
         <translation>Supprimer un favori</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="131"/>
+        <location filename="../src/MainWindow.cpp" line="132"/>
         <source>Expand/Collapse all</source>
         <translation>Déplier/Réduire tout</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="133"/>
+        <location filename="../src/MainWindow.cpp" line="134"/>
         <source>G&apos;MIC (https://gmic.eu)&lt;br/&gt;GREYC (https://www.greyc.fr)&lt;br/&gt;CNRS (https://www.cnrs.fr)&lt;br/&gt;Normandy University (https://www.unicaen.fr)&lt;br/&gt;Ensicaen (https://www.ensicaen.fr)</source>
         <translation>G&apos;MIC (https://gmic.eu)&lt;br/&gt;GREYC (https://www.greyc.fr)&lt;br/&gt;CNRS (https://www.cnrs.fr)&lt;br/&gt;Normandie Université (https://www.unicaen.fr)&lt;br/&gt;Ensicaen (https://www.ensicaen.fr)</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="140"/>
+        <location filename="../src/MainWindow.cpp" line="141"/>
         <source>Selection mode</source>
         <translation>Mode sélection</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="179"/>
+        <location filename="../src/MainWindow.cpp" line="180"/>
         <source>Update filters</source>
         <translation>Mettre à jour les filtres (Ctrl+R / F5)</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="233"/>
+        <location filename="../src/MainWindow.cpp" line="231"/>
         <source>Manage visible tags
 (Right-click on a fave or a filter to set/remove tags)</source>
         <translation>Gérer les tags visibles
 (Ajouter/supprimer des tags par clic droit sur un favori ou sur un filtre)</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="356"/>
+        <location filename="../src/MainWindow.cpp" line="237"/>
+        <source>Force &amp;quit</source>
+        <translation>Forcer la &amp;terminaison</translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow.cpp" line="353"/>
         <source>Update completed</source>
         <translation>Mise à jour réussie</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="356"/>
-        <location filename="../src/MainWindow.cpp" line="358"/>
-        <location filename="../src/MainWindow.cpp" line="496"/>
+        <location filename="../src/MainWindow.cpp" line="353"/>
+        <location filename="../src/MainWindow.cpp" line="355"/>
+        <location filename="../src/MainWindow.cpp" line="487"/>
         <source>Filter definitions have been updated.</source>
         <translation>Les définitions de filtres ont été mises à jour.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="361"/>
+        <location filename="../src/MainWindow.cpp" line="358"/>
         <source>No download was needed.</source>
         <translation>Aucun téléchargement n&apos;était requis.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="414"/>
+        <location filename="../src/MainWindow.cpp" line="405"/>
         <source>Plugin was called with a filter path with no matching filter:
 
 Path: %1</source>
@@ -600,8 +605,8 @@ Path: %1</source>
 Chemin: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="422"/>
-        <location filename="../src/MainWindow.cpp" line="449"/>
+        <location filename="../src/MainWindow.cpp" line="413"/>
+        <location filename="../src/MainWindow.cpp" line="440"/>
         <source>Error parsing filter parameters definition for filter:
 
 %1
@@ -618,7 +623,7 @@ Impossible de déterminer les paramètres par défaut.
 %2</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="435"/>
+        <location filename="../src/MainWindow.cpp" line="426"/>
         <source>Plugin was called with a command that cannot be recognized as a filter:
 
 Command: %1</source>
@@ -627,12 +632,12 @@ Command: %1</source>
 Commande: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="895"/>
+        <location filename="../src/MainWindow.cpp" line="885"/>
         <source>[Elapsed time: %1]</source>
         <translation>[Temps écoulé : %1]</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="430"/>
+        <location filename="../src/MainWindow.cpp" line="421"/>
         <source>Plugin was called with a command that cannot be parsed:
 
 %1</source>
@@ -641,7 +646,7 @@ Commande: %1</translation>
 %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="439"/>
+        <location filename="../src/MainWindow.cpp" line="430"/>
         <source>Plugin was called with a command that does not match the provided path:
 
 Path: %1
@@ -654,52 +659,52 @@ Commande : %2
 Commande trouvée pour le chemin : %3</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="492"/>
+        <location filename="../src/MainWindow.cpp" line="483"/>
         <source>Filters update could not be achieved</source>
         <translation>La mise à jour des filtres n&apos;a pas réussi</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="632"/>
+        <location filename="../src/MainWindow.cpp" line="624"/>
         <source>The update could not be achieved&lt;br&gt;because of the following errors:&lt;br&gt;</source>
         <translation>La mise à jour n&apos;a pas réussi en raison&lt;br/&gt;des erreurs suivantes :&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="638"/>
+        <location filename="../src/MainWindow.cpp" line="630"/>
         <source>Update error</source>
         <translation>Erreurs lors de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="829"/>
+        <location filename="../src/MainWindow.cpp" line="817"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="951"/>
+        <location filename="../src/MainWindow.cpp" line="1419"/>
         <source>Waiting for cancelled jobs...</source>
         <translation>En attente des traitements annulés...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1315"/>
+        <location filename="../src/MainWindow.cpp" line="1273"/>
         <source>Import faves</source>
         <translation>Importer les favoris</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1315"/>
+        <location filename="../src/MainWindow.cpp" line="1273"/>
         <source>Do you want to import faves from file below?&lt;br/&gt;%1</source>
         <translation>Voulez-vous importer les favoris du fichier ci-dessous ?&lt;br/&gt;%1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1318"/>
+        <location filename="../src/MainWindow.cpp" line="1276"/>
         <source>Don&apos;t ask again</source>
         <translation>Ne plus me demander</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1437"/>
+        <location filename="../src/MainWindow.cpp" line="1395"/>
         <source>Confirmation</source>
         <translation>Confirmation</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1437"/>
+        <location filename="../src/MainWindow.cpp" line="1395"/>
         <source>A gmic command is running.&lt;br&gt;Do you really want to close the plugin?</source>
         <translation>Une commande gmic est en cours d&apos;exécution.&lt;br&gt;Voulez-vous vraiment fermer le plugin ?</translation>
     </message>
@@ -715,28 +720,38 @@ Commande trouvée pour le chemin : %3</translation>
 <context>
     <name>GmicQt::ProgressInfoWidget</name>
     <message>
-        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="49"/>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="50"/>
         <source>G&apos;MIC-Qt Plug-in progression</source>
         <translation>Progression du greffon G&apos;MIC-Qt</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="52"/>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="53"/>
         <source>Abort</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="150"/>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="126"/>
+        <source>[Processing 88:00:00.888 | 888.9 GiB]</source>
+        <translation>[Traitement en cours 88:00:00.888 | 888.9 Gio]</translation>
+    </message>
+    <message>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="128"/>
+        <source>[Processing 88:00:00.888]</source>
+        <translation>[Traitement en cours 88:00:00.888]</translation>
+    </message>
+    <message>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="160"/>
         <source>Updating filters...</source>
         <translation>Mise à jour des filtres...</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="204"/>
-        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="217"/>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="213"/>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="221"/>
         <source>[Processing %1 | %2]</source>
         <translation>[Traitement en cours %1 | %2]</translation>
     </message>
     <message>
-        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="219"/>
+        <location filename="../src/Widgets/ProgressInfoWidget.cpp" line="223"/>
         <source>[Processing %1]</source>
         <translation>[Traitement en cours %1]</translation>
     </message>
@@ -780,76 +795,76 @@ Commande trouvée pour le chemin : %3</translation>
 <context>
     <name>GmicQt::SourcesWidget</name>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="47"/>
+        <location filename="../src/SourcesWidget.cpp" line="58"/>
         <source>Move source up</source>
         <translation>Déplacer la source vers le haut</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="49"/>
+        <location filename="../src/SourcesWidget.cpp" line="60"/>
         <source>Move source down</source>
         <translation>Déplacer la source vers le bas</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="51"/>
-        <source>Remove source</source>
-        <translation>Supprimer la source</translation>
-    </message>
-    <message>
-        <location filename="../src/SourcesWidget.cpp" line="53"/>
+        <location filename="../src/SourcesWidget.cpp" line="62"/>
         <source>Add local file (dialog)</source>
         <translation>Ajouter un fichier local (dialogue)</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="55"/>
+        <location filename="../src/SourcesWidget.cpp" line="64"/>
         <source>Reset filter sources</source>
         <translation>Réinitialiser les sources de filtres</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="78"/>
-        <source>Macros: $HOME %APPDATA% $VERSION</source>
-        <translation>Macros : $HOME %APPDATA% $VERSION</translation>
+        <location filename="../src/SourcesWidget.cpp" line="80"/>
+        <source>Macros: $HOME %USERPROFILE% $VERSION</source>
+        <translation>Macros: $HOME %USERPROFILE% $VERSION</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="80"/>
+        <location filename="../src/SourcesWidget.cpp" line="102"/>
+        <source>Environment variables (e.g. %USERPROFILE% or %HOMEDIR%) are substituted in sources.
+VERSION is also a predefined variable that stands for the G&apos;MIC version number (currently %1).</source>
+        <translation>Les variables d&apos;environement (e.g. %USERPROFILE% ou %HOMEDIR%) sont substituées dans les sources.
+VERSION est aussi une variable définie comme le numéro de version courante de G&apos;MIC (actuellement %1).</translation>
+    </message>
+    <message>
+        <location filename="../src/SourcesWidget.cpp" line="82"/>
         <source>Macros: $HOME $VERSION</source>
         <translation>Macros : $HOME $VERSION</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="83"/>
+        <location filename="../src/SourcesWidget.cpp" line="53"/>
+        <source>Remove source (Delete)</source>
+        <translation>Supprimer une source (Suppr)</translation>
+    </message>
+    <message>
+        <location filename="../src/SourcesWidget.cpp" line="85"/>
         <source>Disable</source>
         <translation>Désactiver</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="84"/>
+        <location filename="../src/SourcesWidget.cpp" line="86"/>
         <source>Enable without updates</source>
         <translation>Activer sans les mises à jour</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="85"/>
+        <location filename="../src/SourcesWidget.cpp" line="87"/>
         <source>Enable with updates (recommended)</source>
         <translation>Activer avec les mises à jour (recommandé)</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="100"/>
-        <source>Environment variables (e.g. %APPDATA% or %HOMEDIR%) are substituted in sources.
-VERSION is also a predefined variable that stands for the G&apos;MIC version number (currently %1).</source>
-        <translation>Les variables d&apos;environnement (e.g. %APPDATA% ou %HOMEDIR%) sont substituées dans les sources.
-VERSION est aussi une variable prédéfinie à la valeur de la version de G&apos;MIC (actuellement %1).</translation>
-    </message>
-    <message>
-        <location filename="../src/SourcesWidget.cpp" line="104"/>
+        <location filename="../src/SourcesWidget.cpp" line="106"/>
         <source>Environment variables (e.g. $HOME or ${HOME} for your home directory) are substituted in sources.
 VERSION is also a predefined variable that stands for the G&apos;MIC version number (currently %1).</source>
         <translation>Les variables d&apos;environnement (e.g. $HOME ou ${HOME}) sont substituées dans les sources.
 VERSION est aussi une variable prédéfinie à la valeur de la version de G&apos;MIC (actuellement %1).</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="109"/>
+        <location filename="../src/SourcesWidget.cpp" line="111"/>
         <source>New source</source>
         <translation>Nouvelle source</translation>
     </message>
     <message>
-        <location filename="../src/SourcesWidget.cpp" line="185"/>
+        <location filename="../src/SourcesWidget.cpp" line="192"/>
         <source>Select a file</source>
         <translation>Sélectionnez un fichier</translation>
     </message>
@@ -857,27 +872,27 @@ VERSION est aussi une variable prédéfinie à la valeur de la version de G&apos
 <context>
     <name>GmicQt::Updater</name>
     <message>
-        <location filename="../src/Updater.cpp" line="136"/>
+        <location filename="../src/Updater.cpp" line="137"/>
         <source>Error downloading %1 (empty file?)</source>
         <translation>Erreur de téléchargement de %1 (fichier vide ?)</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="145"/>
+        <location filename="../src/Updater.cpp" line="146"/>
         <source>Could not read/decompress %1</source>
         <translation>Impossible de lire/décompresser %1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="150"/>
+        <location filename="../src/Updater.cpp" line="151"/>
         <source>Error writing file %1</source>
         <translation>Erreur d&apos;écriture du fichier %1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="167"/>
+        <location filename="../src/Updater.cpp" line="168"/>
         <source>Error downloading %1&lt;br/&gt;Error %2: %3</source>
         <translation>Erreur lors du téléchargement de %1&lt;br/&gt; Erreur %2 : %3</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="203"/>
+        <location filename="../src/Updater.cpp" line="204"/>
         <source>Download timeout: %1</source>
         <translation>Téléchargement annulé (hors délai) : %1</translation>
     </message>
@@ -1057,26 +1072,31 @@ VERSION est aussi une variable prédéfinie à la valeur de la version de G&apos
     </message>
     <message>
         <location filename="../ui/mainwindow.ui" line="495"/>
-        <source>Settings...</source>
-        <translation>Paramètres...</translation>
+        <source>&amp;Settings...</source>
+        <translation>&amp;Paramètres...</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="531"/>
+        <location filename="../ui/mainwindow.ui" line="544"/>
+        <source>&amp;Close</source>
+        <translation>&amp;Fermer</translation>
+    </message>
+    <message>
+        <location filename="../ui/mainwindow.ui" line="557"/>
         <source>&amp;Cancel</source>
         <translation>&amp;Annuler</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="544"/>
+        <location filename="../ui/mainwindow.ui" line="531"/>
         <source>&amp;Fullscreen</source>
         <translation>&amp;Plein écran</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="557"/>
+        <location filename="../ui/mainwindow.ui" line="570"/>
         <source>&amp;Apply</source>
         <translation>&amp;Appliquer</translation>
     </message>
     <message>
-        <location filename="../ui/mainwindow.ui" line="570"/>
+        <location filename="../ui/mainwindow.ui" line="583"/>
         <source>&amp;OK</source>
         <translation>&amp;Ok</translation>
     </message>
@@ -1217,6 +1237,26 @@ VERSION est aussi une variable prédéfinie à la valeur de la version de G&apos
         <location filename="../src/Misc.cpp" line="336"/>
         <source>List %1 cannot be merged considering these runs: %2</source>
         <translation></translation>
+    </message>
+    <message>
+        <location filename="../src/Misc.cpp" line="431"/>
+        <source>%1 GiB</source>
+        <translation>%1 Gio</translation>
+    </message>
+    <message>
+        <location filename="../src/Misc.cpp" line="433"/>
+        <source>%1 MiB</source>
+        <translation>%1 Mio</translation>
+    </message>
+    <message>
+        <location filename="../src/Misc.cpp" line="435"/>
+        <source>%1 KiB</source>
+        <translation>%1 Kio</translation>
+    </message>
+    <message>
+        <location filename="../src/Misc.cpp" line="437"/>
+        <source>%1 B</source>
+        <translation>%1 o</translation>
     </message>
 </context>
 <context>

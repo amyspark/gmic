@@ -47,7 +47,7 @@
 #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.
 #
 
-#------ Syntax rules for a G'MIC command file :#
+#------ Syntax rules for a G'MIC command file :
 
 #*** General syntax :
 #
@@ -346,8 +346,8 @@ reference : skip "${2=}"
 \n\
 "* There are no hard limitations on the size of the image along each dimension. For instance, the number of image "\
 "slices or channels can be of arbitrary size within the limits of the available memory."\n\
-"* The `width`, `height` and `depth` of an image are considered as spatial dimensions, while the `spectrum` has a "\
-"multi-spectral meaning. Thus, a 4D image in G'MIC should be most often regarded as a 3D dataset of multi-spectral "\
+"* The `width`, `height` and `depth` of an image are considered as _spatial_ dimensions, while the `spectrum` has a "\
+"_multi-spectral_ meaning. Thus, a 4D image in G'MIC should be most often regarded as a 3D dataset of multi-spectral "\
 "voxels. Most of the G'MIC commands will stick with this idea (e.g. command ''blur'' blurs images only along the "\
 "spatial `xyz`-axes)."\n\
 "* G'MIC stores all the image data as buffers of `float` values (32 bits, value range '[-3.4E38,+3.4E38]'. "\
@@ -849,6 +849,7 @@ reference : skip "${2=}"
 \
 "## Specific functions:"\n\
 "* 'addr(expr)': return the pointer address to the specified expression 'expr'. "\n\
+"* 'o2c(_#ind,offset)' and 'c2o(_#ind,x,_y,_z,_c)': Convert image offset to image coordinates and vice-versa. "\n\
 "* 'fill(target,expr)' or 'fill(target,index_name,expr)' fill the content of the specified target "\
 "(often vector-valued) using a given expression, e.g. `V = vector16(); fill(V,k,k^2 + k + 1);`. "\
 "For a vector-valued target, it is basically equivalent to: "\
@@ -1068,7 +1069,7 @@ reference : skip "${2=}"
 "* A command file is a simple text file, where each line starts either by "\
 "\n~~~\ncommand_name: command_definition\n~~~\n or \n~~~\ncommand_definition (continuation)\n~~~\n"\n\
 "* At startup, G'MIC automatically includes user's command file '$HOME/.gmic' (on __Unix__) or "\
-"'%APPDATA%/user.gmic' (on __Windows__). The CLI tool 'gmic' automatically runs the command "\
+"'%USERPROFILE%\\user.gmic' (on __Windows__). The CLI tool 'gmic' automatically runs the command "\
 "'cli_start' if defined."\n\
 "* Custom command names must use character set `[a-zA-Z0-9_]` and cannot start with a number."\n\
 "* Any `# comment` expression found in a custom commands file is discarded by the G'MIC parser, "\
@@ -1615,7 +1616,7 @@ clean_cluts :
       replace_str " ","_"
       replace_str "xp_2","xp2"
       replace_str "hp_5","hp5"
-      repeat 8 n:=1+$> {
+      repeat 8 { n:=1+$>
         replace_str "_"${n}"_+","_+"
         replace_str "_"${n}"_-","_-"
         replace_str "_"${n}"_alt","_alt"
@@ -2847,8 +2848,8 @@ __display_array :
   +luminance. r.. {$1*24},{$2*24} grid.. {100/$1}%,{100/$2}%,0,0,1,0
   xb={24*int($1/2)} yb={24*int($2/2)} xe={$xb+24} ye={$yb+24}
   rectangle.. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,$3,$4,$5
-  repeat $2 yg=$> {
-    repeat $1 xg=$> {
+  repeat $2 { yg=$>
+    repeat $1 { xg=$>
       t.. {-3,i($xg,$yg)},{5+$xg*24},{5+$yg*24},13,0.8,{i($xg,$yg)>128?0:255}
     }
   }
@@ -2913,6 +2914,30 @@ _display_camera :
 
   while {*}" && "!{*,ESC}
   camera 0,0 w[] 0
+
+#@cli dclut : eq. to 'display_clut'.
+dclut : check "isint(${1=256}) && $1>0 && isint(${2=33}) && $2>0"
+  v + _display_clut $*
+
+#@cli display_clut : _image_resolution>0,_clut_resolution>0
+#@cli : Display selected 3D color LUTs.
+#@cli : Default values: 'image_resolution=320' and 'clut_resolution=33'.
+#@cli : $ clut tealorange clut summer clut 60s display_clut 400
+display_clut :
+  v + _$0 $*
+
+_display_clut : check "isint(${1=320}) && $1>0 && isint(${2=33}) && $2>0"
+  e[0--3] "Display selected 3D color LUTs, with image resolution $1x$1 and CLUT resolution $2x$2x$2."
+  foreach { nm={n}
+    r3dx $2 pointcloud3d circles3d 1 o3d 0.1 *3d {255/($2-1)} colorcube3d 1 +3d
+    pose3d 0.815360904,-0.144610703,-0.560602367,0,\
+           -0.149177685,0.883129835,-0.444778264,0,\
+           0.559404552,0.446283728,0.698496521,0
+    c3d n3d *3d. {2.10*$1}
+    {2*$1},{2*$1},1,3,-1 j3d. ..,47%,46%,0,1,2,0,0,{4*$1} rm..
+    to_rgba replace_color 0,0.5%,-1,-1,-1,255,96,96,96,0 r2dx $1
+    => $nm
+  }
 
 #@cli dfft : eq. to 'display_fft'.
 dfft :
@@ -8251,7 +8276,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.2.2').
+# $1 = version number (e.g. '3.2.3').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9953,7 +9978,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (320,321,322,$_version) sort. discard. store. compat
+  (320,321,322,323,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -26982,7 +27007,7 @@ nn_print :
       e "        * Parameters: "$c{$name,whds}$n
     fi
   }
-  e "\n * Total: "${b}{narg($_nn_modules_names)}$n" modules, "$b${-nn_size}$n" parameters.\n"
+  e "\n * Total: "${b}{narg($_nn_modules_names)-1}$n" modules, "$b${-nn_size}$n" parameters.\n"
 
 #@cli nn_trainer : name,_loss,_learning_rate>0,_optimizer,_scheduler
 #@cli : Add a network trainer to the network.
@@ -31569,17 +31594,7 @@ is_videofilename : skip "${1=}"
 #@cli is_macos
 #@cli : Return 1 if current computer OS is Darwin (MacOS), 0 otherwise.
 is_macos :
-  if !narg($_is_macos) l[] {
-    if ${-is_windows} _is_macos=0
-    else
-      file=${-path_tmp}gmic_uname
-      x "uname >"{/$file}
-      it[] $file
-      _is_macos={same(crop(),'Darwin',6,0)}
-      rm
-    fi
-  onfail _is_macos=0 rm
-  } fi
+  if !narg($_is_macos) _is_macos:=isdir('/Library/Apple/System/Library') fi
   u $_is_macos
 
 #@cli is_windows
@@ -34148,14 +34163,14 @@ x_connect4 : check_display $0
       elif ${autoplayer$turn}" || "{*,-SPACE}" || "{*,ENTER} # Computer play
         if {*,-ENTER} autoplayer$turn=1 fi
         max_score=-inf max_col=
-        repeat w#$board move1=$> {
+        repeat w#$board { move1=$>
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 => board1
             {board,w},1,1,1,"y = -1; repeat (h#"$board1",k, if(!i(#"$board1",x,k),y = k)); y" => ymax1
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
-            repeat w#$board move2=$> {
+            repeat w#$board { move2=$>
               yM2={i("#"$ymax1,$move2)}
               if $yM2>=0
                 +=[board1] {1+$opp_turn},$move2,$yM2
@@ -37311,9 +37326,9 @@ x_spline : check_display $0
 -----------------------------------------------------"
 
   # Init display and variables.
-  if $! a x n 0,255 to_rgb else (0;0^0;128^0;0) r. 512,512,1,3,3 => "[G"{`39`}"MIC] Spline Editor" fi
-  w[0] {0,w},{0,h},0,0,{n} r[0] {*,w},{*,h},1,3,1
-  i[1] 1         # Point coordinates
+  if $! a x n 0,255 to_rgb else (0;0^0;128^0;0) r. 1024,1024,1,3,3 => "[G"{`39`}"MIC] Spline Editor" fi
+  w[0] {0,[w,h]/2},0,0,{n}
+  0              # Point coordinates
   roundness=0.5  # Curve roundness
   visuflags=23   # Visualisation flags
   nearest=-1     # Nearest point
@@ -37323,7 +37338,7 @@ x_spline : check_display $0
   do
 
     # Init coordinates [1] if necessary.
-    if {1,whds}==1
+    if !{1,whds}
       rm[1] roundness=0.5 nearest=-1 active=-1
       i[1] ({0.2*w},{0.2*h};\
             {0.2*w},{0.8*h};\
@@ -37332,25 +37347,33 @@ x_spline : check_display $0
     fi
 
     # Estimate screen-normalized coordinates [2], curve tangents [3] and tangent orientations [4].
-    [1] ({{*,w}/{0,w}},{{*,h}/{0,h}}) *[-2,-1]                       # Normalized coordinates.
+    [1] ({{*,w}*2/{0,w}},{{*,h}*2/{0,h}}) *[-2,-1]                   # Normalized coordinates.
     +shift[2] 0,-1,0,0,2 +shift[2] 0,1,0,0,2 -[-2,-1] *. $roundness  # Curve tangents.
     +s. x sqr[-2,-1] +[-2,-1] sqrt. r. 2 +/[-2,-1] rm..              # Tangent orientations.
 
     # Display curve, control points, polygon and tangents.
-    +r[0] {*,w},{*,h},1,3
+    +r[0] {2*[{*,w},{*,h}]},1,3
     if $visuflags&4 polygon. {2,h},{2,^},0.3,128,200,255 fi
     repeat h#1 {
       line. {2,@0-3},0.3,255,255,0
-      if $visuflags&1 spline. {2,@0-1},{3,@0-1},{2,@2-3},{3,@2-3},1,255 fi
-      if $visuflags&8 line. {{2,@0}-{4,@0}*20},{{2,@1}-{4,@1}*20},{{2,@0}+{4,@0}*20},{{2,@1}+{4,@1}*20},1,0,255,0 fi
-      if $visuflags&16 t. $>,{{2,@0}-3},{{2,@1}-18},13,1,255,255,0 fi
-      if $visuflags&32 t. "("{round({1,@0})}","{round({1,@1})}")",{{2,@0}-16},{{2,@1}+10},13,1,100,200,255 fi
+      if $visuflags&1
+        spline. {2,@0-1},{3,@0-1},{2,@2-3},{3,@2-3},1,255
+      fi
+      if $visuflags&8
+        thickline. {{2,@0}-{4,@0}*40},{{2,@1}-{4,@1}*40},{{2,@0}+{4,@0}*40},{{2,@1}+{4,@1}*40},3,1,0,255,0
+      fi
+      if $visuflags&16
+        t. $>,{{2,@0}-10},{{2,@1}-42},35,1,255,255,0
+      fi
+      if $visuflags&32
+        t. "("{round({1,@0})}","{round({1,@1})}")",{{2,@0}-50},{{2,@1}+16},30,1,100,200,255
+      fi
       shift[1-4] 0,-1,0,0,2
     }
     if $visuflags&2 repeat h#1 {
-      ellipse. {2,@0-1},4,4,0,1,0,0,0 ellipse. {2,@0-1},2,2,0,1,255,100,155 shift[2] 0,1,0,0,2
+      ellipse. {2,@0-1},10,10,0,1,0,0,0 ellipse. {2,@0-1},8,8,0,1,255,100,155 shift[2] 0,1,0,0,2
     } fi
-    w. rm[3,4,-1] wait
+    r2dx. 50% w. rm[3,4,-1] wait
 
     # Handle key events.
     if {*,SPACE} visuflags+={if($visuflags&1,-1,1)} wait -1 fi  # Show/hide spline
@@ -37362,7 +37385,7 @@ x_spline : check_display $0
       visuflags+={if($visuflags&32,-32,32)} wait -1 fi
     if {*,PADADD}" && "$roundness<1 roundness*=1.1 wait -1 fi    # Increase roundness
     if {*,PADSUB}" && "$roundness>0.1 roundness*=0.9 wait -1 fi  # Decrease roundness
-    if {*,R}" && "!{*,CTRLLEFT}" && "!{*,CTRLRIGHT} rm. i[1] 1 wait -1 fi  # Reset curve
+    if {*,R}" && "!{*,CTRLLEFT}" && "!{*,CTRLRIGHT} rm. i[1] 0 wait -1 fi  # Reset curve
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} fi # Increase window size
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} fi # Decrease window size
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} fi             # Reset window size
@@ -37371,9 +37394,9 @@ x_spline : check_display $0
     # Set/unset active point.
     if {*,b}==0 active=-1                            # Unset active point if mouse button is released
     elif {*,x}>=0" && "{*,b}" && "$active==-1        # Find new active point
-      [2] ({*,x},{*,y}) -[-2,-1] sqr. s. x +[-2,-1]  # Compute distance vector to points
+      [2] ({2*[{*,x},{*,y}]}) -[-2,-1] sqr. s. x +[-2,-1]  # Compute distance vector to points
       nearest={ym}                                   # Set nearest point
-      if im<64 active=$nearest fi                    # Set it as active point, if near enough
+      if im<256 active=$nearest fi                   # Set it as active point, if near enough
       rm.
     fi
     rm[2]
@@ -38346,6 +38369,13 @@ gui_autocrop_layers :
     z $coords => "mode("$mode"),opacity("$opacity"),pos("{arg(1,$coords)}","{arg(2,$coords)}"),name("$nm")"
   }
 
+fx_logo : skip "${1= }"
+  rm[^0]
+  w,h=${-gui_preview_wh}
+  ({'"$1"'}) c. 0,127 r. 15,1,1,1,0,2 r. {w/3},1,1,3,-1 n. 0,255 100%,1,1,1,lerp(0,$w-1,x/(w-1)) rv[-2,-1] a[-2,-1] c
+  rbf. $h transpose. r. $w,$h,1,3,3
+  blend alpha,0.5
+  to "$1",0.5~,0.5~,10%
 
 #@gui ____<i>About</i>
 #---------------------
@@ -38982,7 +39012,7 @@ _gui_download_all_data :
 #@gui : <b>G'MIC</b> is an <b>open</b> image processing framework. Thus, including
 #@gui : <b>user-defined filters</b> into this plug-in is possible.\n\n
 #@gui : To do so, you need to create a <span foreground="purple" style="italic">.gmic</span>
-#@gui : file in your <i>$HOME/</i> folder (or <i>%APPDATA%/user.gmic</i> on Windows).
+#@gui : file in your <i>$HOME/</i> folder (or <i>%USERPROFILE%/user.gmic</i> on Windows).
 #@gui : It will be read each time the plug-in is launched, or when the <i>Refresh</i>
 #@gui : button (under the central pane) is pressed. It must be a regular text file, containing the declarations and
 #@gui : implementations of the filters (written in the <b>G'MIC</b> language) that will be added
@@ -39300,7 +39330,7 @@ fx_gmicky_preview :
 #@gui : from the server logs: <i>IP address of the client; date and time of the request;</i>
 #@gui : as well as a short string, supplied through the HTTP protocol <i>"User Agent"</i> header
 #@gui : field, which describes the full plugin version as shown in the window title
-#@gui : (e.g. "<i>G'MIC-Qt for GIMP 2.8 - Linux 64 bits - 2.2.1_pre#180301</i>").\n\n
+#@gui : (e.g. "<i>G'MIC-Qt for GIMP 2.10 - Linux 64 bits - 3.2.3</i>").\n\n
 #@gui : Note that this information may solely be used for purely anonymous
 #@gui : statistical purposes.
 #@gui : "}
@@ -39327,8 +39357,8 @@ fx_gmicky_preview :
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
 #@gui : - <b>2023/01/16</b> : version <i>3.2.0</i>.\n
-#@gui : - <span foreground="purple"><b>2023/03/17</b> : version <i>3.2.2</i> (Current stable).</span>\n
-##@gui : - <b>2023/02/27</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2023/04/04</b> : version <i>3.2.3</i> (Current stable).</span>\n
+##@gui : - <b>2023/05/XX</b> : version <i>3.2.4_pre</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.3)","https://discuss.pixls.us/t/on-the-road-to-3-3"}
@@ -51972,6 +52002,105 @@ _fx_shapes16 :
 
 _fx_shapes17 :
   _fx_shapes9 $* expand_xy 1,0 +erode 3 -
+
+#@gui Pack Ellipses : fx_pack_ellipses, fx_pack_ellipses_preview(0)
+#@gui : Min Radius (px) = float(3,1,256)
+#@gui : Max Radius (px) = float(20,1,256)
+#@gui : Radius Dilation/Erosion (px)= float(0,-10,10)
+#@gui : Min Isotropy (%) = float(30,0,100)
+#@gui : Max Isotropy (%) = float(100,0,100)
+#@gui : Isotropy Quantization = int(6,0,16)
+#@gui : Orientation = choice{1,"Isotropic (Circles Only)","Anisotropic (Along Contours)",\
+# "Anisotropic (Orthogonal to Contours)"}
+#@gui : Region Analysis Size = int(3,0,10)
+#@gui : Background Color = color(0,0,0,255)
+#@gui : Render Resolution = _choice("x1","x2","x3","x4","x5","x6","x7","x8")
+#@gui : Preserve Image Size = _bool(0)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2023/03/29</i>.</small>")
+fx_pack_ellipses :
+  radius_min,radius_max,radius_dilation,isotropy_min,isotropy_max,isotropy_levels,orientation_ellipse,\
+    region_analysis,bgR,bgG,bgB,bgA,render_factor,preserve_size=$*
+  isotropy_min,isotropy_max:="sort([ $isotropy_min,$isotropy_max ])/100"
+  radius_min,radius_max:="sort([ $radius_min,$radius_max ])"
+  render_factor+=1
+
+  foreach {
+    progress -1
+    to_rgb
+
+    # Init images.
+    nm={n} => img
+    1,1,1,3 => set
+    +structuretensors[img] 1 b. 1% eigen.
+    f.. "l0 = sqrt(i0); l1 = sqrt(i1); [1 - (l1 - l0)/l1,0]" channels.. 0
+    if $isotropy_levels quantize.. $isotropy_levels,0,-1 fi
+    n.. $isotropy_min,$isotropy_max =>.. isotropy
+
+    if $orientation_ellipse==0 f[isotropy] 1 .
+    elif $orientation_ellipse==1 +f. "[ atan2(-i0,i1),0 ]"
+    else +f. "[ atan2(i1,i0),0 ]"
+    fi
+    channels. 0 => angles
+
+    if $region_analysis +norm[img] b. 0.5% slic. {30*$region_analysis},0 g. xy,1 a[-2,-1] c norm. ge. 5%
+    else 100%,100%
+    fi
+    => contours
+    +==[contours] 0 => mask
+
+    # Pack ellipses.
+    nb_attempts=0
+    repeat inf {
+      x0,y0,x1,y1:="
+        const N = 4*$radius_max;
+        wm1 = w#$mask - 1;
+        hm1 = h#$mask - 1;
+        Pc = round(u([wm1,hm1])); P0 = Pc - N/2; P1 = Pc + N/2;
+        [ cut(P0[0],0,wm1), cut(P0[1],0,hm1), cut(P1[0],0,wm1), cut(P1[1],0,hm1) ]"
+
+      +z[mask] $x0,$y0,$x1,$y1 r. {[w,h]+2},1,1,0,0,0.5,0.5 distance. 0
+      x,y,r:=$x0+xM-1,$y0+yM-1,min($radius_max,iM-1.25) rm.
+
+      if $r>$radius_min
+        r2={isotropy,max(1,$r*i($x,$y))}
+        ellipse[mask] $x,$y,$r,$r2,{angles,rad2deg(i($x,$y))},1,0
+        eval "da_push(#$set,[$x,$y,$r])"
+        nb_attempts=0
+      else
+        if narg($contours) +[mask] [contours] rm[contours]
+        else nb_attempts+=1 if $nb_attempts>10 break fi
+        fi
+      fi
+
+      if !($>%100) progress {mask,cut(400*(1-ia)^3,0$progress,100)} fi
+    }
+    rm[mask]
+
+    # Render result.
+    da_freeze[set]
+    W,H={img,[w,h]}
+    {img,round($render_factor*[w,h])} => mask
+    eval[set] "
+      const fact = $render_factor;
+      r1 = fact*(i2 + $radius_dilation);
+      r2 = max(1,r1*i(#$isotropy,i0,i1));
+      ellipse(#$mask,round(fact*i0),round(fact*i1),r1,r2,i(#$angles,i0,i1),1,y + 1);
+      I"
+
+    r[img] {mask,[w,h]},1,100%,3
+    blend[img] [mask],shapeaverage0
+    !=[mask] 0 *[mask] 255
+    a[img,mask] c
+    if $preserve_size r[img] $W,$H,1,100%,2 fi
+    k[img]
+
+    100%,100%,100%,4 fc. $bgR,$bgG,$bgB,$bgA rv blend alpha => $nm
+    progress 100
+  }
+
+fx_pack_ellipses_preview :
+  gui_split_preview "fx_pack_ellipses ${1-12},1,0"
 
 #@gui Pack Sprites : fx_pack_sprites, gui_no_preview
 #@gui : Number of Scales = int(5,1,16)

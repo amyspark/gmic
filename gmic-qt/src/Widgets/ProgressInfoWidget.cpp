@@ -24,6 +24,7 @@
  */
 #include "Widgets/ProgressInfoWidget.h"
 #include <QFile>
+#include <QFontMetrics>
 #include <QGuiApplication>
 #include <QScreen>
 #include "GmicProcessor.h"
@@ -48,10 +49,10 @@ ProgressInfoWidget::ProgressInfoWidget(QWidget * parent) : QWidget(parent), ui(n
   _growing = true;
   setWindowTitle(tr("G'MIC-Qt Plug-in progression"));
   ui->progressBar->setRange(0, 100);
-  ui->tbCancel->setIcon(LOAD_ICON("process-stop"));
+  ui->tbCancel->setIcon(IconLoader::load("cancel"));
   ui->tbCancel->setToolTip(tr("Abort"));
   connect(&_timer, &QTimer::timeout, this, &ProgressInfoWidget::onTimeOut);
-  connect(ui->tbCancel, &QToolButton::clicked, this, &ProgressInfoWidget::onCancelClicked);
+  connect(ui->tbCancel, &QToolButton::clicked, this, &ProgressInfoWidget::cancel);
   if (!parent) {
     QRect position = frameGeometry();
     QList<QScreen *> screens = QGuiApplication::screens();
@@ -93,14 +94,14 @@ void ProgressInfoWidget::onTimeOut()
   if (_mode == Mode::GmicProcessing) {
     updateThreadInformation();
   } else if (_mode == Mode::FiltersUpdate) {
-    updateUpdateProgression();
+    updateFilterUpdateProgression();
   }
 }
 
-void ProgressInfoWidget::onCancelClicked()
+void ProgressInfoWidget::cancel()
 {
   _canceled = true;
-  emit cancel();
+  emit canceled();
 }
 
 void ProgressInfoWidget::stopAnimationAndHide()
@@ -110,14 +111,24 @@ void ProgressInfoWidget::stopAnimationAndHide()
   hide();
 }
 
-void ProgressInfoWidget::startFilterThreadAnimationAndShow(bool showCancelButton)
+void ProgressInfoWidget::startFilterThreadAnimationAndShow()
 {
   layout()->removeWidget(ui->tbCancel);
   layout()->removeWidget(ui->progressBar);
   layout()->removeWidget(ui->label);
   layout()->addWidget(ui->progressBar);
-  layout()->addWidget(ui->tbCancel);
   layout()->addWidget(ui->label);
+  ui->tbCancel->hide();
+
+  ui->label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+  ui->label->setAlignment(Qt::AlignRight);
+#if defined(_IS_LINUX_) || defined(_IS_WINDOWS_)
+  QString largestText(tr("[Processing 88:00:00.888 | 888.9 GiB]"));
+#else
+  QString largestText(tr("[Processing 88:00:00.888]"));
+#endif
+  QFontMetrics fm(ui->label->font());
+  ui->label->setMinimumWidth(fm.horizontalAdvance(largestText));
 
   _canceled = false;
   _mode = Mode::GmicProcessing;
@@ -127,7 +138,6 @@ void ProgressInfoWidget::startFilterThreadAnimationAndShow(bool showCancelButton
   onTimeOut();
   _timer.setInterval(250);
   _timer.start();
-  ui->tbCancel->setVisible(showCancelButton);
   show();
 }
 
@@ -148,6 +158,9 @@ void ProgressInfoWidget::startFiltersUpdateAnimationAndShow()
   ui->progressBar->setTextVisible(false);
   ui->progressBar->setInvertedAppearance(false);
   ui->label->setText(tr("Updating filters..."));
+  ui->label->setMinimumWidth(0);
+  ui->label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+  ui->label->setAlignment(Qt::AlignLeft);
   _timer.setInterval(75);
 
   _growing = true;
@@ -192,35 +205,26 @@ void ProgressInfoWidget::updateThreadInformation()
   if (status.open(QFile::ReadOnly)) {
     QByteArray text = status.readAll();
     const char * str = strstr(text.constData(), "VmRSS:");
-    unsigned int kiB;
-    if (str && sscanf(str + 7, "%u", &kiB)) {
-      if (kiB >= 1024) {
-        memoryStr = QString("%1 MiB").arg(kiB / 1024);
-      } else {
-        memoryStr = QString("%1 KiB").arg(kiB);
-      }
+    quint64 kiB;
+    if (str && sscanf(str + 7, "%llu", &kiB)) {
+      memoryStr = readableSize(kiB * 1024);
     }
   }
   ui->label->setText(QString(tr("[Processing %1 | %2]")).arg(durationStr).arg(memoryStr));
 #elif defined(_IS_WINDOWS_)
   PROCESS_MEMORY_COUNTERS counters;
-  unsigned long kiB = 0;
+  quint64 kiB = 0;
   if (GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters))) {
-    kiB = static_cast<unsigned long>(counters.WorkingSetSize / 1024);
+    kiB = static_cast<quint64>(counters.WorkingSetSize / 1024);
   }
-  QString memoryStr;
-  if (kiB >= 1024) {
-    memoryStr = QString("%1 MiB").arg(kiB / 1024);
-  } else {
-    memoryStr = QString("%1 KiB").arg(kiB);
-  }
+  QString memoryStr = readableSize(kiB * 1024);
   ui->label->setText(QString(tr("[Processing %1 | %2]")).arg(durationStr).arg(memoryStr));
 #else
   ui->label->setText(QString(tr("[Processing %1]")).arg(durationStr));
 #endif
 }
 
-void ProgressInfoWidget::updateUpdateProgression()
+void ProgressInfoWidget::updateFilterUpdateProgression()
 {
   int value = ui->progressBar->value();
   if (_growing) {

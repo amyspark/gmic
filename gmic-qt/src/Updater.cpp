@@ -26,6 +26,7 @@
 #include <QByteArray>
 #include <QDebug>
 #include <QFile>
+#include <QFileInfo>
 #include <QNetworkRequest>
 #include <QTextStream>
 #include <QUrl>
@@ -247,8 +248,13 @@ QString Updater::localFilename(QString url)
 
 bool Updater::appendLocalGmicFile(QByteArray & array, QString filename) const
 {
+  QFileInfo info(filename);
+  if (!info.exists() || !info.size()) {
+    return false;
+  }
   QFile file(filename);
   if (!file.open(QIODevice::ReadOnly)) {
+    Logger::error("Error opening file: " + filename);
     return false;
   }
   QByteArray fileData;
@@ -259,7 +265,7 @@ bool Updater::appendLocalGmicFile(QByteArray & array, QString filename) const
     if (!fileData.size()) {
       return false;
     }
-  } else { // Try to uncompress
+  } else {
     TRACE << "Appending:" << filename;
     fileData = file.readAll();
   }
@@ -321,9 +327,13 @@ void Updater::setOutputMessageMode(OutputMessageMode mode)
 void Updater::appendBuiltinGmicStdlib(QByteArray & array) const
 {
   gmic_image<char> stdlib_h = gmic::decompress_stdlib();
-  QByteArray tmp = QByteArray::fromRawData(stdlib_h, (int)stdlib_h.size());
-  tmp[tmp.size() - 1] = '\n';
+  if (!stdlib_h.size() || (stdlib_h.size() == 1)) {
+    Logger::error("Could not decompress gmic builtin stdlib");
+    return;
+  }
+  QByteArray tmp(stdlib_h, int(stdlib_h.size() - 1));
   array.append(tmp);
+  array.append('\n');
 }
 
 } // namespace GmicQt

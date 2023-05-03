@@ -338,9 +338,7 @@ OPENEXR_LIBS = $(shell pkg-config --libs OpenEXR || echo -lIlmImf -lHalf)
 # (http://www.fftw.org/)
 FFTW_CFLAGS = -Dcimg_use_fftw3 $(shell pkg-config --cflags fftw3)
 FFTW_LIBS = $(shell pkg-config --libs fftw3 || echo -lfftw3)
-ifneq ($(OS),Windows)
 FFTW_LIBS += -lfftw3_threads
-endif
 
 # Enable native support of the BOARD library.
 # (https://github.com/c-koi/libboard)

@@ -69,6 +69,16 @@ void GmicProcessor::init()
   _gmicImages->assign();
 }
 
+GmicProcessor::~GmicProcessor()
+{
+  delete _gmicImages;
+  delete _previewImage;
+  if (!_unfinishedAbortedThreads.isEmpty()) {
+    Logger::error(QString("~GmicProcessor(): There are %1 unfinished filter threads.").arg(_unfinishedAbortedThreads.size()));
+    detachAllUnfinishedAbortedThreads();
+  }
+}
+
 void GmicProcessor::setContext(const GmicProcessor::FilterContext & context)
 {
   _filterContext = context;
@@ -177,7 +187,7 @@ void GmicProcessor::execute()
 
 bool GmicProcessor::isProcessingFullImage() const
 {
-  return _filterContext.requestType == FilterContext::RequestType::FullImage;
+  return _filterThread && (_filterContext.requestType == FilterContext::RequestType::FullImage);
 }
 
 bool GmicProcessor::isProcessing() const
@@ -256,6 +266,34 @@ void GmicProcessor::cancel()
   abortCurrentFilterThread();
 }
 
+void GmicProcessor::detachAllUnfinishedAbortedThreads()
+{
+  for (FilterThread * thread : _unfinishedAbortedThreads) {
+    thread->disconnect(this);
+    thread->setParent(nullptr);
+  }
+  _unfinishedAbortedThreads.clear();
+}
+
+void GmicProcessor::terminateAllThreads()
+{
+  if (_filterThread) {
+    _filterThread->disconnect(this);
+    _filterThread->terminate();
+    _filterThread->wait();
+    delete _filterThread;
+  }
+  while (!_unfinishedAbortedThreads.isEmpty()) {
+    _unfinishedAbortedThreads.front()->disconnect(this);
+    _unfinishedAbortedThreads.front()->terminate();
+    _unfinishedAbortedThreads.front()->wait();
+    delete _unfinishedAbortedThreads.front();
+    _unfinishedAbortedThreads.pop_front();
+  }
+  _waitingCursorTimer.stop();
+  OverrideCursor::setWaiting(false);
+}
+
 bool GmicProcessor::hasUnfinishedAbortedThreads() const
 {
   return !_unfinishedAbortedThreads.isEmpty();
@@ -291,15 +329,6 @@ void GmicProcessor::saveSettings(QSettings & settings)
     settings.setValue(QString("LastExecution/host_%1/GmicStatusString").arg(GmicQtHost::ApplicationShortname), status);
     settings.setValue(QString("LastExecution/host_%1/InputMode").arg(GmicQtHost::ApplicationShortname), (int)_lastAppliedCommandInOutState.inputMode);
     settings.setValue(QString("LastExecution/host_%1/OutputMode").arg(GmicQtHost::ApplicationShortname), (int)_lastAppliedCommandInOutState.outputMode);
-  }
-}
-
-GmicProcessor::~GmicProcessor()
-{
-  delete _gmicImages;
-  delete _previewImage;
-  if (!_unfinishedAbortedThreads.isEmpty()) {
-    Logger::error(QString("~GmicProcessor(): There are %1 unfinished filter threads.").arg(_unfinishedAbortedThreads.size()));
   }
 }
 

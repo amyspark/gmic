@@ -23,10 +23,12 @@
  *
  */
 #include "SourcesWidget.h"
+#include <QAction>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFileDialog>
 #include <QListWidget>
+#include <QListWidgetItem>
 #include <QPushButton>
 #include <QSet>
 #include <QToolTip>
@@ -44,20 +46,25 @@ SourcesWidget::SourcesWidget(QWidget * parent) : QWidget(parent), ui(new Ui::Sou
 {
   ui->setupUi(this);
 
-  ui->tbUp->setIcon(LOAD_ICON("draw-arrow-up"));
+  QAction * removeAction = new QAction(this);
+  removeAction->setIcon(IconLoader::load("user-trash"));
+  removeAction->setShortcutContext(Qt::WindowShortcut);
+  removeAction->setShortcut(Qt::Key_Delete);
+  removeAction->setToolTip(tr("Remove source (Delete)"));
+  connect(removeAction, &QAction::triggered, this, &SourcesWidget::removeCurrentSource);
+  ui->tbTrash->setDefaultAction(removeAction);
+
+  ui->tbUp->setIcon(IconLoader::load("draw-arrow-up"));
   ui->tbUp->setToolTip(tr("Move source up"));
-  ui->tbDown->setIcon(LOAD_ICON("draw-arrow-down"));
+  ui->tbDown->setIcon(IconLoader::load("draw-arrow-down"));
   ui->tbDown->setToolTip(tr("Move source down"));
-  ui->tbTrash->setIcon(LOAD_ICON("user-trash"));
-  ui->tbTrash->setToolTip(tr("Remove source"));
-  ui->tbOpen->setIcon(LOAD_ICON("folder"));
+  ui->tbOpen->setIcon(IconLoader::load("folder"));
   ui->tbOpen->setToolTip(tr("Add local file (dialog)"));
-  ui->tbReset->setIcon(LOAD_ICON("view-refresh"));
+  ui->tbReset->setIcon(IconLoader::load("view-refresh"));
   ui->tbReset->setToolTip(tr("Reset filter sources"));
   connect(ui->tbOpen, &QPushButton::clicked, this, &SourcesWidget::onOpenFile);
   connect(ui->tbNew, &QPushButton::clicked, this, &SourcesWidget::onAddNew);
   connect(ui->tbReset, &QPushButton::clicked, this, &SourcesWidget::setToDefault);
-  connect(ui->tbTrash, &QPushButton::clicked, this, &SourcesWidget::removeCurrentSource);
   connect(ui->tbUp, &QPushButton::clicked, this, &SourcesWidget::onMoveUp);
   connect(ui->tbDown, &QPushButton::clicked, this, &SourcesWidget::onMoveDown);
   connect(ui->list, &QListWidget::currentItemChanged, this, &SourcesWidget::onSourceSelected);
@@ -70,7 +77,7 @@ SourcesWidget::SourcesWidget(QWidget * parent) : QWidget(parent), ui(new Ui::Sou
   ui->list->addItems(_sourcesAtOpening = Settings::filterSources());
 
 #ifdef _IS_WINDOWS_
-  ui->labelVariables->setText(tr("Macros: $HOME %APPDATA% $VERSION"));
+  ui->labelVariables->setText(tr("Macros: $HOME %USERPROFILE% $VERSION"));
 #else
   ui->labelVariables->setText(tr("Macros: $HOME $VERSION"));
 #endif
@@ -92,7 +99,7 @@ SourcesWidget::SourcesWidget(QWidget * parent) : QWidget(parent), ui(new Ui::Sou
   }
 
 #ifdef _IS_WINDOWS_
-  ui->labelVariables->setText(tr("Environment variables (e.g. %APPDATA% or %HOMEDIR%) are substituted in sources.\n"
+  ui->labelVariables->setText(tr("Environment variables (e.g. %USERPROFILE% or %HOMEDIR%) are substituted in sources.\n"
                                  "VERSION is also a predefined variable that stands for the G'MIC version number (currently %1).")
                                   .arg(GmicQt::GmicVersion));
 #else
@@ -127,8 +134,10 @@ QStringList SourcesWidget::defaultList()
 {
   QStringList result;
 #ifdef _IS_WINDOWS_
-  result << QString("%APPDATA%%1user.gmic").arg(QDir::separator());
+  result << QString("%GMIC_PATH%%1user.gmic").arg(QDir::separator());
+  result << QString("%USERPROFILE%%1user.gmic").arg(QDir::separator());
 #else
+  result << "${GMIC_PATH}/.gmic";
   result << "${HOME}/.gmic";
 #endif
   return result;
@@ -218,14 +227,14 @@ void SourcesWidget::enableButtons()
   if (index == -1) {
     ui->tbUp->setEnabled(false);
     ui->tbDown->setEnabled(false);
-    ui->tbTrash->setEnabled(false);
+    ui->tbTrash->defaultAction()->setEnabled(false);
     ui->leURL->clear();
     ui->leURL->setEnabled(false);
     return;
   }
   ui->tbUp->setEnabled(index > 0);
   ui->tbDown->setEnabled(index < ui->list->count() - 1);
-  ui->tbTrash->setEnabled(true);
+  ui->tbTrash->defaultAction()->setEnabled(true);
   ui->leURL->setEnabled(true);
 }
 
@@ -234,10 +243,13 @@ void SourcesWidget::removeCurrentSource()
   QListWidgetItem * item = ui->list->currentItem();
   int row = ui->list->currentRow();
   if (item) {
+    disconnect(ui->list, &QListWidget::currentItemChanged, this, nullptr);
     ui->list->removeItemWidget(item);
     delete item;
+    connect(ui->list, &QListWidget::currentItemChanged, this, &SourcesWidget::onSourceSelected, Qt::UniqueConnection);
     if (ui->list->count()) {
       ui->list->setCurrentRow(std::min(ui->list->count() - 1, row));
+      onSourceSelected();
     }
     enableButtons();
   }

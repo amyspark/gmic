@@ -37,8 +37,6 @@
 #include "Globals.h"
 #include "GmicStdlib.h"
 #include "ImageTools.h"
-#include "LayersExtentProxy.h"
-#include "Logger.h"
 #include "Misc.h"
 #include "OverrideCursor.h"
 #include "Settings.h"
@@ -460,7 +458,7 @@ double PreviewWidget::currentZoomFactor() const
 
 bool PreviewWidget::event(QEvent * event)
 {
-  if (event->type() == QEvent::WindowActivate && _pendingResize) {
+  if ((event->type() == QEvent::WindowActivate) && _pendingResize) {
     _pendingResize = false;
     if (width() && height()) {
       updateVisibleRect();
@@ -484,10 +482,9 @@ bool PreviewWidget::eventFilter(QObject *, QEvent * event)
   return false;
 }
 
-void PreviewWidget::leaveEvent(QEvent *)
-{
-  OverrideCursor::setWaiting(false);
-}
+void PreviewWidget::leaveEvent(QEvent *) {}
+
+void PreviewWidget::enterEvent(QEvent *) {}
 
 void PreviewWidget::wheelEvent(QWheelEvent * event)
 {
