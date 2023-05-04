@@ -151,20 +151,24 @@ endif (ENABLE_SYSTEM_GMIC)
 find_package(Threads REQUIRED)
 
 #
-# Qt5
+# Qt
 #
-find_package(Qt5 ${MIN_QT_VERSION}
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} ${MIN_QT_VERSION}
         REQUIRED COMPONENTS
         Core
         Gui
         Widgets
         Network
+        LinguistTools
 )
-
-#
-# For the translations
-#
-find_package(Qt5LinguistTools REQUIRED)
+if(QT_VERSION VERSION_GREATER_EQUAL "6.3")
+  if(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+    qt6_standard_project_setup()
+  else()
+    qt_standard_project_setup()
+  endif()
+endif()
 
 #
 # PNG
@@ -270,11 +274,24 @@ endif()
 # add all defines
 #
 
+if (QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+  set(gmic_qt_LIBRARIES
+          Qt${QT_VERSION_MAJOR}::Core
+          Qt${QT_VERSION_MAJOR}::Widgets
+          Qt${QT_VERSION_MAJOR}::Gui
+          Qt${QT_VERSION_MAJOR}::Network
+  )
+else()
+  set(gmic_qt_LIBRARIES
+          Qt::Core
+          Qt::Widgets
+          Qt::Gui
+          Qt::Network
+  )
+endif()
+
 set(gmic_qt_LIBRARIES
-        Qt5::Core
-        Qt5::Widgets
-        Qt5::Gui
-        Qt5::Network
+        ${gmic_qt_LIBRARIES}
         ${PNG_LIBRARIES}
         ${FFTW3_LIBRARIES}
         ${ZLIB_LIBRARIES}
@@ -320,7 +337,10 @@ if (APPLE)
     add_definitions(-D_IS_MACOS_)
     set(CMAKE_MACOSX_RPATH 1)
     set(BUILD_WITH_INSTALL_RPATH 1)
-    add_definitions(-mmacosx-version-min=10.9 -Wno-macro-redefined -Wno-deprecated-register)
+    add_definitions(-Wno-macro-redefined -Wno-deprecated-register)
+    if (QT_VERSION_MAJOR VERSION_EQUAL "5")
+      add_definitions(-mmacosx-version-min=10.9)
+    endif()
 endif()
 
 if (WIN32)
@@ -664,10 +684,22 @@ else()
 
   set_source_files_properties(${gmic_filters_translation_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/translations/filters)
 
-  qt5_add_translation(gmic_qt_QM
+  if(QT_VERSION VERSION_LESS_EQUAL "5.15.0")
+    qt5_add_translation(gmic_qt_QM
       ${gmic_translation_files}
       ${gmic_filters_translation_files}
-  )
+    )
+  elseif(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+    qt6_add_translation(gmic_qt_QM
+      ${gmic_translation_files}
+      ${gmic_filters_translation_files}
+    )
+  else()
+    qt_add_translation(gmic_qt_QM
+      ${gmic_translation_files}
+      ${gmic_filters_translation_files}
+    )
+  endif()
 endif()
 
 include(GNUInstallDirs)
@@ -694,7 +726,13 @@ if (${GMIC_QT_HOST} STREQUAL "gimp" OR ${GMIC_QT_HOST} STREQUAL "gimp3")
     execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} gimp-${TARGET_GIMP_VERSION}.0 --define-variable=prefix=${CMAKE_INSTALL_PREFIX} --variable gimplibdir OUTPUT_VARIABLE GIMP_PKGLIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/Gimp/host_gimp.cpp)
-    qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    if(QT_VERSION VERSION_LESS_EQUAL "5.15.0")
+      qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    elseif(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+      qt6_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    else()
+      qt_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    endif()
     add_definitions(-DGMIC_HOST=gimp -DGIMP_DISABLE_DEPRECATED)
     add_executable(gmic_gimp_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
     target_link_libraries(
@@ -741,7 +779,13 @@ elseif (${GMIC_QT_HOST} STREQUAL "krita-plugin")
 
     set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/KritaPlugin/host.cpp src/Host/KritaPlugin/gmicqttoolplugin.cpp)
     set (gmic_qt_SRCS ${gmic_qt_SRCS} )
-    qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    if(QT_VERSION VERSION_LESS_EQUAL "5.15.0")
+      qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    elseif(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+      qt6_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    else()
+      qt_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+    endif()
     add_definitions(-DGMIC_HOST=krita-plugin)
     add_definitions(-D_GMIC_QT_DISABLE_THEMING_)
     add_definitions(-D_GMIC_QT_CONSENT_TO_UPDATE_FIRST_)
@@ -783,7 +827,13 @@ elseif (${GMIC_QT_HOST} STREQUAL "none")
   set(gmic_qt_FORMS ${gmic_qt_FORMS}
     src/Host/None/jpegqualitydialog.ui
     )
-  qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  if(QT_VERSION VERSION_LESS "5.15.0")
+    qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  elseif(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+    qt6_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  else()
+    qt_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  endif()
   add_definitions(-DGMIC_HOST=standalone)
   add_executable(gmic_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
   target_link_libraries(gmic_qt PRIVATE ${gmic_qt_LIBRARIES})
@@ -792,7 +842,13 @@ elseif (${GMIC_QT_HOST} STREQUAL "none")
 elseif (${GMIC_QT_HOST} STREQUAL "paintdotnet")
 
   set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/PaintDotNet/host_paintdotnet.cpp)
-  qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  if(QT_VERSION VERSION_LESS "5.15.0")
+    qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  elseif(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+    qt6_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  else()
+    qt_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  endif()
   add_definitions(-DGMIC_HOST=paintdotnet)
   add_executable(gmic_paintdotnet_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
   target_link_libraries(
@@ -812,7 +868,13 @@ elseif (${GMIC_QT_HOST} STREQUAL "8bf")
   endif()
 
   set (gmic_qt_SRCS ${gmic_qt_SRCS} src/Host/8bf/host_8bf.cpp)
-  qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  if(QT_VERSION VERSION_LESS_EQUAL "5.15.0")
+    qt5_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  elseif(QT_NO_CREATE_VERSIONLESS_FUNCTIONS)
+    qt6_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  else()
+    qt_wrap_ui(gmic_qt_SRCS ${gmic_qt_FORMS})
+  endif()
   add_definitions(-DGMIC_HOST=plugin8bf)
   add_executable(gmic_8bf_qt ${gmic_qt_SRCS} ${gmic_qt_QRC} ${gmic_qt_QM})
   target_link_libraries(
