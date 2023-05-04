@@ -1,0 +1,102 @@
+name: Build Linux
+
+on:
+  push:
+    branches-ignore:
+      - 'coverityScan'
+  pull_request:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.job }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    name: '${{ matrix.os.id }} (${{ matrix.compiler }}, qt${{ matrix.qt }})'
+    runs-on: ${{ matrix.os.id }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        os:
+          - { id: ubuntu-22.04, name: jammy }
+        compiler:
+          - 'gcc'
+          - 'clang'
+        qt:
+          - '5'
+          - '6'
+      fail-fast: false
+    steps:
+      - name: Runtime environment
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "GITHUB_WORKSPACE=`pwd`" >> $GITHUB_ENV
+      - name: Setup GCC
+        if: startsWith(matrix.compiler, 'gcc')
+        run: |
+          CXX=${CC/#gcc/g++}
+          sudo apt-get update
+          sudo apt-get install $CC $CXX
+          echo "CC=$CC" >> $GITHUB_ENV
+          echo "CXX=$CXX" >> $GITHUB_ENV
+        env:
+          CC: ${{ matrix.compiler }}
+      - name: Setup Clang
+        if: startsWith(matrix.compiler, 'clang')
+        run: |
+          sudo apt-get update
+          sudo apt-get install $CC llvm
+          CXX=${CC/#clang/clang++}
+          echo "CC=$CC" >> $GITHUB_ENV
+          echo "CXX=$CXX" >> $GITHUB_ENV
+        env:
+          CC: ${{ matrix.compiler }}
+        working-directory: ${{ runner.temp }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+      - name: Setup CMake + Ninja
+        run: |
+          sudo python3 -m pip install cmake ninja
+      - name: Version tools
+        run: |
+          $CC --version
+          $CXX --version
+          cmake --version
+          ninja --version
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt-get install libpng-dev zlib1g-dev libfftw3-dev libcurl4-openssl-dev
+      - name: Install Qt 5
+        if: ${{ matrix.qt == '5' }}
+        run:
+          sudo apt-get install qtbase5-dev qttools5-dev
+      - name: Install Qt 6
+        if: ${{ matrix.qt == '6' }}
+        # https://askubuntu.com/a/1460243
+        run: |
+          sudo apt-get install qt6-base-dev qt6-base-private-dev qt6-l10n-tools qt6-tools-dev qt6-tools-dev-tools linguist-qt6 libegl1-mesa-dev
+          qtchooser -install qt6 $(which qmake6)
+          echo "QT_SELECT=qt6" >> $GITHUB_ENV
+      # Don't use LTO because it OOMs the runners
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake ${{ github.workspace }}/gmic-qt \
+              -DGMIC_QT_HOST="none" \
+              -DENABLE_SYSTEM_GMIC=OFF \
+              -DENABLE_LTO=OFF \
+              -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+              -G Ninja
+      - name: Build + install
+        run: cmake --build . --target install --parallel
+        working-directory: ${{ github.workspace }}/build

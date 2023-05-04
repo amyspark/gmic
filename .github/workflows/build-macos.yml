@@ -1,0 +1,67 @@
+name: Build macOS
+
+on:
+  push:
+    branches-ignore:
+      - 'coverityScan'
+  pull_request:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.job }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    name: '${{ matrix.os }} (qt${{ matrix.qt }})'
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+        qt:
+          - '5'
+          - '6'
+      fail-fast: false
+    steps:
+      - name: Runtime environment
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          echo "GITHUB_WORKSPACE=`pwd`" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: true
+      - name: Setup CMake + Ninja
+        run: |
+          brew install cmake ninja
+        working-directory: ${{ runner.temp }}
+      - name: Version tools
+        run: |
+          cc --version  || true
+          ld --version || true
+          cmake --version
+          ninja --version
+      - name: Install dependencies
+        run: |
+          brew install libpng fftw qt@${{ matrix.qt }}
+          echo "/usr/local/opt/qt@${{ matrix.qt }}/bin" >> $GITHUB_PATH
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake ${{ github.workspace }}/gmic-qt \
+              -DGMIC_QT_HOST="none" \
+              -DENABLE_SYSTEM_GMIC=OFF \
+              -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+              -DCMAKE_PREFIX_PATH=/usr/local/opt/qt@${{ matrix.qt }} \
+              -G Ninja
+      - name: Build + install
+        run: cmake --build . --target install --parallel
+        working-directory: ${{ github.workspace }}/build

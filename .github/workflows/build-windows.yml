@@ -1,0 +1,74 @@
+name: Build Windows
+
+on:
+  push:
+    branches-ignore:
+      - 'coverityScan'
+  pull_request:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.job }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows-mingw:
+    name: '${{ matrix.os }} (${{ matrix.sys.abi }}, qt${{ matrix.qt }})'
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      matrix:
+        os:
+          - windows-2022
+        sys:
+          - { abi: ucrt64,  env: ucrt-x86_64 }
+          - { abi: clang64, env: clang-x86_64 }
+        qt:
+          - '5'
+          - '6'
+      fail-fast: false
+    steps:
+      - name: Use MinGW from MSYS
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys.abi}}
+          update: true
+          pacboy: >-
+            toolchain:p
+            libpng:p
+            zlib:p
+            fftw:p
+            qt${{ matrix.qt }}:p
+            cmake:p
+            ninja:p
+      - name: Runtime environment
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "GITHUB_WORKSPACE=`pwd`" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: true
+      - name: Version tools
+        run: |
+          cmake --version
+          ninja --version
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake $(pwd)/../gmic-qt \
+              -DGMIC_QT_HOST="none" \
+              -DENABLE_SYSTEM_GMIC=OFF \
+              -DCMAKE_INSTALL_PREFIX=$(pwd)/../install \
+              -G Ninja
+      - name: Build + install
+        run: cmake --build . --target install --parallel
+        working-directory: ${{ github.workspace }}/build
+  
